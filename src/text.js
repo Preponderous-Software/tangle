@@ -393,7 +393,7 @@ export function proverBoard(doc, {fed, blank, run, message, good, solved, unlock
       }
       g.fillStyle = self ? "#f1ece2" : INK; g.fillText(".", bx + 112, y + 150);
       if (!solved) {
-        g.fillStyle = self ? "#b39a5a" : "#7a6f5c"; g.font = `600 17px ${MONO}`; g.textAlign = "center";
+        g.fillStyle = self ? "#b39a5a" : "#7a6f5c"; g.font = `700 22px ${MONO}`; g.textAlign = "center";
         g.fillText("TENS", bx + 25, y + 182); g.fillText("ONES", bx + 81, y + 182); g.textAlign = "left";
       }
       if (self) { g.fillStyle = "#e6c46a"; g.font = `600 26px ${MONO}`; g.fillText("ABOUT ITSELF", 470, y + 42); }

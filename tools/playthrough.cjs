@@ -163,7 +163,8 @@ const EYE = 1.62;
 
   // the epilogue: back to the hall, out through its new north door, and straight on until you're back in it
   for (const [x, z] of [[-17, 31], [-13.5, 31], [-9, 31], [-9.5, 27], [-9.5, 24], [-9.5, 19.2], [-9.5, 16], [-7.5, 16], [-2, 16], [0, 14], [0, 9.6], [0, 5.5], [0, 0], [0, -4], [0, -7.5]]) await walkTo(x, z);
-  step(`epilogue passage: room ${await page.evaluate(() => window.__tangle.state.room)}, caption "${await page.textContent("#caption")}"`);
+  step(`epilogue passage: room ${await page.evaluate(() => window.__tangle.state.room)}`);
+  step(`last plaque card: ${await closeCard()}`);
   await lookAt([0, EYE, -20]);
   await page.keyboard.down("KeyW");
   for (let k = 0; k < 60 && !(await page.evaluate(() => window.__tangle.state.epilogue)); k++) await frames(3);

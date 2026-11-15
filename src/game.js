@@ -269,7 +269,9 @@ function refreshHallDoor() {
   for (const k of World.HALL_COPIES) rug.panel([0, 0.012, 1.4 - k * World.LOOP], [0, 1, 0], 4.2, 4.2, [0, 0, -1]);
   mesh(SLOT.epiRug, rug, SLOT.rug, 0);
   // over the door, on the hall side; and the last plaque, on the passage's left-hand wall
-  hallPanel(SLOT.wayOut, Text.PLAQUES.wayOut, [0, 3.52, H.z0 + 0.02], [0, 0, 1]);
+  // once you've been round, the sign admits where it leads
+  hallPanel(SLOT.wayOut, state.epilogue ? {...Text.PLAQUES.wayOut, title: "The way out?", body: "Go through, and keep walking straight ahead. (You know where it leads.)"} : Text.PLAQUES.wayOut,
+    [0, 3.52, H.z0 + 0.02], [0, 0, 1]);
   hallPanel(SLOT.lastPlaque, Text.PLAQUES.last, [-1.18, 1.62, (World.PASSAGE.z0 + World.PASSAGE.z1) / 2], [1, 0, 0]);
 }
 
@@ -491,7 +493,7 @@ function solveGodel() {
     why: "Each of these is what Douglas Hofstadter calls a strange loop: you move up through levels, and find yourself back where you began. " +
       "In Gödel, Escher, Bach he suggests that your sense of “I” is a loop like this: a pattern in the brain that ends up standing for itself. " +
       "One last door has opened, in the hall's far wall, where the welcome plaque was."};
-  objective(allSolved() ? "Every loop found. Walk back to the desk: the Prover's board now shows why card 81 is true." : nextObjective());
+  objective(allSolved() ? "Walk back to the desk to see on the board why card 81 is true, then take the new door in the hall's far wall." : nextObjective());
 }
 let pendingEnd = null;
 
@@ -1131,8 +1133,15 @@ function enterRoom(r) {
     else if (n > 0 && n < 6 && state.saidN !== n) { state.saidN = n; say(`${["One loop", "Two loops", "Three loops", "Four loops", "Five loops"][n - 1]} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
   }
   if (r === "out" && !state.epilogue) {
-    say("A short passage. The last plaque is on the wall to your left. Then keep walking straight ahead.", 7000, true);
-    objective("Read the last plaque, then keep walking straight ahead.");
+    objective("Keep walking straight ahead.");
+    // the passage is short and its plaque hangs side-on: walking straight on (as the sign says) passes
+    // it unread, so the first time through it is shown as a card
+    if (!state.readLast) {
+      state.readLast = true;
+      const P = Text.PLAQUES.last;
+      debrief({title: P.title + ".", what: P.body.replace(/\nKeep walking\.$/, ""),
+        why: "It's the plaque on this passage's left-hand wall. Close this and keep walking straight ahead."});
+    } else say("Keep walking straight ahead.", 4000);
   }
   if (state.seenRooms.has(r)) return;
   state.seenRooms.add(r); save();
@@ -1321,13 +1330,15 @@ function panels() {
   return P;
 }
 function nearestPanel() {
-  let best = null, bd = 3.2;
+  let best = null, bd = 3.6;
   for (const p of panels()) { const d = Math.hypot(p.c[0] - me.x, p.c[1] - me.z); if (d < bd) { bd = d; best = p; } }
   return best;
 }
 function pressNth(n) {
   const p = nearestPanel();
-  if (state.card || !p || n > p.ids.length) return;
+  if (state.card) return;
+  if (!p) { say("Number keys press the buttons of a desk or lectern: walk up to one first.", 3500); return; }
+  if (n > p.ids.length) { say(`This one has ${p.ids.length} buttons: keys 1 to ${p.ids.length}.`, 3000); return; }
   const id = p.ids[n - 1];
   if (!targets().some((t) => t.id === id)) { Audio.cue("nope"); return; }  // dark (solved) buttons stay dark
   press(id);
