@@ -41,7 +41,7 @@ export function addRow(list, guess) { return [guess.slice(), ...list.map((r) => 
 // The question once the list has been beaten twice: which list could hold every endless row?
 export const QUESTION = [["q_long", "LONGER"], ["q_endless", "ENDLESS"], ["q_none", "NONE"]];
 export function answerQuestion(id) {
-  if (id === "q_none") return {ok: true, message: "Right: no list can hold every endless row. Whatever the list, its flipped diagonal is missing from it."};
-  if (id === "q_long") return {ok: false, message: "Add as many rows as you like: the new list has a new diagonal, and its flipped row is missing. You just saw it happen twice."};
-  return {ok: false, message: "This list is endless already, and the flipped diagonal still escaped it."};
+  if (id === "q_none") return {ok: true, message: "Right: no list can hold every endless row. Whatever the list, flip every tile on its diagonal and you get a row that isn't in it."};
+  if (id === "q_long") return {ok: false, message: "Add as many rows as you like: the new list has a new diagonal, and flipping it gives a row that's missing. You just saw it happen twice."};
+  return {ok: false, message: "This list is endless already, and flipping its diagonal still made a row that wasn't in it."};
 }

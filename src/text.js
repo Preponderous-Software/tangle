@@ -133,7 +133,7 @@ export const PLAQUES = {
   list: {kicker: "The List", title: "Find a row that isn't there", w: 2.6, h: 2.4, bodySize: 0.046,
     body: "The librarian says this list holds every endless row of light and dark tiles. It goes on forever, row after row, and each row goes on forever too.\n" +
       "Set the switches on the desk to start a row, and press CHECK. Can you make a row that is certainly nowhere in the list?"},
-  stair: {kicker: "The Staircase", title: "Climb to the top", w: 2.2, h: 2.2, bodySize: 0.05,
+  stair: {kicker: "The Staircase", title: "Climb to the top", w: 1.86, h: 2.1, bodySize: 0.05,
     body: "Bach wrote a canon that rises a whole tone every time it repeats. These stairs do the same: " +
       "each flight is one key higher, C, D, E, F\u266f, G\u266f, A\u266f.\nGo through the door, climb, and find the top. Then come back here."},
   scr: {kicker: "The Screen", title: "A picture of itself", w: 3.0, h: 2.0, bodySize: 0.043,
@@ -250,7 +250,7 @@ export function keySign(doc, name) {
   g.strokeStyle = "#c9a24f"; g.lineWidth = 10; g.strokeRect(14, 14, W - 28, H - 28);
   g.fillStyle = "#e8d5a8"; g.textAlign = "center"; g.textBaseline = "middle";
   g.font = `700 ${name.length > 1 ? 230 : 280}px ${SERIF}`; g.fillText(name, W / 2, H / 2 - 20);
-  g.fillStyle = "#c9a24f"; g.font = `600 34px ${MONO}`; g.fillText("LANDING", W / 2, H - 70);
+  g.fillStyle = "#c9a24f"; g.font = `600 46px ${MONO}`; g.fillText("LANDING", W / 2, H - 66);
   return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
 }
 
@@ -261,12 +261,12 @@ export function topBoard(doc, {locked, message, good, solved}) {
   g.fillStyle = "#151a1d"; g.fillRect(0, 0, W, H);
   g.fillStyle = "#c9a24f"; g.font = `600 30px ${MONO}`; g.fillText("OUTSIDE THE STAIRS", 50, 62);
   g.fillStyle = "#f1ece2"; g.font = `700 70px ${SERIF}`; g.fillText("Where is the top of the staircase?", 50, 170);
-  g.font = `400 36px ${SERIF}`; g.fillStyle = "#9aa3a6";
-  g.fillText(locked ? "Climb the stairs first: go all the way round, past A\u266f." : solved ? "Solved." : "Press your answer on the lectern.", 50, 240);
+  g.font = `400 46px ${SERIF}`; g.fillStyle = "#b4bcbf";
+  g.fillText(locked ? "Climb the stairs first: go all the way round, past A\u266f." : solved ? "Solved." : "Press your answer on the lectern below.", 50, 250);
   if (message) {
-    g.font = `600 38px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
-    let y = H - 40 - 48 * (wrap(g, message, W - 100).length - 1);
-    for (const l of wrap(g, message, W - 100)) { g.fillText(l, 50, y); y += 48; }
+    g.font = `600 44px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
+    let y = H - 40 - 54 * (wrap(g, message, W - 100).length - 1);
+    for (const l of wrap(g, message, W - 100)) { g.fillText(l, 50, y); y += 54; }
   }
   return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
 }
@@ -297,8 +297,9 @@ export function listBoard(doc, {rows, guess, diffs, diag, later, escaped, messag
     g.fillStyle = round && r === 0 ? "#e6c46a" : "#b7bdb2"; g.font = `600 28px ${MONO}`;
     g.fillText(`row ${r + 1}`, 46, y + 32);
     for (let i = 0; i < N; i++) {
-      const ring = diffs && diffs[r] === i ? "#e0634a" : diag && i === r ? "#e6c46a" : null;
-      tile(X0 + i * (T + gap), y, rows[r][i], ring);
+      const gold = diag && i === r, red = diffs && diffs[r] === i;
+      tile(X0 + i * (T + gap), y, rows[r][i], gold ? "#e6c46a" : red ? "#e0634a" : null);
+      if (gold && red) { g.strokeStyle = "#e0634a"; g.lineWidth = 5; g.strokeRect(X0 + i * (T + gap) + 5, y + 5, T - 10, T - 10); }  // both: red inside the gold
     }
     g.fillStyle = "#8d968c"; g.font = `700 32px ${SERIF}`; g.fillText("…", X0 + N * (T + gap) + 4, y + 32);
     if (diffs) {
@@ -340,8 +341,8 @@ export function questionBoard(doc, {locked, message, good, solved}) {
   g.fillStyle = "#151a1d"; g.fillRect(0, 0, W, H);
   g.fillStyle = "#c9a24f"; g.font = `600 30px ${MONO}`; g.fillText("A QUESTION FOR THE LIBRARIAN", 50, 62);
   g.fillStyle = "#f1ece2"; g.font = `700 60px ${SERIF}`; g.fillText("Which list could hold every endless row?", 50, 160);
-  g.font = `400 36px ${SERIF}`; g.fillStyle = "#9aa3a6";
-  g.fillText(locked ? "First, beat the list: make a row that isn't in it." : solved ? "Solved." : "Press your answer on the lectern.", 50, 228);
+  g.font = `400 42px ${SERIF}`; g.fillStyle = "#b4bcbf";
+  g.fillText(locked ? "First, beat the list: make a row that isn't in it." : solved ? "Solved." : "Press your answer on the lectern below.", 50, 232);
   g.font = `600 30px ${MONO}`; g.fillStyle = "#e6c46a";
   g.fillText("LONGER: a longer list   ENDLESS: an endless one   NONE: no list can", 50, 290);
   if (message) {

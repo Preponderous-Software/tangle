@@ -172,7 +172,7 @@ function buildScene() {
   const R = World.SCR;
   panelMesh(SLOT.scrPlaque, Text.PLAQUES.scr, [-3.6, 1.75, R.z0 + 0.02], [0, 0, 1]);
   const V = World.VEST;
-  panelMesh(SLOT.vestPlaque, Text.PLAQUES.stair, [V.x0 + 0.02, 1.7, 18.3], [1, 0, 0]);
+  panelMesh(SLOT.vestPlaque, Text.PLAQUES.stair, [V.x0 + 0.02, 1.7, 18.37], [1, 0, 0]);  // clear of the stair door's frame (17.32)
   buildStairwell();
   buildListRoom();
   buildProverRoom();
@@ -416,14 +416,14 @@ let pendingEnd = null;
 
 function toggleTile(i) {
   const d = state.diag;
-  if (d.round >= 2 || d.busy) { Audio.cue("nope"); if (d.round >= 2) say("You've beaten the list. Now the question on the left-hand wall.", 4000); return; }
+  if (d.round >= 2 || d.busy) { Audio.cue("nope"); say(d.round >= 2 ? "You've beaten the list. Now the question on the left-hand wall." : "Wait: the librarian is adding your row to the list.", 4000); return; }
   d.guess[i] = 1 - d.guess[i]; d.diffs = null; d.later = null; d.msg = null;
   Audio.cue("click"); refreshList(); refreshItems(performance.now()); save();
 }
 
 function checkRow() {
   const d = state.diag;
-  if (d.round >= 2 || d.busy) { Audio.cue("nope"); return; }
+  if (d.round >= 2 || d.busy) { Audio.cue("nope"); say(d.round >= 2 ? "You've beaten the list. Now the question on the left-hand wall." : "Wait: the librarian is adding your row to the list.", 4000); return; }
   const r = Diag.check(d.guess, d.list);
   d.checks++; d.diffs = r.diffs; d.later = null; d.good = r.kind === "escapes";
   if (r.kind === "row") {
@@ -433,14 +433,16 @@ function checkRow() {
     d.later = {row: r.row, tiles: d.guess.slice()};
     d.msg = `Yours differs from rows 1 to 8, but row ${r.row}, further down, starts just like it. Does yours differ later on? You'd have to check forever.`;
     Audio.cue("nope");
-    if (d.checks === 2) say("You can't check every row: the list never ends. Instead, can you make sure your row differs from row 1? And from row 2? From every row?", 10000, true);
+  }
+  if (r.kind !== "escapes") {  // hints, whichever way the check failed
     if (d.checks >= 2 && d.hint < 2) {
       d.hint = 2;
-      say("Look at the lit tiles: row 1's tile 1, row 2's tile 2, row 3's tile 3, and on down the list.", 9000);
+      say("You can't check every row: the list never ends. Instead, can you make sure your row differs from row 1? And from row 2? From every row?", 10000, true);
+      say("Look at the gold tiles: row 1's tile 1, row 2's tile 2, row 3's tile 3, and on down the list.", 9000);
     }
     if (d.checks >= 4 && d.hint < 3) {
       d.hint = 3;
-      say("Make each of your tiles the opposite of the lit tile in its column. Then your row differs from every row somewhere.", 10000);
+      say("Make each of your tiles the opposite of the gold tile in its column. Then your row differs from every row somewhere.", 10000);
     }
   } else {
     d.escaped = true;
@@ -727,9 +729,14 @@ function solveScreen() {
 function stairs(before) {
   if (roomAt(me.x, me.z) !== "stair") return;
   const R = World.STAIR.rise;
+  state.stairTrend = (state.stairTrend || 0) * 0.95 + (me.y - before.y);  // > 0 climbing, < 0 going down
   if (me.y >= R - 1e-6) { me = {...me, y: me.y - R}; state.loops++; kit.cam.ty -= R; }
   else if (me.y < -1e-6) { me = {...me, y: me.y + R}; state.loops--; kit.cam.ty += R; }
   const sg = World.stairSeg(me.x, me.z);
+  if (!state.loopedOnce && !state.saidDown && state.loops * R + me.y < -1.2 && state.stairTrend < 0) {
+    state.saidDown = true;
+    say("You're going down. To climb, turn round and go back past the door.", 6000, true);
+  }
   if (sg && sg.land && sg.key !== state.lastKey) {
     state.lastKey = sg.key;
     Audio.keyChord(sg.key * 2);
@@ -993,7 +1000,7 @@ function enterRoom(r) {
     objective(state.loopedOnce ? "Answer the question on the wall: where is the top of the staircase?" : "Climb the staircase and find the top.");
   }
   if (r === "stair" && !state.solved.stair && !state.loopedOnce) {
-    say("Each landing is one key higher. Listen to your footsteps as you climb.", 6000);
+    say("The stairs go up to your right. Each landing is one key higher: listen to your footsteps as you climb.", 7000);
   }
   if (r === "list" && !state.solved.list) {
     say("A library, and a list that claims to hold everything. Read the plaque on your left as you come in.", 7000);
@@ -1215,7 +1222,8 @@ function tick(t, now) {
     const sg = World.stairSeg(me.x, me.z), h = state.loops * World.STAIR.rise + me.y;
     const where = sg && sg.land ? `${World.KEYS[sg.key]} landing` : "on the stairs";
     const level = Math.abs(h) < 0.05 ? "level with the door" : h > 0 ? `${h.toFixed(1)} m above the door` : `${(-h).toFixed(1)} m below the door`;
-    p.textContent = `${where}  \u00b7  ${level}`; p.hidden = false;
+    const down = h < -0.4 && state.stairTrend < -0.005 ? "  \u00b7  going down: turn round to climb" : "";
+    p.textContent = `${where}  \u00b7  ${level}${down}`; p.hidden = false;
   }
   else if (state.tooClose && !state.card) { p.textContent = "Too close: step back a little"; p.hidden = false; }
   else if (state.depth >= 2) {

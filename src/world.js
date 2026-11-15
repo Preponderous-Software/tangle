@@ -227,6 +227,8 @@ function shell(m, r, colors, doors) {
   }
 }
 
+const JAMB = 0.006;  // how far a door frame stands into its opening, past the walls
+
 // A corridor running along z (x between the door's edges), from z0 to z1.
 function corridorZ(m, z0, z1, colors, x0 = DOOR.z0, x1 = DOOR.z1) {
   const h = DOOR.h, mid = [(x0 + x1) / 2, h / 2, (z0 + z1) / 2];
@@ -235,10 +237,10 @@ function corridorZ(m, z0, z1, colors, x0 = DOOR.z0, x1 = DOOR.z1) {
   q([[x0, h, z0], [x1, h, z0], [x1, h, z1], [x0, h, z1]], colors.ceil);
   q([[x0, 0, z0], [x0, 0, z1], [x0, h, z1], [x0, h, z0]], colors.wall);
   q([[x1, 0, z0], [x1, 0, z1], [x1, h, z1], [x1, h, z0]], colors.wall);
-  for (const z of [z0, z1]) {
-    m.box([x0 - 0.12, 0, z - 0.08], [x0, h + 0.12, z + 0.08], C.trim);
-    m.box([x1, 0, z - 0.08], [x1 + 0.12, h + 0.12, z + 0.08], C.trim);
-    m.box([x0 - 0.12, h, z - 0.08], [x1 + 0.12, h + 0.12, z + 0.08], C.trim);
+  for (const z of [z0, z1]) {  // the frames stand a hair proud of the corridor's walls, so no faces share a plane (seams)
+    m.box([x0 - 0.12, 0, z - 0.08], [x0 + JAMB, h + 0.12, z + 0.08], C.trim);
+    m.box([x1 - JAMB, 0, z - 0.08], [x1 + 0.12, h + 0.12, z + 0.08], C.trim);
+    m.box([x0 - 0.12, h - JAMB, z - 0.08], [x1 + 0.12, h + 0.12, z + 0.08], C.trim);
   }
 }
 
@@ -250,9 +252,9 @@ function corridor(m, x0, x1, colors, z0 = DOOR.z0, z1 = DOOR.z1, dy = 0) {
   q([[x1, 0, z0], [x0, 0, z0], [x0, h, z0], [x1, h, z0]], colors.wall);
   q([[x0, 0, z1], [x1, 0, z1], [x1, h, z1], [x0, h, z1]], colors.wall);
   for (const x of [x0, x1]) {
-    m.box([x - 0.08, 0, z0 - 0.12], [x + 0.08, h + 0.12, z0], C.trim);
-    m.box([x - 0.08, 0, z1], [x + 0.08, h + 0.12, z1 + 0.12], C.trim);
-    m.box([x - 0.08, h, z0 - 0.12], [x + 0.08, h + 0.12, z1 + 0.12], C.trim);
+    m.box([x - 0.08, 0, z0 - 0.12], [x + 0.08, h + 0.12, z0 + JAMB], C.trim);
+    m.box([x - 0.08, 0, z1 - JAMB], [x + 0.08, h + 0.12, z1 + 0.12], C.trim);
+    m.box([x - 0.08, h - JAMB, z0 - 0.12], [x + 0.08, h + 0.12, z1 + 0.12], C.trim);
   }
 }
 
@@ -439,9 +441,9 @@ export function buildStairShell() {
   const hub = {wall: C.hubWall, floor: C.hubFloor, ceil: C.hubCeil};
   for (const k of K) {
     const dy = k * R, x = ex;
-    m.box([x - 0.08, dy, d0 - 0.12], [x + 0.08, dy + DOOR.h + 0.12, d0], C.trim);   // the door's frame
-    m.box([x - 0.08, dy, d1], [x + 0.08, dy + DOOR.h + 0.12, d1 + 0.12], C.trim);
-    m.box([x - 0.08, dy + DOOR.h, d0 - 0.12], [x + 0.08, dy + DOOR.h + 0.12, d1 + 0.12], C.trim);
+    m.box([x - 0.08, dy, d0 - 0.12], [x + 0.08, dy + DOOR.h + 0.12, d0 + JAMB], C.trim);   // the door's frame
+    m.box([x - 0.08, dy, d1 - JAMB], [x + 0.08, dy + DOOR.h + 0.12, d1 + 0.12], C.trim);
+    m.box([x - 0.08, dy + DOOR.h - JAMB, d0 - 0.12], [x + 0.08, dy + DOOR.h + 0.12, d1 + 0.12], C.trim);
     // through the wall, and (for the other loops) the same small room behind the door: the stairs
     // promise the same door every time round, so every loop has one
     const m2 = new MeshBuilder();
