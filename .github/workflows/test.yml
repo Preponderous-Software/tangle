@@ -1,10 +1,16 @@
+# Tests the rules, the tribar, walking and every route through the house, then deploys the game to
+# the arcade as https://tangle.play.danielstephenson.dev (pushes to main, while ARCADE_ENABLED is set).
 name: test
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -17,3 +23,28 @@ jobs:
       - run: npm test
       # the page's modules parse
       - run: for f in src/*.js; do node --check "$f"; done
+
+  deploy:
+    name: Deploy to the arcade
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && vars.ARCADE_ENABLED == 'true')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # only what the browser needs: the page, its modules, the engine and the poster
+      - name: Gather the site
+        run: |
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site/engine"
+          cp index.html "$site/"
+          cp -r src assets "$site/"
+          cp engine/tangle-engine.js engine/tangle-engine.wasm engine/strata-kit.js engine/strata-loader.js "$site/engine/"
+          echo "SITE=$site" >> "$GITHUB_ENV"
+          echo "0.1.0+g${GITHUB_SHA::7}" > "$RUNNER_TEMP/arcade-version.txt"
+          find "$site" -type f | sort
+      - uses: Stephenson-Software/arcade-deploy@v1
+        with:
+          slug: tangle
+          token: ${{ secrets.ARCADE_TOKEN }}
+          site-dir: ${{ env.SITE }}
+          version-file: ${{ runner.temp }}/arcade-version.txt
