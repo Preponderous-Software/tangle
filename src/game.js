@@ -228,7 +228,7 @@ function refreshGate() {
 }
 
 function refreshLights() {
-  const L = World.lights().map((l) => l.slice()).concat(World.stairLights(), World.listLights(), World.proverLights());
+  const L = World.lights().map((l) => l.slice()).concat(World.stairLights(), World.listLights(), World.proverLights(state.solved.godel));
   if (state.glow > 0.01) L.push([...World.TRIBAR.centre.map((v, i) => v + [1.2, 1.0, 1.6][i]), 7, 1.0, 0.82, 0.5, 2.8 * state.glow]);
   if (state.gateOpen && !state.solved.miu) L.push([12.6, 2.6, 7.2, 6, 1.0, 0.85, 0.55, 1.1]);
   rows(mod._tangle_lights, L);
@@ -363,12 +363,26 @@ function turnBlank() {
   Audio.cue("click");
   refreshProver(); refreshItems(performance.now()); save();
 }
+// The lamps on the Prover's cabinet: dim while it waits, flickering while it searches, green once it
+// has proved a card, gold once you've seen that card 81 is true.
+function proverLamps(t) {
+  const r = state.prv.run, X = World.PCAB.x1 + 0.03;
+  return World.PLAMPS.map(([y, z], i) => {
+    let col = [0.5, 0.42, 0.3], a = 0.25;
+    if (state.solved.godel) { col = [1.0, 0.78, 0.35]; a = 0.95; }
+    else if (r && r.kind === "proved") { col = [0.45, 0.95, 0.6]; a = 0.9; }
+    else if (r) { const k = Math.floor(t * 7) * 31 + i * 17; col = [1.0, 0.72, 0.3]; a = (Math.imul(k, 2654435761 | 0) >>> 7) % 3 ? 0.95 : 0.15; }
+    return [X, y, z, 9, 0.09, ...col, a];
+  });
+}
 function proverTick(now) {  // while a card is in the Prover: count, and unlock the questions once card 81 has run a while
   const p = state.prv;
   if (!p.run) return;
   const t = (now - p.run.t0) / 1000;
   if (p.run.kind === "proved" && t > 4) return;  // the proof is up; nothing more to draw
-  refreshProver(now);
+  if (p.run.kind === "proved" && t >= 2 && !p.run.stamped) { p.run.stamped = true; Audio.stamp(); Audio.cue("open"); }  // the proof is done: stamp the card
+  if (p.run.kind === "forever") Audio.proverWork(Math.min(1, t / 8));
+  refreshProver(now); refreshPoints(now / 1000);
   if (p.run.n === 81 && p.run.kind === "forever" && t > 6 && !p.selfFed) {
     p.selfFed = true;
     p.msg = "Still searching, and it always will be. Why? Answer the questions on the left-hand wall.";
@@ -396,7 +410,8 @@ function proverAnswer(id) {
 }
 function solveGodel() {
   state.solved.godel = true;
-  save(); refreshDoors(); refreshItems(); refreshProver(); Audio.cue("solve"); flash();
+  state.prv.msg = "Card 81 is true, and the Prover will never prove it."; state.prv.good = true;
+  save(); refreshDoors(); refreshItems(); refreshProver(); refreshLights(); refreshPoints(); Audio.stamp(); Audio.cue("solve"); flash();
   setTimeout(() => debrief({title: "True, and it can't be proved.",
     what: "Card 81 talks about itself through its number. If the Prover proved it, it would have proved something false, and it never does. " +
       "So it never proves card 81, and that is exactly what card 81 says. You could see it's true by stepping outside the Prover and thinking about it, " +
@@ -593,6 +608,7 @@ function refreshPoints(t = 0) {
       pts.push([ex + 0.42 * Math.cos(a), 0.03, ez + 0.42 * Math.sin(a), 7, 0, ...(solved ? [1.0, 0.8, 0.3] : [0.95, 0.85, 0.55]), pulse]);
     }
   }
+  pts.push(...proverLamps(t));
   rows(mod._tangle_points, pts);
 }
 
