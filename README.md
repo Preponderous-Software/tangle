@@ -128,6 +128,16 @@ Every picture here is the real game, shot by [darkroom](https://github.com/Prepo
 ![A card titled Strange loops, summing up each room's loop](docs/media/ending-card.jpg)
 
 *The closing card, once every room is solved.*
+
+![The Prover's board: card 81 reads 'The Prover can't prove card 57', and the board explains there is no card 57](docs/media/prover-dial.jpg)
+
+*Card 81's number is a two-digit dial; every wrong number is explained, and the player has to see that card 81 should talk about itself.*
+
+![Animation: walking from the hall through a new door and a short passage with a last plaque, and arriving back in the same hall](docs/media/epilogue-loop.gif)
+
+*The epilogue: once every room is solved, a door opens in the hall, and its passage leads back into the same hall.*
+
+[MP4 version](docs/media/epilogue-loop.mp4)
 <!-- darkroom:end -->
 
 ## Play

@@ -527,6 +527,73 @@
           "frames": 3
         }
       ]
+    },
+    {
+      "name": "prover-dial",
+      "kind": "still",
+      "device": "wide",
+      "url": "{base}?drive=1&skip=5",
+      "caption": "Card 81's number is a two-digit dial; every wrong number is explained, and the player has to see that card 81 should talk about itself.",
+      "alt": "The Prover's board: card 81 reads 'The Prover can't prove card 57', and the board explains there is no card 57",
+      "steps": [
+        {
+          "js": "__dr.pose(-22.6, 31.0, 0.0, -0.12)"
+        },
+        {
+          "frames": 2
+        },
+        {
+          "js": "__tangle.press('g12'); __tangle.press('g47'); __tangle.press('gten')"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "frames": 4
+        }
+      ]
+    },
+    {
+      "name": "epilogue-loop",
+      "kind": "clip",
+      "device": "wide",
+      "url": "{base}?drive=1&skip=6",
+      "caption": "The epilogue: once every room is solved, a door opens in the hall, and its passage leads back into the same hall.",
+      "alt": "Animation: walking from the hall through a new door and a short passage with a last plaque, and arriving back in the same hall",
+      "fps": 12.5,
+      "gif": {
+        "width": 640,
+        "colors": 160,
+        "hold_last_ms": 1500
+      },
+      "video": [
+        "mp4"
+      ],
+      "setup+": [
+        {
+          "js": "__dr.pose(0, 1.5, Math.PI / 2, 0.0)"
+        },
+        {
+          "frames": 4
+        },
+        {
+          "key": "KeyW",
+          "action": "down"
+        }
+      ],
+      "steps": [
+        {
+          "repeat": 64,
+          "steps": [
+            {
+              "frames": 3
+            },
+            {
+              "capture": true
+            }
+          ]
+        }
+      ]
     }
   ]
 }

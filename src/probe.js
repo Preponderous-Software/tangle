@@ -15,10 +15,10 @@ const text = (id) => { const el = document.getElementById(id); return el && !el.
 
 // Things a player walks to: doorways, plaques, and everything that can be pressed.
 const DOORS = [["triangle door", -6, 0], ["machine door", 6, 0], ["screen door", 0, 6], ["screen room's hall door", 0, 9],
-  ["vestibule door", -8, 16], ["staircase door", -10.7, 16], ["list corridor", -9.5, 19.4], ["list door", -9.5, 25], ["prover door", -16, 31]];
+  ["vestibule door", -8, 16], ["staircase door", -10.7, 16], ["list corridor", -9.5, 19.4], ["list door", -9.5, 25], ["prover door", -16, 31], ["way out (hall's north door, after all six)", 0, -6]];
 const PLAQUES = [["welcome plaque", 0, -6], ["triangle plaque", -10.9, -8], ["machine rules", 11.4, -8], ["screen plaque", -3.6, 9],
   ["staircase plaque", -10.7, 18.3], ["vestibule question", -9.5, 12.6], ["list plaque", -14, 37], ["librarian's list", -9, 37],
-  ["list question", -2, 31], ["prover plaque", -19.3, 25], ["prover board", -27, 31], ["prover questions", -22, 37], ["big screen", 0, 23], ["sentence board", 8, 15], ["balcony board", 23, -0.5]];
+  ["list question", -2, 31], ["prover plaque", -19.3, 25], ["prover board", -27, 31], ["prover questions", -22, 37], ["last plaque (in the passage)", -1.2, -7.5], ["big screen", 0, 23], ["sentence board", 8, 15], ["balcony board", 23, -0.5]];
 function buttons() {
   const out = [];
   for (const [id, label, x] of World.BUTTONS) out.push([`machine ${label}`, x, World.BUTTON_Z, id]);
