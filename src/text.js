@@ -123,9 +123,13 @@ export const PLAQUES = {
   hub: {kicker: "Welcome", title: "Tangle: a house of strange loops", w: 6.4, h: 3.3, bodySize: 0.036,
     body: "A strange loop is a path that keeps going forward, or upward, and still ends up back where it started. " +
       "The idea comes from the book Gödel, Escher, Bach by Douglas Hofstadter.\n" +
-      "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you), and the Staircase and the List beyond it."},
-  soon: {kicker: "Coming soon", title: "The last room", w: 2.1, h: 1.5, titleSize: 0.1, dark: true,
-    body: "A sentence that says it can't be proved.", bodySize: 0.08},
+      "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you), and the Staircase, the List and the Prover beyond it."},
+  sealed: {kicker: "Room 6  ·  sealed", title: "The Prover", w: 1.2, h: 1.0, titleSize: 0.12, dark: true,
+    body: "Opens when you've beaten the list.", bodySize: 0.08},
+  prover: {kicker: "The Prover", title: "A sentence about itself", w: 2.6, h: 2.4, bodySize: 0.046,
+    body: "Feed the Prover a card and it tries every possible proof, shortest first. If it finds one, the card is PROVED.\n" +
+      "The Prover is honest: it never proves anything false.\nEvery card has a number, so a card can talk about other cards. " +
+      "Press a card on the desk to feed it in. Start with cards 12 and 47."},
   list: {kicker: "The List", title: "Find a row that isn't there", w: 2.6, h: 2.4, bodySize: 0.046,
     body: "The librarian says this list holds every endless row of light and dark tiles. It goes on forever, row after row, and each row goes on forever too.\n" +
       "Set the switches on the desk to start a row, and press CHECK. Can you make a row that is certainly nowhere in the list?"},
@@ -152,9 +156,9 @@ export const PLAQUES = {
 };
 
 export function progressPlaque(solved) {
-  const n = ["tribar", "miu", "scr", "stair", "list"].filter((k) => solved[k]).length;
-  return {kicker: "Progress", title: `${n} of 5 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
-    body: n === 5 ? "That's this part of the house, for now." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : !solved.stair ? "Next: the Staircase, beyond the Screen." : "Next: the List, beyond the Screen.",
+  const n = ["tribar", "miu", "scr", "stair", "list", "godel"].filter((k) => solved[k]).length;
+  return {kicker: "Progress", title: `${n} of 6 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
+    body: n === 6 ? "Every loop in the house, found." : solved.list ? "Next: the Prover, beyond the List." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : !solved.stair ? "Next: the Staircase, beyond the Screen." : "Next: the List, beyond the Screen.",
     bodySize: 0.075, dark: true};
 }
 
@@ -340,6 +344,91 @@ export function questionBoard(doc, {locked, message, good, solved}) {
   g.fillText(locked ? "First, beat the list: make a row that isn't in it." : solved ? "Solved." : "Press your answer on the lectern.", 50, 228);
   g.font = `600 30px ${MONO}`; g.fillStyle = "#e6c46a";
   g.fillText("LONGER: a longer list   ENDLESS: an endless one   NONE: no list can", 50, 290);
+  if (message) {
+    g.font = `600 36px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
+    let yy = H - 40 - 46 * (wrap(g, message, W - 100).length - 1);
+    for (const l of wrap(g, message, W - 100)) { g.fillText(l, 50, yy); yy += 46; }
+  }
+  return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
+}
+
+// Room 6: the Prover's board. The three cards on the left, what the Prover is doing on the right.
+// fed: cards fed so far; blank: card 81's number; run: {n, count, kind, proof} or null.
+export function proverBoard(doc, {fed, blank, run, message, good, solved, unlocked}) {
+  const W = 1400, H = Math.round(1400 * 3.4 / 6.4), c = doc.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#14121b"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#c9a24f"; g.font = `600 30px ${MONO}`; g.fillText("THE PROVER  \u00b7  it never proves anything false", 50, 62);
+  g.fillStyle = "#9aa3a6"; g.font = `600 26px ${MONO}`; g.fillText("THE CARDS", 50, 118); g.fillText("IN THE PROVER", 760, 118);
+  const self = blank === 81;
+  const cards = [[12, "2 + 2 = 4"], [47, "2 + 2 = 5"], [81, null]];
+  let y = 140;
+  for (const [n, text] of cards) {
+    const h = n === 81 ? 190 : 120, active = run && run.n === n;
+    g.fillStyle = n === 81 && self ? "#2b2414" : "#efe9dd"; g.fillRect(50, y, 660, h);
+    g.lineWidth = active ? 8 : 3; g.strokeStyle = active ? "#e6c46a" : "#6b6455"; g.strokeRect(50, y, 660, h);
+    g.fillStyle = n === 81 && self ? "#e6c46a" : "#7a6f5c"; g.font = `700 30px ${MONO}`; g.fillText(`CARD ${n}`, 74, y + 42);
+    if (text) { g.fillStyle = INK; g.font = `700 54px ${SERIF}`; g.fillText(text, 74, y + 98); }
+    else {
+      g.font = `700 42px ${SERIF}`; g.fillStyle = self ? "#f1ece2" : INK;
+      g.fillText("The Prover can't prove", 74, y + 96);
+      g.fillText("card", 74, y + 150);
+      const bx = 74 + g.measureText("card ").width;
+      g.fillStyle = self ? "#e6c46a" : "#c9a24f"; g.fillRect(bx, y + 110, 96, 54);
+      g.fillStyle = "#14121b"; g.fillText(String(blank), bx + 8, y + 151);
+      g.fillStyle = self ? "#f1ece2" : INK; g.fillText(".", bx + 100, y + 150);
+      if (self) { g.fillStyle = "#e6c46a"; g.font = `600 26px ${MONO}`; g.fillText("ABOUT ITSELF", 470, y + 42); }
+    }
+    if (n === 12 && fed.includes(12)) stamp(g, "PROVED", "#2f8f5a", 560, y + 72);
+    if (n === 47 && fed.includes(47)) stamp(g, "NO PROOF, EVER", "#b0402f", 515, y + 66);
+    if (n === 81 && self && solved) stamp(g, "TRUE, UNPROVED", "#c98a1f", 530, y + 150);
+    y += h + 22;
+  }
+  // the Prover's side
+  const X = 760;
+  if (!run) {
+    g.fillStyle = "#b9b2c8"; g.font = `400 48px ${SERIF}`;
+    for (const [i, l] of wrap(g, "Empty. Press a card on the desk in front of you to feed it in.", W - X - 50).entries()) g.fillText(l, X, 200 + i * 60);
+  } else {
+    g.fillStyle = "#f1ece2"; g.font = `700 46px ${SERIF}`; g.fillText(`Card ${run.n}`, X, 186);
+    g.fillStyle = "#9aa3a6"; g.font = `600 28px ${MONO}`; g.fillText("proofs tried", X, 246);
+    g.fillStyle = "#e6c46a"; g.font = `700 56px ${MONO}`; g.fillText(run.count.toLocaleString("en-US"), X, 310);
+    if (run.kind === "proved") {
+      g.fillStyle = "#7fd0a0"; g.font = `600 34px ${MONO}`;
+      run.proof.forEach((l, i) => g.fillText(l, X, 380 + i * 44));
+    } else {
+      g.fillStyle = "#b9b2c8"; g.font = `italic 400 38px ${SERIF}`;
+      g.fillText(run.long ? "none of them prove it\u2026 still searching" : "searching\u2026", X, 390);
+    }
+    if (solved && run.n === 81) { g.fillStyle = "#7fd0a0"; g.font = `700 40px ${SERIF}`; g.fillText("Never proved. And true.", X, 470); }
+  }
+  if (message) {
+    g.font = `600 34px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0c080";
+    const ls = wrap(g, message, W - X - 50);
+    let yy = H - 36 - 44 * (ls.length - 1);
+    for (const l of ls) { g.fillText(l, X, yy); yy += 44; }
+  }
+  return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
+}
+function stamp(g, text, col, x, y) {
+  g.save(); g.translate(x, y); g.rotate(-0.18);
+  g.strokeStyle = col; g.lineWidth = 6; g.font = `800 34px ${MONO}`;
+  const w = g.measureText(text).width + 28;
+  g.strokeRect(-w / 2, -30, w, 56); g.fillStyle = col; g.textAlign = "center"; g.fillText(text, 0, 10);
+  g.restore();
+}
+
+// Room 6's questions, on the wall above the lectern.
+export function proverQuestion(doc, {locked, ask, legend, step, total, message, good, solved}) {
+  const W = 1400, H = Math.round(1400 * 1.6 / 3.8), c = doc.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#151a1d"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#c9a24f"; g.font = `600 30px ${MONO}`; g.fillText(locked ? "ABOUT CARD 81" : `ABOUT CARD 81  \u00b7  ${Math.min(step + 1, total)} of ${total}`, 50, 62);
+  g.fillStyle = "#f1ece2"; g.font = `700 58px ${SERIF}`;
+  g.fillText(locked ? "Make card 81 talk about itself." : ask, 50, 160);
+  g.font = `400 36px ${SERIF}`; g.fillStyle = "#9aa3a6";
+  g.fillText(locked ? "Then feed it to the Prover, and come back here." : solved ? "Solved." : "Press your answer on the lectern.", 50, 228);
+  if (!locked && !solved) { g.font = `600 30px ${MONO}`; g.fillStyle = "#e6c46a"; g.fillText(legend, 50, 290); }
   if (message) {
     g.font = `600 36px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
     let yy = H - 40 - 46 * (wrap(g, message, W - 100).length - 1);

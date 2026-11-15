@@ -25,14 +25,17 @@ happened.
 
 ## Finding your way
 
-- `pt state` shows `room` (hub, tri, miu, scr, vest, stair, list), the NEXT `objective` line, the
+- `pt state` shows `room` (hub, tri, miu, scr, vest, stair, list, prv), the NEXT `objective` line, the
   latest `caption`, the `prompt`, and `solved` for each room.
 - `nearest` lists `door`, `plaque` and `button` with distance and bearing. `pt walkto door` and
   `pt walkto plaque` work; buttons sit on desks and lecterns, so walk near (`pt walkto button`), then
   tilt down and aim.
 - The hall (hub) has doors west (the Triangle), east (the Machine) and south (the Screen). The
   Screen room's west door leads to a small vestibule; from there the stairs are straight ahead and the
-  List is through the door on the left (south), down a corridor.
+  List is through the door on the left (south), down a corridor. Once the List is solved, a door in
+  the List's west wall (on your right as you come in) opens onto the Prover, the last room.
+- `pt state` also has `prover`: the cards fed so far, card 81's number, whether the questions are
+  open, and which question you're on.
 
 ## What not to do
 

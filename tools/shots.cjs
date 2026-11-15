@@ -48,6 +48,16 @@ const SHOTS = [
   ["33-list-question", [-4.4, 31.0, Math.PI, 0.12], "listQuestion"],
   ["34-list-solved", [-4.4, 31.0, Math.PI, 0.12], "listSolve"],
   ["35-list-shelves", [-11.5, 28.0, 0.5, 0.05], "frames6"],
+  ["36-list-door6", [-12.0, 31.0, 0.0, 0.05], "frames10"],
+  ["37-prv-entrance", [-17.0, 31.0, 0.0, 0.02], "frames10"],
+  ["38-prv-plaque", [-19.3, 26.9, Math.PI / 2, 0.05], "frames6"],
+  ["39-prv-desk", [-22.9, 31.2, 0.0, 0.5], "frames6"],
+  ["40-prv-fed12", [-22.6, 31.0, 0.0, -0.12], "prvFeed12", 3000],
+  ["41-prv-fed47", [-22.6, 31.0, 0.0, -0.12], "prvFeed47", 5000],
+  ["42-prv-self", [-22.6, 31.0, 0.0, -0.12], "prvSelf", 7000],
+  ["43-prv-question", [-22.0, 34.3, -Math.PI / 2, -0.12], "prvWrong"],
+  ["44-prv-q2", [-22.0, 34.3, -Math.PI / 2, 0.3], "prvQ2"],
+  ["45-prv-solved", [-22.0, 34.3, -Math.PI / 2, -0.12], "prvSolve", 1200],
 ];
 
 (async () => {
@@ -56,12 +66,14 @@ const SHOTS = [
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-  await page.goto(url + "?drive=1", { waitUntil: "commit" });
+  // FROM=36 shoots only the poses from 36 on, starting with the first five rooms solved (?skip=5)
+  const from = process.env.FROM;
+  await page.goto(url + (from ? "?drive=1&skip=5" : "?drive=1"), { waitUntil: "commit" });
   await page.waitForFunction(() => window.__tangle && window.__strataKit, null, { timeout: 90000 });
   await page.evaluate(() => { window.__tangle.reset(); });
   let t = 1;
   const drive = async (n = 2) => { for (let i = 0; i < n; i++) { t += 1 / 30; await page.evaluate((tt) => window.__strataKit.drive(tt), t); } };
-  for (const [name, pose, setup] of SHOTS) {
+  for (const [name, pose, setup, waitMs] of SHOTS.filter(([n]) => !from || n >= from)) {
     await page.evaluate(({ pose, setup }) => {
       if (setup !== "afterSolve" && window.__tangle.state.card) window.__tangle.card(null);
       const g = window.__tangle, W = { eye: [-12.2, 1.62, 5.4], c: [-19.6, 2.9, -3.6] };
@@ -87,14 +99,22 @@ const SHOTS = [
       if (setup === "listEscape") { flipTo(flipped()); g.press("check"); }
       if (setup === "listQuestion") { flipTo(flipped()); g.press("check"); g.press("q_long"); }
       if (setup === "listSolve") g.press("q_none");
+      if (setup === "prvFeed12") g.press("g12");
+      if (setup === "prvFeed47") g.press("g47");
+      if (setup === "prvSelf") { g.press("gnum"); g.press("gnum"); g.press("g81"); }
+      if (setup === "prvWrong") g.press("ga");
+      if (setup === "prvQ2") g.press("gb");
+      if (setup === "prvSolve") g.press("ga");
       if (setup === "solveLiar") ["false", "neither"].forEach((b) => g.press(b));
     }, { pose, setup });
     if (setup === "wait6") await page.waitForTimeout(6200);
+    if (waitMs) { await page.waitForTimeout(waitMs); await drive(1); }
     await drive(setup === "hold" ? 90 : setup === "half" ? 16 : /^frames(\d+)$/.test(setup || "") ? Number(setup.slice(6)) : 3);
     await page.screenshot({ path: path.join(out, name + ".png") });
     const st = await page.evaluate(() => ({ room: window.__tangle.state.room, solved: window.__tangle.state.solved, me: window.__tangle.me }));
     console.log(name, JSON.stringify(st.solved), st.room, st.me.y.toFixed(2), await page.evaluate(() => `depth ${window.__tangle.state.depth} screenDone ${window.__tangle.state.screenDone} sentence ${window.__tangle.state.sentence}`));
   }
+  if (from) { console.log("errors", errors); await browser.close(); process.exit(errors.length ? 1 : 0); }
   // the title card, as a player first sees it (not driven)
   const p2 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   p2.on("pageerror", (e) => errors.push(e.message));

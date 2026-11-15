@@ -4,8 +4,9 @@
 // failures are ignored.
 import * as World from "./world.js";
 import {QUESTION} from "./diagonal.js";
+import {QUESTIONS as PROVER_Q, ANSWER_IDS} from "./prover.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const post = (path, body) => { fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body), keepalive: true}).catch(() => {}); };
 const t0 = performance.now();
 const tick = () => Math.max(0, Math.round((performance.now() - t0) / 1000 * 60));
@@ -14,10 +15,10 @@ const text = (id) => { const el = document.getElementById(id); return el && !el.
 
 // Things a player walks to: doorways, plaques, and everything that can be pressed.
 const DOORS = [["triangle door", -6, 0], ["machine door", 6, 0], ["screen door", 0, 6], ["screen room's hall door", 0, 9],
-  ["vestibule door", -8, 16], ["staircase door", -10.7, 16], ["list corridor", -9.5, 19.4], ["list door", -9.5, 25]];
+  ["vestibule door", -8, 16], ["staircase door", -10.7, 16], ["list corridor", -9.5, 19.4], ["list door", -9.5, 25], ["prover door", -16, 31]];
 const PLAQUES = [["welcome plaque", 0, -6], ["triangle plaque", -10.9, -8], ["machine rules", 11.4, -8], ["screen plaque", -3.6, 9],
   ["staircase plaque", -10.7, 18.3], ["vestibule question", -9.5, 12.6], ["list plaque", -14, 37], ["librarian's list", -9, 37],
-  ["list question", -2, 31], ["big screen", 0, 23], ["sentence board", 8, 15], ["balcony board", 23, -0.5]];
+  ["list question", -2, 31], ["prover plaque", -19.3, 25], ["prover board", -27, 31], ["prover questions", -22, 37], ["big screen", 0, 23], ["sentence board", 8, 15], ["balcony board", 23, -0.5]];
 function buttons() {
   const out = [];
   for (const [id, label, x] of World.BUTTONS) out.push([`machine ${label}`, x, World.BUTTON_Z, id]);
@@ -25,6 +26,8 @@ function buttons() {
   for (const [id, label, x] of World.TOP_ANSWERS) out.push([`vestibule ${label}`, x, 13.3, id]);
   for (const [id, label, x] of World.SWITCHES) out.push([id === "check" ? "list CHECK" : `list tile ${label}`, x, World.SWITCH_Z, id]);
   for (const [id, label] of QUESTION) out.push([`list answer ${label}`, World.QANSWER_X, World.QANSWERS_Z[id], id]);
+  for (const [id, label, z] of World.PKEYS) out.push([`prover desk ${label}`, World.PKEY_X, z, id]);
+  ANSWER_IDS.forEach((id, i) => out.push([`prover lectern button ${i + 1} (${PROVER_Q.map((q) => q.buttons[i]).join(" / ")})`, World.GANSWERS_X[id], World.GANSWER_Z, id]));
   out.push(["declare button (balcony)", World.MACHINE.declare[0], World.MACHINE.declare[2], "declare"]);
   return out;
 }
@@ -46,7 +49,7 @@ function nearest(me) {
 
 export function startProbe() {
   let lastScreen = null, lastObjective = null, lastCaption = null, lastPanel = null, solvedSeen = null, worldSent = false;
-  const NAMES = {tribar: "The Triangle", miu: "The Machine", scr: "The Screen", stair: "The Staircase", list: "The List"};
+  const NAMES = {tribar: "The Triangle", miu: "The Machine", scr: "The Screen", stair: "The Staircase", list: "The List", godel: "The Prover"};
   setInterval(() => {
     try {
       const g = window.__tangle;
@@ -77,6 +80,7 @@ export function startProbe() {
         room: s.room, objective: objective ? {number: n + 1, title: objective, completed: n} : null,
         solved: s.solved, prompt: text("prompt"), caption, openPanels: screen === "WORLD" ? [] : [screen.toLowerCase()],
         list: {round: s.diag.round, checks: s.diag.checks, guess: s.diag.guess.join("")},
+        prover: {fed: s.prv.fed, number: s.prv.blank, unlocked: s.prv.selfFed, question: s.prv.q, running: s.prv.run ? s.prv.run.n : null},
         stairs: {loops: s.loops, loopedOnce: s.loopedOnce}, screenDepth: s.depth,
         nearest: nearest(me),
       });

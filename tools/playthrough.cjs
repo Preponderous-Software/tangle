@@ -126,9 +126,31 @@ const EYE = 1.62;
   await lookAt([-2.62, 1.08, 31.55]); await frames(3);
   await page.keyboard.press("KeyE"); await frames(3);
   step(`list card: ${await closeCard()}`);
+
+  // the Prover: the two sums, then card 81 set to talk about itself, then the two questions
+  await walkTo(-9, 31); await walkTo(-13.5, 31); await walkTo(-17, 31); await walkTo(-22.6, 31);
+  const KEY = { g12: 32.9, g47: 32.1, g81: 31.3, gnum: 30.1 };
+  const pressKey = async (id) => { await lookAt([-24.0, 1.1, KEY[id]]); await frames(2); await page.keyboard.press("KeyE"); await frames(2); };
+  const prv = () => page.evaluate(() => { const p = window.__tangle.state.prv; return { fed: p.fed, blank: p.blank, selfFed: p.selfFed, q: p.q, msg: p.msg, qMsg: p.qMsg }; });
+  await pressKey("g81");
+  step(`prover, card 81 too soon: ${(await prv()).msg}`);
+  await pressKey("g12"); await pressKey("g47");
+  step(`prover fed: ${JSON.stringify((await prv()).fed)}`);
+  while ((await prv()).blank !== 81) await pressKey("gnum");
+  await pressKey("g81");
+  for (let k = 0; k < 100 && !(await prv()).selfFed; k++) { await page.waitForTimeout(100); await frames(2); }
+  step(`prover: card 81 fed, questions ${(await prv()).selfFed ? "open" : "SHUT"}`);
+  await walkTo(-22, 34.4);
+  const GX = { ga: -21.45, gb: -22.0, gc: -22.55 };
+  const answerG = async (id) => { await lookAt([GX[id], 1.08, 35.42]); await frames(3); await page.keyboard.press("KeyE"); await frames(3); };
+  await answerG("ga");
+  step(`prover q1 wrong: ${(await prv()).qMsg}`);
+  await answerG("gb"); await answerG("ga");
+  step(`prover card: ${await closeCard()}`);
+  step(`ending card: ${await closeCard()}`);
   const end = await st();
   step(`end: ${JSON.stringify(end.solved)}`);
   console.log("errors", errors);
   await browser.close();
-  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || !end.solved.list || errors.length) process.exit(1);
+  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || !end.solved.list || !end.solved.godel || errors.length) process.exit(1);
 })().catch((e) => { console.error(e.message); process.exit(1); });

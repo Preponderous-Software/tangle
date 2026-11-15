@@ -26,6 +26,20 @@ export const QLECTERN = {x0: -2.95, x1: -2.3, z0: 29.8, z1: 32.2, h: 1.0};
 export const QANSWER_X = -2.62;
 export const QANSWERS_Z = {q_long: 30.45, q_endless: 31.0, q_none: 31.55};
 export const QBOARD = {c: [-2.13, 2.35, 31.0], w: 3.8, h: 1.6};  // in front of its frame (-2.1)
+// Room 6: the Prover, through the List's west door (sealed until the List is solved). The Prover's
+// board on the far wall, the desk of cards in front of it, the questions on the left-hand wall.
+export const PRV = {x0: -27.3, z0: 25, x1: -16.3, z1: 37, h: 5};
+export const DOOR6 = [30.3, 31.7];   // z range of the door between the List and the Prover
+export const PBOARD = {c: [-26.43, 3.05, 31.0], w: 6.4, h: 3.4};  // in front of its frame (on the cabinet)
+export const PCAB = {x0: -27.3, x1: -26.5, z0: 27.2, z1: 34.8, h: 1.1};  // the Prover's cabinet, under its board
+export const PDESK = {x0: -24.4, x1: -23.6, z0: 29.4, z1: 33.4, h: 1.0};
+export const PKEY_X = -24.0, PKEY_Y = 1.06;
+// [id, label, z]: facing the Prover (-x), card 12 is on the left (+z)
+export const PKEYS = [["g12", "CARD 12", 32.9], ["g47", "CARD 47", 32.1], ["g81", "CARD 81", 31.3], ["gnum", "ITS NUMBER", 30.1]];
+export const GLECTERN = {x0: -23.2, x1: -20.8, z0: 35.1, z1: 35.75, h: 1.0};  // out from the wall, so the board reads from the lectern
+export const GANSWER_Z = 35.42;
+export const GANSWERS_X = {ga: -21.45, gb: -22.0, gc: -22.55};   // facing the wall (+z), ga is on the left
+export const GBOARD = {c: [-22.0, 2.35, 36.87], w: 3.8, h: 1.6};  // in front of its frame (36.9)
 
 // The stairwell, going up: landings (flat) and flights (each one whole tone, 0.8 m, higher).
 // Flight `dir`: +1 rises as the coordinate along `along` grows, -1 as it shrinks.
@@ -117,7 +131,12 @@ export function collision(state) {
     ...wallBoxes(HUB, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1]}),
     ...wallBoxes(SCR, {n: [DOOR.z0, DOOR.z1], w: DOOR4}),
     ...wallBoxes(VEST, {w: DOOR4, e: DOOR4, s: DOOR5}),
-    ...wallBoxes(LIST, {n: DOOR5}),
+    ...wallBoxes(LIST, {n: DOOR5, w: DOOR6}),
+    {x0: LIST.x0 - 0.3, z0: DOOR6[0], x1: LIST.x0 + 0.1, z1: DOOR6[1], when: () => !(state.solved && state.solved.list)},  // sealed until the List is solved
+    ...wallBoxes(PRV, {e: DOOR6}),
+    {x0: PCAB.x0, z0: PCAB.z0, x1: PCAB.x1, z1: PCAB.z1},
+    {x0: PDESK.x0, z0: PDESK.z0, x1: PDESK.x1, z1: PDESK.z1},
+    {x0: GLECTERN.x0, z0: GLECTERN.z0, x1: GLECTERN.x1, z1: GLECTERN.z1},
     {x0: DOOR5[0] - 0.3, z0: VEST.z1, x1: DOOR5[0], z1: LIST.z0}, {x0: DOOR5[1], z0: VEST.z1, x1: DOOR5[1] + 0.3, z1: LIST.z0},
     {x0: DESK.x0, z0: DESK.z0, x1: DESK.x1, z1: DESK.z1},
     {x0: QLECTERN.x0, z0: QLECTERN.z0, x1: QLECTERN.x1, z1: QLECTERN.z1},
@@ -165,6 +184,7 @@ export function collision(state) {
     {axis: "x", at: SCR.x0, c0: DOOR4[0], c1: DOOR4[1]}, {axis: "x", at: VEST.x1, c0: DOOR4[0], c1: DOOR4[1]},
     {axis: "x", at: VEST.x0, c0: DOOR4[0], c1: DOOR4[1]}, {axis: "x", at: STAIR.x1, c0: DOOR4[0], c1: DOOR4[1]},
     {axis: "z", at: VEST.z1, c0: DOOR5[0], c1: DOOR5[1]}, {axis: "z", at: LIST.z0, c0: DOOR5[0], c1: DOOR5[1]},
+    {axis: "x", at: LIST.x0, c0: DOOR6[0], c1: DOOR6[1]}, {axis: "x", at: PRV.x1, c0: DOOR6[0], c1: DOOR6[1]},
   ];
   return {boxes, floors, doors};
 }
@@ -174,6 +194,7 @@ const C = {
   hubWall: [0.62, 0.58, 0.54], hubFloor: [0.30, 0.31, 0.34], hubCeil: [0.78, 0.76, 0.72], trim: [0.20, 0.19, 0.18],
   triWall: [0.20, 0.25, 0.33], triFloor: [0.42, 0.40, 0.38], triCeil: [0.16, 0.19, 0.25],
   miuWall: [0.16, 0.30, 0.30], miuFloor: [0.34, 0.31, 0.27], miuCeil: [0.12, 0.20, 0.21],
+  prvWall: [0.25, 0.23, 0.31], prvFloor: [0.29, 0.27, 0.27], prvCeil: [0.13, 0.12, 0.17],
   listWall: [0.22, 0.27, 0.22], listFloor: [0.33, 0.26, 0.19], listCeil: [0.14, 0.16, 0.13],
   scrWall: [0.30, 0.22, 0.30], scrFloor: [0.28, 0.27, 0.29], scrCeil: [0.17, 0.13, 0.18],
   brass: [0.72, 0.56, 0.26], dark: [0.10, 0.11, 0.12], wood: [0.42, 0.29, 0.18], rail: [0.70, 0.72, 0.74],
@@ -243,7 +264,10 @@ export function buildShells() {
   shell(m, VEST, hub, {w: DOOR4, e: DOOR4, s: DOOR5});
   corridorZ(m, HUB.z1, SCR.z0, hub);
   corridorZ(m, VEST.z1, LIST.z0, hub, DOOR5[0], DOOR5[1]);
-  shell(m, LIST, {wall: C.listWall, floor: C.listFloor, ceil: C.listCeil}, {n: DOOR5});
+  const list = {wall: C.listWall, floor: C.listFloor, ceil: C.listCeil};
+  shell(m, LIST, list, {n: DOOR5, w: DOOR6});
+  shell(m, PRV, {wall: C.prvWall, floor: C.prvFloor, ceil: C.prvCeil}, {e: DOOR6});
+  corridor(m, PRV.x1, LIST.x0, list, DOOR6[0], DOOR6[1]);   // through the wall: the List to the Prover
   shell(m, TRI, {wall: C.triWall, floor: C.triFloor, ceil: C.triCeil}, {e: [DOOR.z0, DOOR.z1]});
   shell(m, MIU, {wall: C.miuWall, floor: C.miuFloor, ceil: C.miuCeil}, {w: [DOOR.z0, DOOR.z1]});
   corridor(m, TRI.x1, HUB.x0, hub);
@@ -465,8 +489,6 @@ export function buildList() {
   m.box([q.x0 - 0.04, q.h, q.z0 - 0.04], [q.x1 + 0.04, q.h + 0.04, q.z1 + 0.04], C.brass);
   const qb = QBOARD;
   m.box([L.x1 - 0.1, qb.c[1] - qb.h / 2 - 0.12, qb.c[2] - qb.w / 2 - 0.12], [L.x1, qb.c[1] + qb.h / 2 + 0.12, qb.c[2] + qb.w / 2 + 0.12], C.brass);
-  // the sealed door to the last room, on the west wall
-  m.box([L.x0, 0, 30.3], [L.x0 + 0.1, 2.6, 31.7], [0.13, 0.13, 0.15]);
   // shelves: a dark case with rows of books, along the walls (x0..x1 along `along`, against a wall)
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -492,6 +514,32 @@ export function buildList() {
   shelf(25.6, 29.4, L.x0, "z", 0.42); shelf(32.6, 36.4, L.x0, "z", 0.42);
   shelf(-15.4, -11.0, L.z0, "x", 0.42); shelf(-7.9, -2.6, L.z0, "x", 0.42);
   return m;
+}
+
+// The sealed door to the Prover, in the List's west doorway (drawn until the List is solved).
+export function buildSealedDoor() {
+  const m = new MeshBuilder();
+  m.box([LIST.x0 - 0.1, 0, DOOR6[0]], [LIST.x0 + 0.06, DOOR.h, DOOR6[1]], [0.13, 0.13, 0.15]);
+  return m;
+}
+
+// Room 6: the Prover's cabinet and board frame, the desk of cards, the lectern and its board's frame.
+export function buildProver() {
+  const m = new MeshBuilder(), c = PCAB, b = PBOARD, k = PDESK, q = GLECTERN, g = GBOARD;
+  m.box([c.x0, 0, c.z0], [c.x1, c.h, c.z1], C.dark);
+  m.box([c.x0, c.h, c.z0 - 0.04], [c.x1 + 0.04, c.h + 0.05, c.z1 + 0.04], C.brass);
+  m.box([c.x1 - 0.02, 0.62, 30.4], [c.x1 + 0.01, 0.7, 31.6], [0.9, 0.75, 0.35]);  // the card slot
+  m.box([PRV.x0, b.c[1] - b.h / 2 - 0.16, b.c[2] - b.w / 2 - 0.16], [b.c[0] - 0.03, b.c[1] + b.h / 2 + 0.16, b.c[2] + b.w / 2 + 0.16], C.brass);
+  m.box([PRV.x0, b.c[1] - b.h / 2 - 0.1, b.c[2] - b.w / 2 - 0.1], [b.c[0] - 0.02, b.c[1] + b.h / 2 + 0.1, b.c[2] + b.w / 2 + 0.1], C.dark);
+  m.box([k.x0, 0, k.z0], [k.x1, k.h, k.z1], C.dark);
+  m.box([k.x0 - 0.05, k.h, k.z0 - 0.05], [k.x1 + 0.05, k.h + 0.04, k.z1 + 0.05], C.brass);
+  m.box([q.x0, 0, q.z0], [q.x1, q.h, q.z1], C.dark);
+  m.box([q.x0 - 0.04, q.h, q.z0 - 0.04], [q.x1 + 0.04, q.h + 0.04, q.z1 + 0.04], C.brass);
+  m.box([g.c[0] - g.w / 2 - 0.12, g.c[1] - g.h / 2 - 0.12, PRV.z1 - 0.1], [g.c[0] + g.w / 2 + 0.12, g.c[1] + g.h / 2 + 0.12, PRV.z1], C.brass);
+  return m;
+}
+export function proverLights() {
+  return [[-21.8, 4.4, 31, 14, 0.85, 0.85, 1.0, 0.8], [-24.5, 3.6, 31, 6, 1.0, 0.9, 0.7, 0.7], [-22, 3.2, 35.2, 5, 1.0, 0.9, 0.75, 0.6]];
 }
 
 export function listLights() {

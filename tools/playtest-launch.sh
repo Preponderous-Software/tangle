@@ -2,7 +2,8 @@
 # Starts Tangle for playtester (Preponderous-Software/playtester, x11 driver): serves the game on a
 # free local port and opens it in Chromium's app mode, which is the game's window.
 # Usage: tools/playtest-launch.sh --data DIR [--playtest-out DIR] [--width W] [--height H] [--rooms all]
-#   --rooms all   start with the first four rooms solved (to test the List and the end)
+#   --rooms all     start with the first four rooms solved, in the vestibule (to test the List and the end)
+#   --rooms prover  start with the first five rooms solved, in the List by the Prover's door
 set -euo pipefail
 here="$(cd "$(dirname "$0")/.." && pwd)"
 data="" probe="" w=1280 h=720 rooms=""
@@ -24,7 +25,7 @@ srv=$!
 cleanup() { kill "$srv" 2>/dev/null || true; }
 trap cleanup EXIT INT TERM
 for _ in $(seq 100); do curl -s -o /dev/null "http://127.0.0.1:$port/" && break; sleep 0.1; done
-q="?new=1"; [ -n "$probe" ] && q="$q&probe"; [ "$rooms" = all ] && q="$q&skip=4"
+q="?new=1"; [ -n "$probe" ] && q="$q&probe"; [ "$rooms" = all ] && q="$q&skip=4"; [ "$rooms" = prover ] && q="$q&skip=5"
 chrome="${PT_CHROMIUM:-$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux*/chrome 2>/dev/null | sort -V | tail -1)}"
 [ -x "$chrome" ] || { echo "No Chromium found: set PT_CHROMIUM or run 'npx playwright install chromium'" >&2; exit 1; }
 sandbox=(); [ "$(id -u)" = 0 ] && sandbox=(--no-sandbox)  # Chromium refuses to run as root otherwise

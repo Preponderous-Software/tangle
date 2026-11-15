@@ -5,7 +5,7 @@ A small first-person game about strange loops, the idea at the heart of Douglas 
 built as a puzzle that you solve by understanding it. When you solve one, a short debrief
 appears in place.
 
-**Status: playable.** It has a hub and five rooms:
+**Status: complete.** It has a hub and six rooms:
 
 - **The Triangle (Escher).** A real impossible triangle stands in the room. From almost everywhere
   it is visibly an open, bent bar. Find the one spot where it closes. When you walk away, it
@@ -38,7 +38,13 @@ appears in place.
   Then the wall asks which list could hold every row. The debrief connects it to Cantor's bigger
   infinities, Gödel's "I am not provable" and Turing's halting problem.
 
-Planned next: a Gödel finale, behind the sealed door in the List.
+- **The Prover (Gödel).** The last room, behind a door the List opens. The Prover tries every proof,
+  shortest first, and it is honest: it never proves anything false. Feed it `2 + 2 = 4` and it stamps
+  the card PROVED; feed it `2 + 2 = 5` and it searches forever. Every card has a number, so card 81,
+  "The Prover can't prove card __", can be set to talk about itself. Fed in, it runs forever too, and
+  a lectern asks why: if the Prover proved card 81 it would have proved something false, so it never
+  does, and that is exactly what card 81 says. It's true, and it can't be proved. A closing card
+  gathers every room's loop into Hofstadter's idea that "I" is a strange loop.
 
 ## Play
 
@@ -104,6 +110,7 @@ itself.
   - `src/miu.js`: the MIU rules.
   - `src/sentences.js`: Room 3's sentences, with checks that each answer is true of itself.
   - `src/diagonal.js`: Room 5's list, the diagonal and the librarian's answers.
+  - `src/prover.js`: Room 6's cards, what the Prover does with each, and the questions about card 81.
   - `src/probe.js`: the playtester probe (only with `?probe`).
   - `src/tribar.js`: the tribar construction.
   - `src/world.js`: the house layout.

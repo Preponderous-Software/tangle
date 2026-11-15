@@ -10,6 +10,7 @@ import * as Text from "./text.js";
 import * as Audio from "./audio.js";
 import {SENTENCES, answer as answerSentence, nestingDepth} from "./sentences.js";
 import * as Diag from "./diagonal.js";
+import * as Prover from "./prover.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -33,9 +34,12 @@ if (params.get("new") === "1") {  // play-tangle.bat new: start over, once (the 
 }
 function validRow(r) { return Array.isArray(r) && r.length === Diag.N && r.every((b) => b === 0 || b === 1) ? r.slice() : null; }
 function validList(l) { return Array.isArray(l) && l.length === Diag.N && l.every(validRow) ? l.map((r) => r.slice()) : null; }
-if (params.get("skip") === "4") {  // playtesting the List: the first four rooms solved, standing in the vestibule
-  store.set(SAVE_KEY, JSON.stringify({tribar: true, miu: true, scr: true, stair: true, gateOpen: true, screenDone: true, loopedOnce: true,
-    boardShown: true, sentence: 4, seen: ["hub", "tri", "miu", "scr", "vest", "stair"], pose: {x: -9.5, z: 15.6, y: 0, yaw: -Math.PI / 2, pitch: 0}}));
+if (params.get("skip") === "4" || params.get("skip") === "5") {
+  // playtesting: the first four rooms solved, standing in the vestibule (4), or all five, in the List by the Prover's door (5)
+  const five = params.get("skip") === "5";
+  store.set(SAVE_KEY, JSON.stringify({tribar: true, miu: true, scr: true, stair: true, list: five, gateOpen: true, screenDone: true, loopedOnce: true,
+    boardShown: true, sentence: 4, seen: ["hub", "tri", "miu", "scr", "vest", "stair", ...(five ? ["list"] : [])],
+    pose: five ? {x: -13.5, z: 31, y: 0, yaw: 0, pitch: 0} : {x: -9.5, z: 15.6, y: 0, yaw: -Math.PI / 2, pitch: 0}}));
   params.delete("skip");
   history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : ""));
 }
@@ -44,7 +48,12 @@ const saved = read(SAVE_KEY);
 const settings = Object.assign({sens: 1, invert: false, sound: true, fov: 66, text: 1}, read(SETTINGS_KEY));
 document.documentElement.style.setProperty("--ui", settings.text);
 const state = {
-  solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr, stair: !!saved.stair, list: !!saved.list},
+  solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr, stair: !!saved.stair, list: !!saved.list, godel: !!saved.godel},
+  // Room 6: the Prover. fed: cards fed so far; blank: card 81's number; selfFed: card 81 fed while about itself; q: question
+  prv: {fed: Array.isArray(saved.prv && saved.prv.fed) ? saved.prv.fed.filter((n) => n === 12 || n === 47) : [],
+    blank: Prover.NUMBERS.includes(saved.prv && saved.prv.blank) ? saved.prv.blank : 12,
+    selfFed: !!(saved.prv && saved.prv.selfFed) || !!saved.godel, q: saved.godel ? Prover.QUESTIONS.length : Math.min(1, (saved.prv && saved.prv.q) || 0),
+    run: null, msg: null, good: false, qMsg: null, qGood: !!saved.godel},
   // Room 5: the librarian's list. round 0: the first list; 1: your row added; 2: beaten twice (the question)
   diag: {list: validList(saved.diag && saved.diag.list) || Diag.START.map((r) => r.slice()),
     guess: (saved.diag && validRow(saved.diag.guess)) || Array(Diag.N).fill(0),
@@ -72,9 +81,9 @@ const state = {
   glow: 0,                // the sculpture's solve light, fading
   boardShown: !!saved.boardShown || !!saved.miu,
 };
-const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.solved.stair || state.solved.list || state.made.length > 1 || state.seenRooms.size > 0;
+const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.solved.stair || state.solved.list || state.solved.godel || state.made.length > 1 || state.seenRooms.size > 0;
 function save() {
-  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, scr: state.solved.scr, stair: state.solved.stair, list: state.solved.list, loopedOnce: state.loopedOnce,
+  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, scr: state.solved.scr, stair: state.solved.stair, list: state.solved.list, godel: state.solved.godel, prv: {fed: state.prv.fed, blank: state.prv.blank, selfFed: state.prv.selfFed, q: state.prv.q}, loopedOnce: state.loopedOnce,
     diag: {list: state.diag.list, guess: state.diag.guess, round: state.diag.round, checks: state.diag.checks, escaped: state.diag.escaped, hint: state.diag.hint},
     screenDone: state.screenDone, sentence: state.sentence, liarTried: state.liarTried, neitherOn: state.neitherOn, gateOpen: state.gateOpen,
     made: state.made.slice(-200), word: state.word, trail: state.history.slice(-40), presses: state.presses,
@@ -124,7 +133,8 @@ function rows(fn, list) {
 const SLOT = {shells: 1, props: 2, tribar: 3, pole: 4, gate: 5, hub: 10, west: 11, east: 12, tri: 13, rules: 14,
   declare: 15, progress: 16, legend: 17, gatesign: 18, soon: 19, rug: 21, scrPlaque: 22, south: 23, lectern: 24, vestPlaque: 25, door4: 26, vestLegend: 27, sealed4: 28, display: 30, board: 31, screen: 32,
   sentences: 33, top: 34, stairs: 40, stairShell: 41, keySign: 42 /* ..47 */,
-  list: 50, listBoard: 51, qBoard: 52, qLegend: 53, deskLegend: 54, listPlaque: 55, door5: 56};
+  list: 50, listBoard: 51, qBoard: 52, qLegend: 53, deskLegend: 54, listPlaque: 55, door5: 56,
+  prv: 57, pBoard: 58, pLegend: 59, gBoard: 60, gLegend: 61, prvPlaque: 62, door6: 63, sealed6: 64, sealedPlaque: 65};
 let tribar = null;
 
 function panelMesh(slot, spec, c, normal) {
@@ -165,6 +175,7 @@ function buildScene() {
   panelMesh(SLOT.vestPlaque, Text.PLAQUES.stair, [V.x0 + 0.02, 1.7, 18.3], [1, 0, 0]);
   buildStairwell();
   buildListRoom();
+  buildProverRoom();
   {
     const sc = World.SCREEN, m = new MeshBuilder();
     m.panel(sc.c, [0, 0, -1], sc.w, sc.h);
@@ -203,6 +214,10 @@ function refreshDoors() {
   // Room 5's plaque: on the vestibule's east wall, beside the south door (no room above a door there)
   panelMesh(SLOT.door5, {...Text.doorPlaque(5, "The List", "A list that can't hold everything", state.solved.list), w: 1.7, h: 0.86},
     [World.VEST.x1 - 0.02, 1.75, 18.35], [-1, 0, 0]);
+  // Room 6's: above its door in the List's west wall, and the sealed door until the List is solved
+  panelMesh(SLOT.door6, Text.doorPlaque(6, "The Prover", "A sentence about itself", state.solved.godel), [World.LIST.x0 + 0.02, 3.45, 31.0], [1, 0, 0]);
+  if (state.solved.list) { mesh(SLOT.sealed6, EMPTY); mesh(SLOT.sealedPlaque, EMPTY); }
+  else { mesh(SLOT.sealed6, World.buildSealedDoor()); panelMesh(SLOT.sealedPlaque, Text.PLAQUES.sealed, [World.LIST.x0 + 0.09, 1.6, 31.0], [1, 0, 0]); }
 }
 
 function refreshGate() {
@@ -213,7 +228,7 @@ function refreshGate() {
 }
 
 function refreshLights() {
-  const L = World.lights().map((l) => l.slice()).concat(World.stairLights(), World.listLights());
+  const L = World.lights().map((l) => l.slice()).concat(World.stairLights(), World.listLights(), World.proverLights());
   if (state.glow > 0.01) L.push([...World.TRIBAR.centre.map((v, i) => v + [1.2, 1.0, 1.6][i]), 7, 1.0, 0.82, 0.5, 2.8 * state.glow]);
   if (state.gateOpen && !state.solved.miu) L.push([12.6, 2.6, 7.2, 6, 1.0, 0.85, 0.55, 1.1]);
   rows(mod._tangle_lights, L);
@@ -249,7 +264,6 @@ function buildListRoom() {
   const L = World.LIST;
   mesh(SLOT.list, World.buildList());
   panelMesh(SLOT.listPlaque, Text.PLAQUES.list, [L.x1 - 0.02, 1.75, 27.2], [-1, 0, 0]);  // on your left as you come in
-  panelMesh(SLOT.soon, Text.PLAQUES.soon, [L.x0 + 0.12, 1.5, 31.0], [1, 0, 0]);
   const k = World.DESK;
   texture(SLOT.deskLegend, Text.legend(document, World.SWITCHES.map(([id, label, x]) => [id, label, k.x1 - x]), 0, k.x1 - k.x0, 52));
   const dm = new MeshBuilder();
@@ -280,6 +294,125 @@ function refreshQuestion() {
   m.panel(b.c, [-1, 0, 0], b.w, b.h);
   mesh(SLOT.qBoard, m, SLOT.qBoard, MESH_UNLIT);
 }
+
+// Room 6: the Prover. Its board and cabinet, the desk of cards, the lectern of questions about card 81.
+function buildProverRoom() {
+  const P = World.PRV;
+  mesh(SLOT.prv, World.buildProver());
+  panelMesh(SLOT.prvPlaque, Text.PLAQUES.prover, [-19.3, 1.75, P.z0 + 0.02], [0, 0, 1]);  // on your right as you come in
+  const k = World.PDESK;
+  texture(SLOT.pLegend, Text.legend(document, World.PKEYS.map(([id, label, z]) => [id, label, k.z1 - z]), 0, k.z1 - k.z0, 40));
+  const dm = new MeshBuilder();
+  dm.panel([k.x1 + 0.01, k.h - 0.17, (k.z0 + k.z1) / 2], [1, 0, 0], k.z1 - k.z0, 0.3);
+  mesh(SLOT.pLegend, dm, SLOT.pLegend, MESH_UNLIT);
+  refreshProverLegend(); refreshProver(); refreshGQuestion();
+}
+function refreshProverLegend() {
+  const q = World.GLECTERN, Q = Prover.QUESTIONS[Math.min(state.prv.q, Prover.QUESTIONS.length - 1)];
+  texture(SLOT.gLegend, Text.legend(document, Prover.ANSWER_IDS.map((id, i) => [id, Q.buttons[i], q.x1 - World.GANSWERS_X[id]]), 0, q.x1 - q.x0, 36));
+  const m = new MeshBuilder();
+  m.panel([(q.x0 + q.x1) / 2, q.h - 0.17, q.z0 - 0.01], [0, 0, -1], q.x1 - q.x0, 0.3);
+  mesh(SLOT.gLegend, m, SLOT.gLegend, MESH_UNLIT);
+}
+function proverRun(now = performance.now()) {
+  const r = state.prv.run;
+  if (!r) return null;
+  const t = (now - r.t0) / 1000;
+  if (r.kind === "proved") { const k = Math.min(Prover.PROOF.length, 1 + Math.floor(t * 1.5)); return {n: r.n, kind: "proved", count: k, proof: Prover.PROOF.slice(0, k)}; }
+  return {n: r.n, kind: "forever", count: Prover.searched(t), long: t > 4};
+}
+function refreshProver(now) {
+  const p = state.prv;
+  texture(SLOT.pBoard, Text.proverBoard(document, {fed: p.fed, blank: p.blank, run: proverRun(now), message: p.msg, good: p.good, solved: state.solved.godel, unlocked: p.selfFed}));
+  const b = World.PBOARD, m = new MeshBuilder();
+  m.panel(b.c, [1, 0, 0], b.w, b.h);
+  mesh(SLOT.pBoard, m, SLOT.pBoard, MESH_UNLIT);
+}
+function refreshGQuestion() {
+  const p = state.prv, Q = Prover.QUESTIONS[Math.min(p.q, Prover.QUESTIONS.length - 1)];
+  texture(SLOT.gBoard, Text.proverQuestion(document, {locked: !p.selfFed, ask: Q.ask, legend: Q.legend, step: p.q, total: Prover.QUESTIONS.length,
+    message: p.qMsg, good: p.qGood, solved: state.solved.godel}));
+  const b = World.GBOARD, m = new MeshBuilder();
+  m.panel(b.c, [0, 0, -1], b.w, b.h);
+  mesh(SLOT.gBoard, m, SLOT.gBoard, MESH_UNLIT);
+}
+function feedCard(n) {
+  const p = state.prv, r = Prover.feed(n, p.blank, p.fed);
+  if (state.solved.godel) { Audio.cue("nope"); return; }
+  p.msg = r.message; p.good = r.kind === "proved";
+  if (r.kind === "refused") { Audio.cue("nope"); say(r.message, 6000, true); refreshProver(); return; }
+  Audio.cue("click");
+  p.run = {n, kind: r.kind, t0: performance.now()};
+  if (n !== 81 && !p.fed.includes(n)) p.fed.push(n);
+  if (n === 12) say("Watch the board: the Prover finds a proof of 2 + 2 = 4 and stamps the card.", 6000, true);
+  if (n === 47) say("2 + 2 = 5 is false. The Prover will never find a proof of it, so it searches forever.", 7000, true);
+  if (n !== 81 && p.fed.includes(12) && p.fed.includes(47) && !p.selfFed) {
+    say("Now card 81. Its number can be changed with the button on the right of the desk.", 7000);
+    objective("Card 81 says the Prover can't prove some card. Set its number so it talks about itself, then feed it in.");
+  }
+  if (n === 81) say("Card 81 says: “The Prover can't prove card 81.” It's talking about itself. Watch what the Prover does.", 8000, true);
+  refreshProver(); refreshItems(performance.now()); save();
+}
+function turnBlank() {
+  const p = state.prv;
+  if (state.solved.godel) { Audio.cue("nope"); return; }
+  p.blank = Prover.nextNumber(p.blank);
+  p.msg = p.blank === Prover.SELF ? "Card 81 now says: “The Prover can't prove card 81.” It talks about itself." : `Card 81 now talks about card ${p.blank}.`;
+  p.good = p.blank === Prover.SELF;
+  if (p.run && p.run.n === 81) p.run = null;  // a different card now
+  Audio.cue("click");
+  refreshProver(); refreshItems(performance.now()); save();
+}
+function proverTick(now) {  // while a card is in the Prover: count, and unlock the questions once card 81 has run a while
+  const p = state.prv;
+  if (!p.run) return;
+  const t = (now - p.run.t0) / 1000;
+  if (p.run.kind === "proved" && t > 4) return;  // the proof is up; nothing more to draw
+  refreshProver(now);
+  if (p.run.n === 81 && p.run.kind === "forever" && t > 6 && !p.selfFed) {
+    p.selfFed = true;
+    p.msg = "Still searching, and it always will be. Why? Answer the questions on the left-hand wall.";
+    p.good = true;
+    Audio.cue("open");
+    say("The lectern on the left-hand wall has woken up. Can the Prover ever prove card 81?", 8000, true);
+    objective("Answer the questions on the left-hand wall about card 81.");
+    refreshProver(now); refreshGQuestion(); refreshItems(now); save();
+  }
+}
+function proverAnswer(id) {
+  const p = state.prv;
+  if (state.solved.godel) return;
+  if (!p.selfFed) { Audio.cue("nope"); say("First make card 81 talk about itself, and feed it to the Prover.", 5000); return; }
+  const r = Prover.answer(p.q, id);
+  p.qMsg = r.message; p.qGood = r.ok;
+  say(r.message, 8000, true);  // the board is out of view while you aim
+  Audio.cue(r.ok ? "click" : "nope");
+  if (r.ok) {
+    p.q++;
+    if (p.q >= Prover.QUESTIONS.length) { refreshGQuestion(); solveGodel(); return; }
+    refreshProverLegend();
+  }
+  refreshGQuestion(); refreshItems(performance.now()); save();
+}
+function solveGodel() {
+  state.solved.godel = true;
+  save(); refreshDoors(); refreshItems(); refreshProver(); Audio.cue("solve"); flash();
+  setTimeout(() => debrief({title: "True, and it can't be proved.",
+    what: "Card 81 talks about itself through its number. If the Prover proved it, it would have proved something false, and it never does. " +
+      "So it never proves card 81, and that is exactly what card 81 says. You could see it's true by stepping outside the Prover and thinking about it, " +
+      "the way the balcony let you see the Machine from outside.",
+    why: "In 1931 Kurt Gödel built card 81 inside arithmetic itself. He gave every sentence about numbers a number, so that sentences could talk about sentences, " +
+      "and wrote one that says “there is no proof of me”. So any honest set of rules for arithmetic misses some truths. " +
+      "Add card 81 as a new rule and a new card 81 appears, the way the librarian's list always had a row missing."}), 900);
+  pendingEnd = {title: "Strange loops.",
+    what: "A triangle that closes on itself. A machine whose rules can't see their own limits. A screen inside itself, and a sentence about itself. " +
+      "Stairs that climb back to where they started. A row made from the list it escapes. A sentence that says it can't be proved.",
+    why: "Each of these is what Douglas Hofstadter calls a strange loop: you move up through levels, and find yourself back where you began. " +
+      "In Gödel, Escher, Bach he suggests that your sense of “I” is a loop like this: a pattern in the brain that ends up standing for itself. " +
+      "Thank you for playing Tangle."};
+  objective(allSolved() ? "Every loop found. Wander as you like." : nextObjective());
+}
+let pendingEnd = null;
 
 function toggleTile(i) {
   const d = state.diag;
@@ -358,7 +491,7 @@ function solveList() {
       "Gödel's proof makes the same move. He gave every statement about numbers a number of its own, and built a sentence that says, in effect, " +
       "\u201cI am not on the list of things arithmetic can prove.\u201d Like your row, it is made from the list it escapes. " +
       "Alan Turing used the diagonal again to show that no program can tell, for every program, whether it will ever stop." +
-      (allSolved() ? " That's every room so far." : "")}), 900);
+      (allSolved() ? " Every room is solved." : state.solved.godel ? "" : " One room is left: its door, in this room's right-hand wall, has opened.")}), 900);
   objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
 }
 
@@ -427,6 +560,20 @@ function refreshItems(now = 0) {
       items.push([0, World.QANSWER_X, 1.06 - (down ? 0.03 : 0), World.QANSWERS_Z[id], 0.42, 0.08, 0.46, ...col]);
     }
   }
+  {
+    const p = state.prv, down = (id) => pressed.id === id && now < pressed.until, lit = (id) => focus && focus.id === id;
+    for (const [id, , z] of World.PKEYS) {
+      let col = id === "gnum" ? [0.3, 0.66, 0.68] : id === "g81" && p.blank === Prover.SELF ? [0.95, 0.75, 0.3] : [0.9, 0.86, 0.76];
+      if (id === "g81" && !(p.fed.includes(12) && p.fed.includes(47))) col = col.map((c) => c * 0.4);
+      if (lit(id)) col = col.map((c) => Math.min(1, c * 1.25 + 0.06));
+      items.push([0, World.PKEY_X, World.PKEY_Y - (down(id) ? 0.03 : 0), z, 0.42, 0.08, id === "gnum" ? 0.6 : 0.46, ...col]);
+    }
+    const off = !p.selfFed || state.solved.godel;
+    for (const id of Prover.ANSWER_IDS) {
+      const base = [0.62, 0.68, 0.86], col = off ? base.map((c) => c * 0.35) : lit(id) ? base.map((c) => Math.min(1, c * 1.3)) : base;
+      items.push([0, World.GANSWERS_X[id], 1.06 - (down(id) ? 0.03 : 0), World.GANSWER_Z, 0.46, 0.08, 0.42, ...col]);
+    }
+  }
   const dp = World.MACHINE.declare, ddown = pressed.id === "declare" && now < pressed.until;
   const lit = focus && focus.id === "declare";
   items.push([0, dp[0], dp[1] - (ddown ? 0.03 : 0), dp[2], 0.34, 0.1, 0.34, ...(state.solved.miu ? [0.3, 0.7, 0.4] : lit ? [1, 0.4, 0.3] : [0.85, 0.25, 0.2])]);
@@ -457,6 +604,9 @@ const LEGEND = {r1: "rule 1: if it ends in I, add U", r2: "rule 2: double everyt
   q_long: "a longer list could hold them all", q_endless: "an endless list could hold them all", q_none: "no list can hold them all", next: "move the highlight to the next III or UU", undo: "take back the last step", declare: "say: MU can't be made"};
 
 function label(id) {
+  if (id === "g12" || id === "g47" || id === "g81") return `feed card ${id.slice(1)} to the Prover: \u201c${Prover.cardText(Number(id.slice(1)), state.prv.blank)}\u201d`;
+  if (id === "gnum") return `change card 81's number (it says card ${state.prv.blank} now)`;
+  if (id === "ga" || id === "gb" || id === "gc") return `answer ${Prover.QUESTIONS[Math.min(state.prv.q, Prover.QUESTIONS.length - 1)].buttons[Prover.ANSWER_IDS.indexOf(id)]}`;
   if (/^t\d$/.test(id)) { const i = Number(id.slice(1)); return `tile ${i + 1}: make it ${state.diag.guess[i] ? "dark" : "light"}`; }
   return LEGEND[id];
 }
@@ -470,6 +620,9 @@ function press(id) {
   if (/^t\d$/.test(id)) { toggleTile(Number(id.slice(1))); return; }
   if (id === "check") { checkRow(); return; }
   if (id.startsWith("q_")) { questionAnswer(id); return; }
+  if (id === "g12" || id === "g47" || id === "g81") { feedCard(Number(id.slice(1))); return; }
+  if (id === "gnum") { turnBlank(); return; }
+  if (id === "ga" || id === "gb" || id === "gc") { proverAnswer(id); return; }
   let last = "", ok = true;
   const all = moves(state.word), sp = spotsOf(state.word);
   if (id === "undo") {
@@ -553,7 +706,7 @@ function solveStair() {
     why: "Bach's Canon per Tonos rises a whole tone each time it repeats and, after six climbs, is back in its first key. Escher drew monks walking stairs like these forever, in Ascending and Descending. " +
       "Hofstadter calls this a strange loop: you move up through the levels of a hierarchy and find yourself back where you began. " +
       "Gödel found one in mathematics: statements about numbers that turn out to be statements about themselves." +
-      (allSolved() ? " That's every room so far." : "")}), 900);
+      (allSolved() ? " Every room is solved." : "")}), 900);
   objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
 }
 
@@ -638,13 +791,14 @@ function captureScreen(now) {
   texture(SLOT.screen, {w: grab.width, h: grab.height, rgba: gctx.getImageData(0, 0, grab.width, grab.height).data});
 }
 
-function allSolved() { return state.solved.tribar && state.solved.miu && state.solved.scr && state.solved.stair && state.solved.list; }
+function allSolved() { return state.solved.tribar && state.solved.miu && state.solved.scr && state.solved.stair && state.solved.list && state.solved.godel; }
 function nextObjective() {
   return !state.solved.tribar ? "Next: the Triangle, through the hall's left-hand door." :
     !state.solved.miu ? "Next: the Machine, through the hall's right-hand door." :
     !state.solved.scr ? "Next: the Screen, through the hall's third door, opposite the welcome plaque." :
     !state.solved.stair ? "Next: the Staircase, through the Screen room's left-hand door." :
-    "Next: the List, through the Screen room's left-hand door, then the small room's left-hand door.";
+    !state.solved.list ? "Next: the List, through the Screen room's left-hand door, then the small room's left-hand door." :
+    "Next: the Prover, through the door in the List's right-hand wall as you come in.";
 }
 
 function maybeOpenGate() {
@@ -669,7 +823,7 @@ function declare() {
     why: "Some facts about a set of rules can only be seen from outside the rules. In 1931 Kurt Gödel showed this is true even of the rules of " +
       "arithmetic: there are true statements those rules can never prove. Where is the loop? Gödel's trick was to make arithmetic describe its own rules, " +
       "so the system talks about itself, the way a picture of a picture contains itself. That self-reference is the strange loop at the heart of the book." +
-      (allSolved() ? " That's every room so far." : "")}), 900);
+      (allSolved() ? " Every room is solved." : "")}), 900);
   objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
 }
 
@@ -755,6 +909,7 @@ function setCard(name) {
 function play() {  // leave a card and go back to the house
   setCard(null);
   if (pendingDebrief) { const d = pendingDebrief; pendingDebrief = null; debrief(d); return; }
+  if (pendingEnd && state.solved.godel) { const d = pendingEnd; pendingEnd = null; debrief(d); return; }
   Audio.start(); Audio.setMuted(!settings.sound); Audio.room(state.room);
   if (!touchFirst) lockPointer();
   canvas.focus();
@@ -815,16 +970,16 @@ function welcomeBack() {
 }
 
 function roomAt(x, z = 0) {
-  if (z > World.LIST.z0 - 0.5) return "list";
+  if (z > World.LIST.z0 - 0.5) return x < World.LIST.x0 - 0.15 ? "prv" : "list";
   if (z > World.MIU.z1 + 0.5) return x < World.VEST.x0 ? "stair" : x < World.SCR.x0 ? "vest" : "scr";
   return x < World.HUB.x0 - 1.5 ? "tri" : x > World.HUB.x1 + 1.5 ? "miu" : "hub";
 }
 function enterRoom(r) {
   Audio.room(r);
   if (r === "hub") {
-    const n = ["tribar", "miu", "scr", "stair", "list"].filter((k) => state.solved[k]).length;
-    if (n === 5 && !state.saidEnd) { state.saidEnd = true; say("That's every room so far. The last one is coming, behind the sealed door in the List. Thank you for playing.", 9000); }
-    else if (n > 0 && n < 5 && state.saidN !== n) { state.saidN = n; say(`${["One loop", "Two loops", "Three loops", "Four loops"][n - 1]} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
+    const n = ["tribar", "miu", "scr", "stair", "list", "godel"].filter((k) => state.solved[k]).length;
+    if (n === 6 && !state.saidEnd) { state.saidEnd = true; say("Every loop in the house, found. Thank you for playing.", 9000); }
+    else if (n > 0 && n < 6 && state.saidN !== n) { state.saidN = n; say(`${["One loop", "Two loops", "Three loops", "Four loops", "Five loops"][n - 1]} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
   }
   if (state.seenRooms.has(r)) return;
   state.seenRooms.add(r); save();
@@ -845,6 +1000,13 @@ function enterRoom(r) {
     say("Set the switches on the desk to make a row, then press CHECK.", 6000);
     objective(state.diag.round >= 2 ? "Answer the question on the left-hand wall: which list could hold every endless row?" :
       state.diag.round === 1 ? "The librarian added your row. Make a row that still isn't in the list." : "Make a row of tiles that isn't anywhere in the librarian's list.");
+  }
+  if (r === "prv" && !state.solved.godel) {
+    say("The last room. A machine that proves things, and some numbered cards. Read the plaque on your right.", 7000);
+    say("Press a card on the desk to feed it to the Prover. Start with cards 12 and 47.", 6500);
+    objective(state.prv.selfFed ? "Answer the questions on the left-hand wall about card 81." :
+      state.prv.fed.length < 2 ? "Feed cards 12 and 47 to the Prover, and watch what it does with each." :
+      "Card 81 says the Prover can't prove some card. Set its number so it talks about itself, then feed it in.");
   }
   if (r === "scr" && !state.solved.scr) {
     say("A screen that shows whatever you're looking at. Read the plaque by the door.", 6000);
@@ -962,6 +1124,14 @@ function targets() {
     const z = World.QANSWERS_Z[id];
     t.push({id, lo: [World.QANSWER_X - 0.24, 0.98, z - 0.26], hi: [World.QANSWER_X + 0.24, 1.16, z + 0.26]});
   }
+  for (const [id, , z] of World.PKEYS) {
+    const hz = id === "gnum" ? 0.3 : 0.23;
+    t.push({id, lo: [World.PKEY_X - 0.21, World.PKEY_Y - 0.06, z - hz], hi: [World.PKEY_X + 0.21, World.PKEY_Y + 0.045, z + hz]});
+  }
+  for (const id of Prover.ANSWER_IDS) {
+    const x = World.GANSWERS_X[id];
+    t.push({id, lo: [x - 0.24, 0.98, World.GANSWER_Z - 0.24], hi: [x + 0.24, 1.16, World.GANSWER_Z + 0.24]});
+  }
   const dp = World.MACHINE.declare;
   if (me.y > 1) t.push({id: "declare", lo: [dp[0] - 0.22, dp[1] - 0.1, dp[2] - 0.22], hi: [dp[0] + 0.22, dp[1] + 0.12, dp[2] + 0.22]});
   return t;
@@ -989,7 +1159,7 @@ function screenRay(nx, ny) {  // normalised device coords -> world direction
 }
 
 // ------------------------------------------------------------------ frame
-let lastT = null, stride = 0, lastSave = 0, lastGlowT = 0;
+let lastT = null, stride = 0, lastSave = 0, lastGlowT = 0, lastProverT = 0;
 function tick(t, now) {
   const dt = lastT == null ? 0 : Math.min(0.05, t - lastT); lastT = t;
   settleDrag();
@@ -1034,8 +1204,9 @@ function tick(t, now) {
     }
   }
   const prev = focus && focus.id;
-  focus = (r === "miu" || r === "scr" || r === "vest" || r === "list") && !state.card ? aim(Walk.lookDir(me.yaw, me.pitch)) : null;
+  focus = (r === "miu" || r === "scr" || r === "vest" || r === "list" || r === "prv") && !state.card ? aim(Walk.lookDir(me.yaw, me.pitch)) : null;
   measureScreen(dt);
+  if (r === "prv" && state.prv.run && performance.now() - lastProverT > 300) { lastProverT = performance.now(); proverTick(lastProverT); }
   $("cross").classList.toggle("active", !!focus);
   $("use").classList.toggle("ready", !!focus);
   const p = $("prompt");

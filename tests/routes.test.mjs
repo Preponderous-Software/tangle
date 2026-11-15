@@ -111,3 +111,20 @@ test("walking into a doorway off-centre slides you through instead of pinning yo
   for (let i = 0; i < 120; i++) me = Walk.step(me, {forward: 1, right: 0}, 1 / 30, w);
   assert.ok(me.z > 22, `into the corridor (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
 });
+
+test("the List to the Prover: sealed until the List is solved, then the desk of cards and the lectern", () => {
+  const sealed = World.collision({gateOpen: true, solved: {list: false}});
+  let me = walk(Walk.spawn(-13.5, 31, 0), [[-20, 31]], sealed, 8);
+  assert.ok(me.x > World.LIST.x0, `the sealed door stops you (at ${me.x.toFixed(2)})`);
+  const w = World.collision({gateOpen: true, solved: {list: true}});
+  me = walk(Walk.spawn(-13.5, 31, 0), [[-17, 31], [-22.9, 31.2]], w);
+  assert.ok(Math.hypot(me.x + 22.9, me.z - 31.2) < 0.3, `at the desk (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
+  for (const [, , z] of World.PKEYS) {
+    const d = Math.hypot(World.PKEY_X - me.x, World.PKEY_Y - (me.y + Walk.EYE), z - me.z);
+    assert.ok(d < 3.1, `card button at z ${z} within reach (${d.toFixed(2)} m)`);
+  }
+  me = walk(me, [[-22, 34.4]], w);
+  assert.ok(Math.hypot(me.x + 22, me.z - 34.4) < 0.3, "at the questions' lectern");
+  me = walk(me, [[-25, 31]], w, 10);
+  assert.ok(me.x > World.PDESK.x1 - 0.01 || me.z > World.PDESK.z1, "the desk stops a walk through it");
+});

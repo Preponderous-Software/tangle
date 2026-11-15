@@ -2,16 +2,28 @@
   "$comment": "Tangle in Chromium's app mode under playtester's x11 driver. tools/playtest-launch.sh serves the game and opens the window; the probe (?probe, src/probe.js) is written by tools/serve.py.",
   "name": "tangle",
   "title": "Tangle",
-  "description": "a first-person educational game about strange loops (Godel, Escher, Bach) for players with no background: a hub and five puzzle rooms (an impossible triangle, the MIU word machine, a screen that shows itself and sentences about themselves, an endless staircase, and Cantor's diagonal list)",
+  "description": "a first-person educational game about strange loops (Godel, Escher, Bach) for players with no background: a hub and six puzzle rooms (an impossible triangle, the MIU word machine, a screen that shows itself and sentences about themselves, an endless staircase, Cantor's diagonal list, and the Prover, where a card says it can't be proved)",
   "repository": "Preponderous-Software/tangle",
   "driver": "x11",
   "build": {
     "command": "npm test",
-    "requires": ["node", "python3"]
+    "requires": [
+      "node",
+      "python3"
+    ]
   },
   "launch": {
-    "command": ["{game_dir}/tools/playtest-launch.sh"],
-    "args": ["--data", "{data_dir}", "--width", "{width}", "--height", "{height}"],
+    "command": [
+      "{game_dir}/tools/playtest-launch.sh"
+    ],
+    "args": [
+      "--data",
+      "{data_dir}",
+      "--width",
+      "{width}",
+      "--height",
+      "{height}"
+    ],
     "cwd": "{game_dir}",
     "start_timeout_sec": 90,
     "settle_sec": 5,
@@ -25,12 +37,27 @@
   "probe": {
     "flag": "--playtest-out",
     "ticks_per_second": 60,
-    "world_screens": ["WORLD", "PAUSE", "DEBRIEF"],
-    "screens": ["LOADING", "TITLE", "WORLD", "PAUSE", "DEBRIEF"],
-    "since": "Tangle 0.1.0 (?probe)"
+    "world_screens": [
+      "WORLD",
+      "PAUSE",
+      "DEBRIEF"
+    ],
+    "screens": [
+      "LOADING",
+      "TITLE",
+      "WORLD",
+      "PAUSE",
+      "DEBRIEF"
+    ],
+    "since": "Tangle 0.1.0 (?probe); prover fields since 0.2.0"
   },
   "movement": {
-    "turn": {"method": "keys", "left": "Left", "right": "Right", "degrees_per_second": 103},
+    "turn": {
+      "method": "keys",
+      "left": "Left",
+      "right": "Right",
+      "degrees_per_second": 103
+    },
     "yaw_increases": "right",
     "forward_key": "w",
     "speed_field": "speed",
@@ -39,29 +66,86 @@
     "interact_range": 2.5,
     "stop_distance": 1.2,
     "face_tolerance": 6,
-    "nearest_kinds": ["door", "plaque", "button"]
+    "nearest_kinds": [
+      "door",
+      "plaque",
+      "button"
+    ]
   },
   "process_name": "playtest-launch.sh",
-  "crash_patterns": ["Uncaught (TypeError|ReferenceError|RangeError)", "GPU process (crashed|exited)", "WebGL.*CONTEXT_LOST", "engine refused mesh"],
+  "crash_patterns": [
+    "Uncaught (TypeError|ReferenceError|RangeError)",
+    "GPU process (crashed|exited)",
+    "WebGL.*CONTEXT_LOST",
+    "engine refused mesh"
+  ],
   "agent_notes": "tangle.md",
   "cheats": "Do not use the ?drive or ?skip URL parameters, window.__tangle, or edit localStorage, unless your goal says so.",
   "smoke": {
     "description": "Leave the title card, walk to the welcome plaque, look at it",
     "steps": [
-      ["await", "TITLE", "120"],
-      ["shot", "01-title"],
-      ["key", "Return"],
-      ["await", "WORLD", "20"],
-      ["shot", "02-hub"],
-      ["walkto", "plaque", "30"],
-      ["shot", "03-plaque"]
+      [
+        "await",
+        "TITLE",
+        "120"
+      ],
+      [
+        "shot",
+        "01-title"
+      ],
+      [
+        "key",
+        "Return"
+      ],
+      [
+        "await",
+        "WORLD",
+        "20"
+      ],
+      [
+        "shot",
+        "02-hub"
+      ],
+      [
+        "walkto",
+        "plaque",
+        "30"
+      ],
+      [
+        "shot",
+        "03-plaque"
+      ]
     ]
   },
   "goals": [
-    {"goal": "Play from the very beginning as a brand-new player who has never heard of Godel, Escher, Bach: the title card, the hall, then the Triangle and the Machine. Solve what you can. Note every moment of confusion, whether the captions and plaques told you what to do, and what you think each room was teaching.", "budget_min": 35},
-    {"goal": "Play the Screen room and the Staircase as a new player (start from the beginning, walk through the hall's door opposite the welcome plaque). Solve them if you can. Note whether the screen-inside-a-screen made sense, whether the sentence answers made sense, and whether the endless climb felt endless.", "budget_min": 35},
-    {"goal": "The List (Room 5). Start with --rooms all (the first four rooms count as solved and you stand in the small room outside the stairs); go through the door on your left and down the corridor. Make a row of tiles that isn't in the librarian's list, as a player who has never heard of Cantor. Say how long it took you to see the trick, which hints you needed, and whether the debrief explained why it matters.", "budget_min": 30, "args": ["--rooms", "all"]},
-    {"goal": "Graphics and layout hunt in every room (hall, Triangle, Machine and balcony, Screen, vestibule, Staircase, List). Look in every direction, up and down. Screenshot and describe anything that looks wrong: gaps or seams, flicker, surfaces fighting, unreadable or overlapping text, walls you can see through or walk through, places you get stuck.", "budget_min": 30, "args": ["--rooms", "all"]}
+    {
+      "goal": "The Prover (Room 6, the last room). Start with --rooms prover (the first five rooms count as solved and you stand in the List facing the Prover's door); go through it. Play as someone who has never heard of Godel: feed the cards to the Prover, make card 81 talk about itself, and answer the questions. Say whether you understood WHY card 81 is true but can't be proved, which caption or board made it click (or didn't), and whether the two closing cards felt like a satisfying ending.",
+      "budget_min": 30,
+      "args": [
+        "--rooms",
+        "prover"
+      ]
+    },
+    {
+      "goal": "Play from the very beginning as a brand-new player who has never heard of Godel, Escher, Bach: the title card, the hall, then the Triangle and the Machine (climb to the balcony when the gate opens). Solve what you can. Note every moment of confusion, any doorway you got stuck in, and whether the captions and plaques told you what to do.",
+      "budget_min": 35
+    },
+    {
+      "goal": "The end game. Start with --rooms all (the first four rooms count as solved and you stand in the small room outside the stairs). Solve the List (through the door on your left and down the corridor), then find the door it opens and solve the Prover. Note whether you found your way between the rooms, whether the List's debrief told you where to go next, and whether the Prover felt like the right finale after the List.",
+      "budget_min": 40,
+      "args": [
+        "--rooms",
+        "all"
+      ]
+    },
+    {
+      "goal": "Graphics and layout hunt in the List and the Prover rooms and the doorway between them (start with --rooms prover). Look in every direction, up and down, and walk along every wall. Screenshot and describe anything that looks wrong: gaps or seams, flicker, surfaces fighting, unreadable or overlapping text, text you can't read from where you'd stand to use it, walls you can see through or walk through, places you get stuck.",
+      "budget_min": 25,
+      "args": [
+        "--rooms",
+        "prover"
+      ]
+    }
   ],
   "questions": [
     "In your own words, what is a strange loop, and what did each room you played show about it?",
