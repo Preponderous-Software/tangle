@@ -25,6 +25,8 @@ const EYE = 1.62;
   };
   const walkTo = async (x, z, limit = 900) => {
     for (let i = 0; i < limit; i += 6) {
+      // a debrief can open on a real-time timer while we walk (slow machines): stop there
+      if (await page.evaluate(() => window.__tangle.state.card)) { await page.keyboard.up("KeyW"); return; }
       const m = await me();
       if (Math.hypot(m.x - x, m.z - z) < 0.22) { await page.keyboard.up("KeyW"); await frames(10); return; }
       await lookAt([x, m.y + EYE, z], m);
