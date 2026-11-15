@@ -8,6 +8,7 @@ import {buildTribar} from "./tribar.js";
 import * as World from "./world.js";
 import * as Text from "./text.js";
 import * as Audio from "./audio.js";
+import {SENTENCES, answer as answerSentence, nestingDepth} from "./sentences.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -34,7 +35,10 @@ const saved = read(SAVE_KEY);
 const settings = Object.assign({sens: 1, invert: false, sound: true, fov: 66, text: 1}, read(SETTINGS_KEY));
 document.documentElement.style.setProperty("--ui", settings.text);
 const state = {
-  solved: {tribar: !!saved.tribar, miu: !!saved.miu},
+  solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr},
+  screenDone: !!saved.screenDone || !!saved.scr,   // Room 3, part 1: seen the screen inside itself
+  sentence: saved.sentence || 0, liarTried: saved.liarTried || {}, neitherOn: !!saved.neitherOn, boardMsg: null, boardGood: false,
+  depth: 0, depthHold: 0,
   gateOpen: !!saved.gateOpen || !!saved.miu,
   made: saved.made || ["MI"],
   word: saved.word || "MI",
@@ -52,9 +56,10 @@ const state = {
   glow: 0,                // the sculpture's solve light, fading
   boardShown: !!saved.boardShown || !!saved.miu,
 };
-const hasProgress = state.solved.tribar || state.solved.miu || state.made.length > 1 || state.seenRooms.size > 0;
+const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.made.length > 1 || state.seenRooms.size > 0;
 function save() {
-  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, gateOpen: state.gateOpen,
+  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, scr: state.solved.scr,
+    screenDone: state.screenDone, sentence: state.sentence, liarTried: state.liarTried, neitherOn: state.neitherOn, gateOpen: state.gateOpen,
     made: state.made.slice(-200), word: state.word, trail: state.history.slice(-40), presses: state.presses,
     seen: [...state.seenRooms], boardShown: state.boardShown, pose: {x: me.x, z: me.z, y: me.y, yaw: me.yaw, pitch: me.pitch}}));
 }
@@ -100,7 +105,7 @@ function rows(fn, list) {
 
 // ------------------------------------------------------------------ building the house
 const SLOT = {shells: 1, props: 2, tribar: 3, pole: 4, gate: 5, hub: 10, west: 11, east: 12, tri: 13, rules: 14,
-  declare: 15, progress: 16, legend: 17, gatesign: 18, soon: 19, sealed: 20, rug: 21, display: 30, board: 31};
+  declare: 15, progress: 16, legend: 17, gatesign: 18, soon: 19, rug: 21, scrPlaque: 22, south: 23, lectern: 24, display: 30, board: 31, screen: 32, sentences: 33};
 let tribar = null;
 
 function panelMesh(slot, spec, c, normal) {
@@ -134,19 +139,29 @@ function buildScene() {
     m.panel([(k.x0 + k.x1) / 2, k.h - 0.17, k.z1 + 0.01], [0, 0, 1], k.x1 - k.x0, 0.32);
     mesh(SLOT.legend, m, SLOT.legend, MESH_UNLIT);
   }
-  // a sealed doorway in the hall's south wall: the rooms still to come
-  const sealed = new MeshBuilder();
-  sealed.box([-1.3, 0, H.z1 - 0.12], [1.3, 2.9, H.z1 - 0.02], [0.13, 0.13, 0.15]);
-  sealed.box([-1.45, 0, H.z1 - 0.16], [-1.3, 3.05, H.z1], [0.2, 0.19, 0.18]);
-  sealed.box([1.3, 0, H.z1 - 0.16], [1.45, 3.05, H.z1], [0.2, 0.19, 0.18]);
-  sealed.box([-1.45, 2.9, H.z1 - 0.16], [1.45, 3.05, H.z1], [0.2, 0.19, 0.18]);
-  mesh(SLOT.sealed, sealed);
+  // Room 3: the plaque by its door, the sealed door to the rooms still to come, the screen, the lectern
+  const R = World.SCR;
+  panelMesh(SLOT.scrPlaque, Text.PLAQUES.scr, [-3.6, 1.75, R.z0 + 0.02], [0, 0, 1]);
+  panelMesh(SLOT.soon, Text.PLAQUES.soon, [R.x0 + 0.12, 1.6, 16], [1, 0, 0]);
+  {
+    const sc = World.SCREEN, m = new MeshBuilder();
+    m.panel(sc.c, [0, 0, -1], sc.w, sc.h);
+    const W0 = 256, H0 = 160, px = new Uint8ClampedArray(W0 * H0 * 4);
+    for (let i = 0; i < W0 * H0; i++) { const v = 20 + ((i * 2654435761) >>> 27); px.set([v, v, v + 6, 255], i * 4); }
+    texture(SLOT.screen, {w: W0, h: H0, rgba: px});
+    mesh(SLOT.screen, m, SLOT.screen, MESH_UNLIT);
+    const L = World.LECTERN;
+    texture(SLOT.lectern, Text.legend(document, World.ANSWERS.map(([id, , z]) => [id, id === "neither" ? "NEITHER" : id.toUpperCase(), z]), L.z0, L.z1 - L.z0, 52));
+    const lm = new MeshBuilder();
+    lm.panel([L.x0 - 0.01, L.h - 0.17, (L.z0 + L.z1) / 2], [-1, 0, 0], L.z1 - L.z0, 0.3);
+    mesh(SLOT.lectern, lm, SLOT.lectern, MESH_UNLIT);
+  }
+  refreshSentences();
   // the rug: a flat textured quad just above the floor (normal up)
   texture(SLOT.rug, Text.rug(document));
   const rug = new MeshBuilder();
   rug.panel([0, 0.012, 1.4], [0, 1, 0], 4.2, 4.2, [0, 0, -1]);
   mesh(SLOT.rug, rug, SLOT.rug, 0);
-  panelMesh(SLOT.soon, Text.PLAQUES.soon, [0, 1.6, H.z1 - 0.13], [0, 0, -1]);
   refreshGate();
   refreshDoors();
   refreshDisplay();
@@ -160,6 +175,7 @@ function refreshDoors() {
   const H = World.HUB;
   panelMesh(SLOT.west, Text.doorPlaque(1, "The Triangle", "A loop you can see", state.solved.tribar), [H.x0 + 0.02, 3.45, 0], [1, 0, 0]);
   panelMesh(SLOT.east, Text.doorPlaque(2, "The Machine", "A loop in rules", state.solved.miu), [H.x1 - 0.02, 3.45, 0], [-1, 0, 0]);
+  panelMesh(SLOT.south, Text.doorPlaque(3, "The Screen", "A loop of pictures and words", state.solved.scr), [0, 3.45, H.z1 - 0.02], [0, 0, -1]);
   panelMesh(SLOT.progress, Text.progressPlaque(state.solved), [4.6, 1.9, H.z0 + 0.02], [0, 0, 1]);
 }
 
@@ -175,6 +191,15 @@ function refreshLights() {
   if (state.glow > 0.01) L.push([...World.TRIBAR.centre.map((v, i) => v + [1.2, 1.0, 1.6][i]), 7, 1.0, 0.82, 0.5, 2.8 * state.glow]);
   if (state.gateOpen && !state.solved.miu) L.push([12.6, 2.6, 7.2, 6, 1.0, 0.85, 0.55, 1.1]);
   rows(mod._tangle_lights, L);
+}
+
+function refreshSentences() {
+  const i = Math.min(state.sentence, SENTENCES.length - 1);
+  texture(SLOT.sentences, Text.sentenceBoard(document, {locked: !state.screenDone, index: state.solved.scr ? SENTENCES.length - 1 : i,
+    total: SENTENCES.length, sentence: SENTENCES[i].text, message: state.boardMsg, good: state.boardGood}));
+  const b = World.SENTENCE_BOARD, m = new MeshBuilder();
+  m.panel(b.c, [-1, 0, 0], b.w, b.h);
+  mesh(SLOT.sentences, m, SLOT.sentences, MESH_UNLIT);
 }
 
 function spotsOf(word) { return moves(word).filter((m) => m.rule === 3 || m.rule === 4); }
@@ -206,6 +231,13 @@ function refreshItems(now = 0) {
     const col = id.startsWith("r") ? [0.86, 0.72, 0.35] : [0.55, 0.62, 0.66];
     items.push([0, x, World.BUTTON_Y - (down ? 0.03 : 0), World.BUTTON_Z, 0.46, 0.08, 0.42, ...(focus && focus.id === id ? col.map((c) => Math.min(1, c * 1.3)) : col)]);
   }
+  for (const [id, , z] of World.ANSWERS) {
+    const down = pressed.id === id && now < pressed.until;
+    const off = !state.screenDone || (id === "neither" && !state.neitherOn) || state.solved.scr;
+    const base = id === "true" ? [0.35, 0.72, 0.45] : id === "false" ? [0.82, 0.38, 0.3] : [0.75, 0.62, 0.9];
+    const col = off ? base.map((c) => c * 0.35) : focus && focus.id === id ? base.map((c) => Math.min(1, c * 1.3)) : base;
+    items.push([0, World.ANSWER_X, World.ANSWER_Y - (down ? 0.03 : 0), z, 0.42, 0.08, 0.46, ...col]);
+  }
   const dp = World.MACHINE.declare, ddown = pressed.id === "declare" && now < pressed.until;
   const lit = focus && focus.id === "declare";
   items.push([0, dp[0], dp[1] - (ddown ? 0.03 : 0), dp[2], 0.34, 0.1, 0.34, ...(state.solved.miu ? [0.3, 0.7, 0.4] : lit ? [1, 0.4, 0.3] : [0.85, 0.25, 0.2])]);
@@ -230,12 +262,14 @@ function refreshPoints(t = 0) {
 
 // ------------------------------------------------------------------ the machine
 const LEGEND = {r1: "rule 1: if it ends in I, add U", r2: "rule 2: double everything after M", r3: "rule 3: replace III with U",
+  true: "this sentence is true", false: "this sentence is false", neither: "it can't be true or false",
   r4: "rule 4: remove UU", next: "move the highlight to the next III or UU", undo: "take back the last step", declare: "say: MU can't be made"};
 
 function press(id) {
   const now = performance.now();
   pressed = {id, until: now + 160};
   if (id === "declare") { Audio.cue("click"); declare(); return; }
+  if (id === "true" || id === "false" || id === "neither") { answerPressed(id); return; }
   let last = "", ok = true;
   const all = moves(state.word), sp = spotsOf(state.word);
   if (id === "undo") {
@@ -275,6 +309,90 @@ function preview(id) {
   return `  ·  ${short(state.word)} → ${short(mv.result)}`;
 }
 
+function answerPressed(id) {
+  if (state.solved.scr) return;
+  if (!state.screenDone) { Audio.cue("nope"); say("The lectern wakes once you've looked at yourself in the big screen.", 4000); return; }
+  if (id === "neither" && !state.neitherOn) {
+    Audio.cue("nope"); say("Not yet: this one only lights when a sentence can't be answered either way.", 4500); return;
+  }
+  const r = answerSentence(state.sentence, id, state.liarTried);
+  state.boardMsg = r.message; state.boardGood = r.ok;
+  if (r.tried) state.liarTried = r.tried;
+  if (r.unlockNeither && !state.neitherOn) {
+    state.neitherOn = true;
+    say("Both answers lead to a contradiction. A third button on the lectern has lit up.", 7000, true);
+    Audio.cue("open");
+  }
+  if (r.ok && r.next != null) { state.sentence = r.next; state.boardMsg = `${r.message} Next one.`; }
+  Audio.cue(r.ok ? "click" : "nope");
+  refreshSentences(); refreshItems(performance.now()); save();
+  if (r.done) solveScreen();
+}
+
+function solveScreen() {
+  state.solved.scr = true;
+  save(); refreshDoors(); refreshItems(); Audio.cue("solve"); flash();
+  setTimeout(() => debrief({title: "This sentence is false.",
+    what: "The screen showed a picture that contains itself, and the sentences talked about themselves. Most of them were simply true or false. " +
+      "The last one can't be either: if it's true it's false, and if it's false it's true. Self-reference can trap a system in a loop.",
+    why: "Gödel used a careful cousin of this sentence. He built one, in the language of arithmetic, that says \u201cThis sentence can't be proved.\u201d " +
+      "It isn't a paradox: if it could be proved, it would be false, so it can't be, and that is exactly what it says. So it's true, but unprovable. " +
+      "That's the heart of Gödel, Escher, Bach: a system that can talk about itself always has truths it can't reach."}), 900);
+  objective(allSolved() ? "All three rooms solved. Wander as you like." : nextObjective());
+}
+
+// Room 3, part 1: how many nested copies of the screen are on screen right now.
+function measureScreen(dt) {
+  if (state.room !== "scr" || state.card) { state.depth = 0; return; }
+  const sc = World.SCREEN, hw = sc.w / 2, hh = sc.h / 2;
+  const pts = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(([x, y]) => kit.project(sc.c[0] + x, sc.c[1] + y, sc.c[2]));
+  const W0 = canvas.clientWidth, H0 = canvas.clientHeight;
+  let depth = 0;
+  state.tooClose = false;
+  if (pts.every((p) => p)) {
+    const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+    const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+    const s = Math.min((Math.max(...xs) - Math.min(...xs)) / W0, (Math.max(...ys) - Math.min(...ys)) / H0);
+    const facing = cx > 0 && cx < W0 && cy > 0 && cy < H0;
+    // a screen bigger than the view shows copies that grow, not shrink: no tunnel to see
+    if (facing && s > 0.97) state.tooClose = true;
+    else if (facing && pts.every((p) => p.x >= -2 && p.x <= W0 + 2 && p.y >= -2 && p.y <= H0 + 2))
+      depth = 1 + nestingDepth(s, Math.max(W0, H0) * (window.devicePixelRatio > 1 ? 1.4 : 1));
+  }
+  state.depth = depth;
+  // the copies shrink by the screen's share of the view's width and height; in a tall portrait view the
+  // height share stays small, so fewer levels show however you stand
+  state.depthNeed = W0 >= H0 ? 6 : 4;
+  if (state.screenDone) return;
+  state.depthHold = depth >= state.depthNeed ? state.depthHold + dt : 0;
+  if (state.depthHold > 1.2) {
+    state.screenDone = true; save(); refreshSentences(); refreshItems(); Audio.cue("gate");
+    say("A picture that contains itself, which contains itself, and so on down. That's self-reference.", 7000, true);
+    say("Now the sentences: the lectern on the right has woken up.", 6000);
+    objective("Answer the lectern's sentences: is each one true or false?");
+  }
+}
+
+// What the screen shows: the frame just drawn, turned a little and pasted onto the screen.
+const grab = document.createElement("canvas"); grab.width = 256; grab.height = 160;
+const gctx = grab.getContext("2d", {willReadFrequently: true});
+let lastGrab = 0;
+function captureScreen(now) {
+  if (state.room !== "scr" || now - lastGrab < 45) return;
+  lastGrab = now;
+  gctx.fillStyle = "#0b0c10"; gctx.fillRect(0, 0, grab.width, grab.height);
+  gctx.save(); gctx.translate(grab.width / 2, grab.height / 2); gctx.rotate(0.14); gctx.scale(1.06, 1.06);
+  try { gctx.drawImage(canvas, -grab.width / 2, -grab.height / 2, grab.width, grab.height); } catch (e) { /* no frame yet */ }
+  gctx.restore();
+  texture(SLOT.screen, {w: grab.width, h: grab.height, rgba: gctx.getImageData(0, 0, grab.width, grab.height).data});
+}
+
+function allSolved() { return state.solved.tribar && state.solved.miu && state.solved.scr; }
+function nextObjective() {
+  return !state.solved.tribar ? "Next: the Triangle, through the hall's left-hand door." :
+    !state.solved.miu ? "Next: the Machine, through the hall's right-hand door." : "Next: the Screen, through the hall's third door, opposite the welcome plaque.";
+}
+
 function maybeOpenGate() {
   if (state.gateOpen) return;
   const distinct = new Set(state.made).size;
@@ -291,16 +409,14 @@ function declare() {
   if (state.solved.miu) return;
   state.solved.miu = true;
   save(); refreshDoors(); refreshItems(); refreshLights(); Audio.cue("solve"); flash();
-  const both = state.solved.tribar;
   setTimeout(() => debrief({title: "MU can't be made.",
     what: "Inside the machine you could press buttons forever without making MU, and the buttons alone could never tell you to stop. " +
       "Up here you saw the pattern from outside: the number of I's is never a multiple of 3, and MU has none.",
     why: "Some facts about a set of rules can only be seen from outside the rules. In 1931 Kurt Gödel showed this is true even of the rules of " +
       "arithmetic: there are true statements those rules can never prove. Where is the loop? Gödel's trick was to make arithmetic describe its own rules, " +
       "so the system talks about itself, the way a picture of a picture contains itself. That self-reference is the strange loop at the heart of the book." +
-      (both ? " You've solved both rooms. More are coming: a screen that shows itself, a staircase that climbs forever, and a list that can't hold everything."
-        : " The Triangle room is on the other side of the hall.")}), 900);
-  objective(both ? "Both rooms solved. Wander as you like." : "Next: the Triangle, across the hall.");
+      (allSolved() ? " That's every room so far." : "")}), 900);
+  objective(allSolved() ? "All three rooms solved. Wander as you like." : nextObjective());
 }
 
 // ------------------------------------------------------------------ the triangle
@@ -345,7 +461,7 @@ function solveTribar() {
     why: "Going round the triangle, you keep moving forward and arrive back where you started. Hofstadter calls that a strange loop. " +
       "It only worked from one point of view, and stepping out of that view showed you how it was done. " +
       "The Machine, across the hall, does the same thing with rules instead of beams."});
-  objective(state.solved.miu ? "Both rooms solved. Wander as you like." : "Walk sideways and watch it break. Then try the Machine, across the hall.");
+  objective(allSolved() ? "All three rooms solved. Wander as you like." : "Walk sideways and watch it break. " + nextObjective().replace("Next: ", "Then "));
 }
 
 // ------------------------------------------------------------------ HUD: captions, objective, cards
@@ -440,18 +556,16 @@ function intro() {
   say("Welcome. Walk up to the plaque on the far wall and read it.", 6000);
 }
 function welcomeBack() {
-  objective(state.solved.tribar && state.solved.miu ? "Both rooms solved. Wander as you like." :
-    state.solved.tribar ? "Next: the Machine, through the hall's right-hand door." :
-    state.solved.miu ? "Next: the Triangle, through the hall's left-hand door." : "Find the Triangle, through the hall's left-hand door.");
+  objective(allSolved() ? "All three rooms solved. Wander as you like." : nextObjective());
 }
 
-function roomAt(x) { return x < World.HUB.x0 - 1.5 ? "tri" : x > World.HUB.x1 + 1.5 ? "miu" : "hub"; }
+function roomAt(x, z = 0) { return z > World.HUB.z1 + 1.5 ? "scr" : x < World.HUB.x0 - 1.5 ? "tri" : x > World.HUB.x1 + 1.5 ? "miu" : "hub"; }
 function enterRoom(r) {
   Audio.room(r);
   if (r === "hub") {
-    const n = (state.solved.tribar ? 1 : 0) + (state.solved.miu ? 1 : 0);
-    if (n === 2 && !state.saidEnd) { state.saidEnd = true; say("That's the first part of the house. The sealed door behind you is where the next rooms will go. Thank you for playing.", 9000); }
-    else if (n === 1 && !state.saidOne) { state.saidOne = true; say(state.solved.tribar ? "One loop found. The Machine is through the door on the right." : "One loop found. The Triangle is through the door on the left.", 6000); }
+    const n = (state.solved.tribar ? 1 : 0) + (state.solved.miu ? 1 : 0) + (state.solved.scr ? 1 : 0);
+    if (n === 3 && !state.saidEnd) { state.saidEnd = true; say("That's every room so far. More are coming, behind the sealed door in the Screen room. Thank you for playing.", 9000); }
+    else if (n > 0 && n < 3 && state.saidN !== n) { state.saidN = n; say(`${n === 1 ? "One loop" : "Two loops"} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
   }
   if (state.seenRooms.has(r)) return;
   state.seenRooms.add(r); save();
@@ -459,6 +573,11 @@ function enterRoom(r) {
     say("Somewhere in here is a triangle that shouldn't exist.", 4500);
     say("Read the plaque on the wall to your right, then explore. A tone gets higher as you get close.", 7000);
     objective("Find the one spot where the triangle closes.");
+  }
+  if (r === "scr" && !state.solved.scr) {
+    say("A screen that shows whatever you're looking at. Read the plaque by the door.", 6000);
+    say("Walk up to the big screen and look straight at it.", 6000);
+    objective(state.screenDone ? "Answer the lectern's sentences: is each one true or false?" : "Look straight at the big screen until it shows itself many levels deep.");
   }
   if (r === "miu" && !state.solved.miu) {
     say("A machine that changes words. The rules are on the wall, the buttons on the desk.", 6000);
@@ -554,6 +673,7 @@ function rayHit(o, d, lo, hi) {
 function targets() {
   const t = [];
   for (const [id, , x] of World.BUTTONS) t.push({id, lo: [x - 0.26, World.BUTTON_Y - 0.08, World.BUTTON_Z - 0.24], hi: [x + 0.26, World.BUTTON_Y + 0.1, World.BUTTON_Z + 0.24]});
+  for (const [id, , z] of World.ANSWERS) t.push({id, lo: [World.ANSWER_X - 0.24, World.ANSWER_Y - 0.08, z - 0.26], hi: [World.ANSWER_X + 0.24, World.ANSWER_Y + 0.1, z + 0.26]});
   const dp = World.MACHINE.declare;
   if (me.y > 1) t.push({id: "declare", lo: [dp[0] - 0.22, dp[1] - 0.1, dp[2] - 0.22], hi: [dp[0] + 0.22, dp[1] + 0.12, dp[2] + 0.22]});
   return t;
@@ -599,7 +719,7 @@ function tick(t, now) {
     if (t - lastSave > 3) { lastSave = t; save(); }
   }
   kit.cam.tx = me.x; kit.cam.ty = me.y + Walk.EYE; kit.cam.tz = me.z; kit.cam.dist = 1;
-  const r = roomAt(me.x);
+  const r = roomAt(me.x, me.z);
   if (r !== state.room) { state.room = r; enterRoom(r); }
   if (r === "tri" && !state.solved.tribar && !state.card) {
     state.triTime += dt;
@@ -624,11 +744,19 @@ function tick(t, now) {
     }
   }
   const prev = focus && focus.id;
-  focus = r === "miu" && !state.card ? aim(Walk.lookDir(me.yaw, me.pitch)) : null;
+  focus = (r === "miu" || r === "scr") && !state.card ? aim(Walk.lookDir(me.yaw, me.pitch)) : null;
+  measureScreen(dt);
   $("cross").classList.toggle("active", !!focus);
   $("use").classList.toggle("ready", !!focus);
   const p = $("prompt");
-  if (focus) { p.textContent = `${touchFirst ? "Use" : "E"}: ${LEGEND[focus.id]}${preview(focus.id)}`; p.hidden = false; } else p.hidden = true;
+  if (focus) { p.textContent = `${touchFirst ? "Use" : "E"}: ${LEGEND[focus.id]}${preview(focus.id)}`; p.hidden = false; }
+  else if (state.tooClose && !state.card) { p.textContent = "Too close: step back a little"; p.hidden = false; }
+  else if (state.depth >= 2) {
+    const need = state.depthNeed || 6;
+    p.textContent = state.screenDone ? `${state.depth} levels deep` : `${Math.min(state.depth, need)} of ${need} levels deep${state.depth >= need ? ": hold still" : ": get closer, face it squarely"}`;
+    p.hidden = false;
+  }
+  else p.hidden = true;
   if ((focus && focus.id) !== prev || (pressed.id && now > pressed.until)) { if (pressed.id && now > pressed.until) pressed.id = null; refreshItems(now); }
   captions(now);
   state.frames++;
@@ -647,6 +775,7 @@ async function boot() {
     limits: {minPitch: -1.2, maxPitch: 1.2, minDist: 1, maxDist: 1},
     idleOrbit: false, dprCap: software ? 0.75 : 1.5, quality: software ? 0 : undefined,
     frame: tick,
+    after: (t, now) => captureScreen(now),
     onKey: (e) => e.key !== "Tab",
     pick: (x, y) => aim(screenRay(x / canvas.clientWidth * 2 - 1, 1 - y / canvas.clientHeight * 2)),
     idOf: (hit) => hit.id,
@@ -658,7 +787,7 @@ async function boot() {
   ambient = software ? 0.62 : 0.45; fovNow = settings.fov;
   mod._tangle_view(ambient, fovNow);
   buildScene();
-  state.room = roomAt(me.x);
+  state.room = roomAt(me.x, me.z);
   if (driven) { setCard(null); welcomeBack(); } else { setCard("title"); $("begin").focus(); }
   if (!driven) kit.start();
   StrataLoader.done();

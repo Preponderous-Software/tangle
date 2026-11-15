@@ -5,7 +5,7 @@ A small first-person game about strange loops, the idea at the heart of Douglas 
 built as a puzzle that you solve by understanding it. When you solve one, a short debrief
 appears in place.
 
-**Status: first playable slice.** It has a hub and two rooms:
+**Status: playable.** It has a hub and three rooms:
 
 - **The Triangle (Escher).** A real impossible triangle stands in the room. From almost everywhere
   it is visibly an open, bent bar. Find the one spot where it closes. When you walk away, it
@@ -15,8 +15,16 @@ appears in place.
   a board counts the I's in every word you made. Only from up there can you see why `MU` is
   impossible.
 
-Rooms planned next: a screen that shows itself (video feedback), a staircase that climbs forever
-(Shepard tone), and a list that can't hold everything (the diagonal argument).
+- **The Screen (self-reference).** A big screen shows exactly what you see, turned a little. Walk up
+  and look straight at it, and it fills with copies of itself, spiralling down. Once you've seen it
+  many levels deep, a lectern wakes up with sentences that talk about themselves ("This sentence has
+  five words."), which you sort into true and false. The last one is "This sentence is false." Both
+  answers lead to a contradiction, and only then does a third button light: *can't be either*. The
+  debrief explains how Gödel's "This sentence can't be proved" differs: it isn't a paradox, it's true
+  and unprovable.
+
+Rooms planned next: a staircase that climbs forever (Shepard tone), and a list that can't hold
+everything (the diagonal argument).
 
 ## Play
 
@@ -53,6 +61,13 @@ itself.
   - The screen shows the word, the last few steps, and why a press didn't work.
   - Aiming at a button previews what it would do (`MI → MIU`).
   - The balcony board stays covered until you climb up to it.
+- **The Screen:**
+  - The screen is live video feedback. Each frame is read back from the canvas, turned slightly and
+    uploaded as the screen's texture.
+  - A readout counts how many copies you can see ("4 of 6 levels deep"). It asks you to step back
+    if you're too close.
+  - The target is 6 levels in landscape and 4 on a portrait phone, where the copies shrink faster.
+  - Wrong answers at the lectern explain why.
 - **Sound:** all synthesized: footsteps, a quiet tone for each room, button clicks, and chords when
   you solve something.
 
@@ -68,6 +83,7 @@ itself.
 - **Code.**
   - `src/walk.js`: walking, collision, floors and the ramp. Pure, with node tests.
   - `src/miu.js`: the MIU rules.
+  - `src/sentences.js`: Room 3's sentences, with checks that each answer is true of itself.
   - `src/tribar.js`: the tribar construction.
   - `src/world.js`: the house layout.
   - `src/text.js`: plaques drawn on a canvas.

@@ -6,10 +6,18 @@ import {EYE} from "./walk.js";
 export const HUB = {x0: -6, z0: -6, x1: 6, z1: 6, h: 4.2};
 export const TRI = {x0: -23, z0: -8, x1: -9, z1: 8, h: 6};
 export const MIU = {x0: 9, z0: -8, x1: 23, z1: 8, h: 7.5};
+export const SCR = {x0: -8, z0: 9, x1: 8, z1: 23, h: 4.6};
 const DOOR = {z0: -1.2, z1: 1.2, h: 2.8};
 
 // The triangle room's one viewpoint and its sculpture.
 export const TRIBAR = {eye: [-12.2, EYE, 5.4], centre: [-19.6, 2.9, -3.6], L: 4.2, w: 0.7};
+
+// Room 3: the screen that shows what you see, and the lectern of sentences about themselves.
+export const SCREEN = {c: [0, 2.15, 22.83], w: 4.4, h: 2.75};  // in front of its bezel (22.86)
+export const LECTERN = {x0: 6.3, x1: 6.95, z0: 13.8, z1: 16.2, h: 1.0};
+export const ANSWERS = [["true", "TRUE", 14.45], ["false", "FALSE", 15.0], ["neither", "CAN'T BE EITHER", 15.55]];
+export const ANSWER_X = 6.62, ANSWER_Y = 1.06;
+export const SENTENCE_BOARD = {c: [7.87, 2.35, 15.0], w: 3.8, h: 1.6};  // in front of its frame (7.9)
 
 // The machine room: console, display, the ramp up to the balcony, the gate.
 export const MACHINE = {
@@ -34,9 +42,12 @@ export const BUTTON_Y = 1.06, BUTTON_Z = -5.15;
 function wallBoxes(r, doors) {
   const t = 0.3, out = [];
   const side = (x0, x1, z0, z1) => out.push({x0, z0, x1, z1});
-  side(r.x0 - t, r.x1 + t, r.z0 - t, r.z0);            // north
-  side(r.x0 - t, r.x1 + t, r.z1, r.z1 + t);            // south
-  for (const [key, x0, x1] of [["w", r.x0 - t, r.x0], ["e", r.x1, r.x1 + t]]) {
+  for (const [key, z0, z1] of [["n", r.z0 - t, r.z0], ["s", r.z1, r.z1 + t]]) {   // doors: [x0, x1]
+    const d = doors[key];
+    if (!d) { side(r.x0 - t, r.x1 + t, z0, z1); continue; }
+    side(r.x0 - t, d[0], z0, z1); side(d[1], r.x1 + t, z0, z1);
+  }
+  for (const [key, x0, x1] of [["w", r.x0 - t, r.x0], ["e", r.x1, r.x1 + t]]) {   // doors: [z0, z1]
     const d = doors[key];
     if (!d) { side(x0, x1, r.z0, r.z1); continue; }
     side(x0, x1, r.z0, d[0]); side(x0, x1, d[1], r.z1);
@@ -46,7 +57,10 @@ function wallBoxes(r, doors) {
 
 export function collision(state) {
   const boxes = [
-    ...wallBoxes(HUB, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1]}),
+    ...wallBoxes(HUB, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1]}),
+    ...wallBoxes(SCR, {n: [DOOR.z0, DOOR.z1]}),
+    {x0: DOOR.z0 - 0.3, z0: HUB.z1, x1: DOOR.z0, z1: SCR.z0}, {x0: DOOR.z1, z0: HUB.z1, x1: DOOR.z1 + 0.3, z1: SCR.z0},
+    {x0: LECTERN.x0, z0: LECTERN.z0, x1: LECTERN.x1, z1: LECTERN.z1},
     ...wallBoxes(TRI, {e: [DOOR.z0, DOOR.z1]}),
     ...wallBoxes(MIU, {w: [DOOR.z0, DOOR.z1]}),
     // corridors
@@ -77,6 +91,7 @@ const C = {
   hubWall: [0.62, 0.58, 0.54], hubFloor: [0.30, 0.31, 0.34], hubCeil: [0.78, 0.76, 0.72], trim: [0.20, 0.19, 0.18],
   triWall: [0.20, 0.25, 0.33], triFloor: [0.42, 0.40, 0.38], triCeil: [0.16, 0.19, 0.25],
   miuWall: [0.16, 0.30, 0.30], miuFloor: [0.34, 0.31, 0.27], miuCeil: [0.12, 0.20, 0.21],
+  scrWall: [0.30, 0.22, 0.30], scrFloor: [0.28, 0.27, 0.29], scrCeil: [0.17, 0.13, 0.18],
   brass: [0.72, 0.56, 0.26], dark: [0.10, 0.11, 0.12], wood: [0.42, 0.29, 0.18], rail: [0.70, 0.72, 0.74],
 };
 
@@ -87,8 +102,12 @@ function shell(m, r, colors, doors) {
   const q = (pts, col) => m.facing(pts, col, mid);
   q([[r.x0, 0, r.z1], [r.x1, 0, r.z1], [r.x1, 0, r.z0], [r.x0, 0, r.z0]], floor);
   q([[r.x0, r.h, r.z0], [r.x1, r.h, r.z0], [r.x1, r.h, r.z1], [r.x0, r.h, r.z1]], ceil);
-  q([[r.x1, 0, r.z0], [r.x0, 0, r.z0], [r.x0, r.h, r.z0], [r.x1, r.h, r.z0]], wall);
-  q([[r.x0, 0, r.z1], [r.x1, 0, r.z1], [r.x1, r.h, r.z1], [r.x0, r.h, r.z1]], wall.map((c) => c * 0.92));
+  for (const [key, z, shade] of [["n", r.z0, 1], ["s", r.z1, 0.92]]) {
+    const d = doors[key], col = wall.map((c) => c * shade);
+    const side = (xa, xb, ya, yb) => q([[xa, ya, z], [xb, ya, z], [xb, yb, z], [xa, yb, z]], col);
+    if (!d) { side(r.x0, r.x1, 0, r.h); continue; }
+    side(r.x0, d[0], 0, r.h); side(d[1], r.x1, 0, r.h); side(d[0], d[1], DOOR.h, r.h);
+  }
   for (const [key, x] of [["w", r.x0], ["e", r.x1]]) {
     const d = doors[key], col = wall.map((c) => c * 0.96);
     const side = (za, zb, ya, yb) => q([[x, ya, za], [x, ya, zb], [x, yb, zb], [x, yb, za]], col);
@@ -96,8 +115,26 @@ function shell(m, r, colors, doors) {
     side(r.z0, d[0], 0, r.h); side(d[1], r.z1, 0, r.h); side(d[0], d[1], DOOR.h, r.h);
   }
   const s = 0.12;  // skirting
-  m.box([r.x0, 0, r.z0], [r.x1, s, r.z0 + 0.03], C.trim);
-  m.box([r.x0, 0, r.z1 - 0.03], [r.x1, s, r.z1], C.trim);
+  const nd = doors.n, sd = doors.s;
+  for (const [z0, z1, d] of [[r.z0, r.z0 + 0.03, nd], [r.z1 - 0.03, r.z1, sd]]) {
+    if (!d) { m.box([r.x0, 0, z0], [r.x1, s, z1], C.trim); continue; }
+    m.box([r.x0, 0, z0], [d[0], s, z1], C.trim); m.box([d[1], 0, z0], [r.x1, s, z1], C.trim);
+  }
+}
+
+// A corridor running along z (x between the door's edges), from z0 to z1.
+function corridorZ(m, z0, z1, colors) {
+  const x0 = DOOR.z0, x1 = DOOR.z1, h = DOOR.h, mid = [0, h / 2, (z0 + z1) / 2];
+  const q = (pts, col) => m.facing(pts, col, mid);
+  q([[x0, 0, z0], [x1, 0, z0], [x1, 0, z1], [x0, 0, z1]], colors.floor);
+  q([[x0, h, z0], [x1, h, z0], [x1, h, z1], [x0, h, z1]], colors.ceil);
+  q([[x0, 0, z0], [x0, 0, z1], [x0, h, z1], [x0, h, z0]], colors.wall);
+  q([[x1, 0, z0], [x1, 0, z1], [x1, h, z1], [x1, h, z0]], colors.wall);
+  for (const z of [z0, z1]) {
+    m.box([x0 - 0.12, 0, z - 0.08], [x0, h + 0.12, z + 0.08], C.trim);
+    m.box([x1, 0, z - 0.08], [x1 + 0.12, h + 0.12, z + 0.08], C.trim);
+    m.box([x0 - 0.12, h, z - 0.08], [x1 + 0.12, h + 0.12, z + 0.08], C.trim);
+  }
 }
 
 function corridor(m, x0, x1, colors) {
@@ -117,7 +154,9 @@ function corridor(m, x0, x1, colors) {
 export function buildShells() {
   const m = new MeshBuilder();
   const hub = {wall: C.hubWall, floor: C.hubFloor, ceil: C.hubCeil};
-  shell(m, HUB, hub, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1]});
+  shell(m, HUB, hub, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1]});
+  shell(m, SCR, {wall: C.scrWall, floor: C.scrFloor, ceil: C.scrCeil}, {n: [DOOR.z0, DOOR.z1]});
+  corridorZ(m, HUB.z1, SCR.z0, hub);
   shell(m, TRI, {wall: C.triWall, floor: C.triFloor, ceil: C.triCeil}, {e: [DOOR.z0, DOOR.z1]});
   shell(m, MIU, {wall: C.miuWall, floor: C.miuFloor, ceil: C.miuCeil}, {w: [DOOR.z0, DOOR.z1]});
   corridor(m, TRI.x1, HUB.x0, hub);
@@ -138,6 +177,19 @@ export function buildProps() {
   };
   bench(-3.6, 3.4, "z"); bench(3.6, 3.4, "z");
   bench(TRIBAR.eye[0] + 1.1, TRIBAR.eye[2] + 1.0, "x");
+  // room 3: the screen's bezel, the lectern, the sealed door to the rooms still to come
+  const sc = SCREEN;
+  m.box([sc.c[0] - sc.w / 2 - 0.16, sc.c[1] - sc.h / 2 - 0.16, SCR.z1 - 0.14], [sc.c[0] + sc.w / 2 + 0.16, sc.c[1] + sc.h / 2 + 0.16, SCR.z1], C.dark);
+  m.box([sc.c[0] - 0.5, 0, SCR.z1 - 0.5], [sc.c[0] + 0.5, sc.c[1] - sc.h / 2 - 0.16, SCR.z1 - 0.1], C.dark);
+  const L = LECTERN;
+  m.box([L.x0, 0, L.z0], [L.x1, L.h, L.z1], C.dark);
+  m.box([L.x0 - 0.04, L.h, L.z0 - 0.04], [L.x1 + 0.04, L.h + 0.04, L.z1 + 0.04], C.brass);
+  const sb = SENTENCE_BOARD;
+  m.box([SCR.x1 - 0.1, sb.c[1] - sb.h / 2 - 0.12, sb.c[2] - sb.w / 2 - 0.12], [SCR.x1, sb.c[1] + sb.h / 2 + 0.12, sb.c[2] + sb.w / 2 + 0.12], C.brass);
+  const sx = SCR.x0;
+  m.box([sx, 0, 14.7], [sx + 0.1, 2.9, 17.3], [0.13, 0.13, 0.15]);
+  m.box([sx, 0, 14.55], [sx + 0.16, 3.05, 14.7], C.trim); m.box([sx, 0, 17.3], [sx + 0.16, 3.05, 17.45], C.trim);
+  m.box([sx, 2.9, 14.55], [sx + 0.16, 3.05, 17.45], C.trim);
   // machine console: a dark desk with a brass edge
   const k = MACHINE.console;
   m.box([k.x0, 0, k.z0], [k.x1, k.h, k.z1], C.dark);
@@ -188,5 +240,7 @@ export function lights() {
     [21.5, 6.6, 0, 7, 1.0, 0.95, 0.85, 0.9],
     [0, 3.0, -4.5, 6, 1.0, 0.9, 0.8, 0.6],
     [-12.2, 4.5, 5.4, 4, 1.0, 0.85, 0.5, 0.4],
+    [0, 4.2, 15, 15, 1.0, 0.9, 1.0, 0.85],
+    [5.6, 3.0, 15, 6, 1.0, 0.9, 0.7, 0.8],
   ];
 }

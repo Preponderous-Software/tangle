@@ -24,6 +24,12 @@ const SHOTS = [
   ["11-menu", [0, 2.4, Math.PI / 2, 0], "menu"],
   ["12-hub-south", [0, -1.5, -Math.PI / 2, 0]],
   ["13-tri-bench", [-14.5, 2.0, -2.4, 0.15]],
+  ["14-scr-entrance", [0, 10.4, -Math.PI / 2 - 0.25, 0.02], "frames40"],
+  ["15-scr-screen-far", [0, 14.5, -Math.PI / 2, -0.04], "frames40"],
+  ["16-scr-screen-close", [0, 20.2, -Math.PI / 2, -0.06], "frames60"],
+  ["17-scr-lectern", [5.35, 15.0, Math.PI, 0.32], "answerFirst"],
+  ["18-scr-liar", [5.35, 15.0, Math.PI - 0.05, 0.05], "toLiar"],
+  ["19-scr-solved", [5.35, 15.0, Math.PI - 0.05, 0.05], "solveLiar"],
 ];
 
 (async () => {
@@ -52,11 +58,14 @@ const SHOTS = [
       if (setup === "openGate") { for (let i = 0; i < 20; i++) g.press(i % 2 ? "undo" : "r2"); g.pose(19.9, -0.5, Math.PI, -0.12); }
       if (setup === "declare") g.press("declare");
       if (setup === "menu") g.openMenu();
+      if (setup === "answerFirst") g.press("true");
+      if (setup === "toLiar") ["false", "true", "false", "true"].forEach((b) => g.press(b));
+      if (setup === "solveLiar") ["false", "neither"].forEach((b) => g.press(b));
     }, { pose, setup });
-    await drive(setup === "hold" ? 90 : setup === "half" ? 16 : 3);
+    await drive(setup === "hold" ? 90 : setup === "half" ? 16 : /^frames(\d+)$/.test(setup || "") ? Number(setup.slice(6)) : 3);
     await page.screenshot({ path: path.join(out, name + ".png") });
     const st = await page.evaluate(() => ({ room: window.__tangle.state.room, solved: window.__tangle.state.solved, me: window.__tangle.me }));
-    console.log(name, JSON.stringify(st.solved), st.room, st.me.y.toFixed(2));
+    console.log(name, JSON.stringify(st.solved), st.room, st.me.y.toFixed(2), await page.evaluate(() => `depth ${window.__tangle.state.depth} screenDone ${window.__tangle.state.screenDone} sentence ${window.__tangle.state.sentence}`));
   }
   // the title card, as a player first sees it (not driven)
   const p2 = await browser.newPage({ viewport: { width: 1280, height: 720 } });

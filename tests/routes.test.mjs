@@ -42,3 +42,11 @@ test("the balcony rail stops a walk off the edge", () => {
   me = walk(me, [[15, 0]], w, 5);
   assert.ok(me.x > World.MACHINE.balcony.x0 && Math.abs(me.y - 3.6) < 0.01);
 });
+
+test("hub to the Screen room: the big screen and the lectern", () => {
+  const w = World.collision({gateOpen: false});
+  let me = walk(Walk.spawn(0, 2, -Math.PI / 2), [[0, 5.5], [0, 9.5], [0, 20.5]], w);
+  assert.ok(Math.hypot(me.x, me.z - 20.5) < 0.3, `in front of the screen (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
+  me = walk(me, [[5.6, 15]], w);
+  assert.ok(Math.hypot(me.x - 5.6, me.z - 15) < 0.3, "at the lectern");
+});

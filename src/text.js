@@ -123,9 +123,12 @@ export const PLAQUES = {
   hub: {kicker: "Welcome", title: "Tangle: a house of strange loops", w: 6.4, h: 3.3, bodySize: 0.036,
     body: "A strange loop is a path that keeps going forward, or upward, and still ends up back where it started. " +
       "The idea comes from the book Gödel, Escher, Bach by Douglas Hofstadter.\n" +
-      "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right)."},
+      "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you)."},
   soon: {kicker: "Coming soon", title: "More rooms", w: 2.1, h: 1.5, titleSize: 0.1, dark: true,
-    body: "A screen that shows itself. A staircase that climbs forever. A list that can't hold everything.", bodySize: 0.075},
+    body: "A staircase that climbs forever. A list that can't hold everything.", bodySize: 0.075},
+  scr: {kicker: "The Screen", title: "A picture of itself", w: 3.0, h: 2.0, bodySize: 0.043,
+    body: "The big screen shows exactly what you see, turned a little.\nWalk up to it and look straight at it. What does a screen show when it is showing itself?\n" +
+      "Then try the sentences on the right: each one talks about itself."},
   gate: {title: "Closed for now", body: "It opens once you've given the machine a fair try.", w: 1.3, h: 0.62, titleSize: 0.11, bodySize: 0.07, dark: true},
   tri: {kicker: "The Triangle", title: "Find where it closes", w: 3.0, h: 2.0, bodySize: 0.043,
     body: "The artist M. C. Escher drew a triangle that cannot exist: three straight beams, each turning a right angle, " +
@@ -143,20 +146,20 @@ export const PLAQUES = {
 };
 
 export function progressPlaque(solved) {
-  const n = (solved.tribar ? 1 : 0) + (solved.miu ? 1 : 0);
-  return {kicker: "Progress", title: `${n} of 2 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
-    body: n === 2 ? "That's this part of the house, for now." : (solved.tribar ? "Next: the Machine, on the right." : "Start with the Triangle, on the left."),
+  const n = (solved.tribar ? 1 : 0) + (solved.miu ? 1 : 0) + (solved.scr ? 1 : 0);
+  return {kicker: "Progress", title: `${n} of 3 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
+    body: n === 3 ? "That's this part of the house, for now." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : "Next: the Screen, behind you.",
     bodySize: 0.075, dark: true};
 }
 
 // The strip on the console's front edge: each button's symbol under it. xs: button x positions.
-export function legend(doc, buttons, x0, width) {
+export function legend(doc, buttons, x0, width, size = 76) {
   const W = 1400, H = 126;
   const c = doc.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d");
   g.fillStyle = "#16191d"; g.fillRect(0, 0, W, H);
-  g.textAlign = "center"; g.fillStyle = "#e6c46a"; g.font = `700 76px ${MONO}`;
-  for (const [, label, x] of buttons) g.fillText(label, (x - x0) / width * W, 92);
+  g.textAlign = "center"; g.fillStyle = "#e6c46a"; g.font = `700 ${size}px ${MONO}`;
+  for (const [, label, x] of buttons) g.fillText(label, (x - x0) / width * W, 63 + size * 0.38);
   return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
 }
 
@@ -201,4 +204,30 @@ export function rug(doc) {
   for (let k = 0; k <= 3; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / 3; g[k ? "lineTo" : "moveTo"](m + R * Math.cos(a), m + R * Math.sin(a)); }
   g.closePath(); g.stroke();
   return {w: N, h: N, rgba: g.getImageData(0, 0, N, N).data};
+}
+
+// The lectern's board: one sentence about itself at a time, and what the last answer showed.
+export function sentenceBoard(doc, {locked, index, total, sentence, message, good}) {
+  const W = 1400, H = Math.round(1400 * 1.6 / 3.8);
+  const c = doc.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#151a1d"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#c9a24f"; g.font = `600 30px ${MONO}`;
+  g.fillText(locked ? "SENTENCES ABOUT THEMSELVES" : `SENTENCES ABOUT THEMSELVES  ·  ${Math.min(index + 1, total)} of ${total}`, 50, 62);
+  if (locked) {
+    g.fillStyle = "#9aa3a6"; g.font = `400 46px ${SERIF}`;
+    g.fillText("Look at yourself in the big screen first.", 50, 220);
+    return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
+  }
+  g.fillStyle = "#f1ece2"; g.font = `700 64px ${SERIF}`;
+  let y = 170;
+  for (const l of wrap(g, `\u201c${sentence}\u201d`, W - 100)) { g.fillText(l, 50, y); y += 74; }
+  g.font = `400 34px ${SERIF}`; g.fillStyle = "#9aa3a6";
+  g.fillText("Is it true or false? Press the answer on the lectern.", 50, y + 6);
+  if (message) {
+    g.font = `600 36px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
+    let yy = H - 40 - 46 * (wrap(g, message, W - 100).length - 1);
+    for (const l of wrap(g, message, W - 100)) { g.fillText(l, 50, yy); yy += 46; }
+  }
+  return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
 }

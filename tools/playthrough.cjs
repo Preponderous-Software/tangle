@@ -84,9 +84,22 @@ const EYE = 1.62;
   await lookAt([21.6, 4.65, 3.2]); await frames(3);
   await page.keyboard.press("KeyE"); await frames(3);
   step(`declare card: ${await closeCard()}`);
+
+  // the Screen: look at yourself until the screen shows itself six levels deep, then the sentences
+  await walkTo(20.6, 6.0); await walkTo(18.8, 7.2); await walkTo(11.3, 7.2); await walkTo(11, 0);
+  await walkTo(7.5, 0); await walkTo(0, 0); await walkTo(0, 5.5); await walkTo(0, 9.6); await walkTo(0, 19.6);
+  await lookAt([0, 2.15, 22.83]); await frames(60);
+  step(`screen: ${await page.evaluate(() => `${window.__tangle.state.depth} levels deep, done ${window.__tangle.state.screenDone}`)}`);
+  await walkTo(5.4, 15.0);
+  const Z = { true: 14.45, false: 15.0, neither: 15.55 };
+  for (const b of ["true", "false", "true", "false", "true", "false", "neither"]) {
+    await lookAt([6.62, 1.08, Z[b]]); await frames(2);
+    await page.keyboard.press("KeyE"); await frames(2);
+  }
+  step(`sentences card: ${await closeCard()}`);
   const end = await st();
   step(`end: ${JSON.stringify(end.solved)}`);
   console.log("errors", errors);
   await browser.close();
-  if (!end.solved.tribar || !end.solved.miu || errors.length) process.exit(1);
+  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || errors.length) process.exit(1);
 })().catch((e) => { console.error(e.message); process.exit(1); });

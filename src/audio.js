@@ -29,6 +29,7 @@ export function start() {
   rooms.hub = chord([110, 165, 220], "sine", 0.05);
   rooms.tri = chord([98, 147, 196, 247], "sine", 0.05);
   rooms.miu = chord([60, 120, 180], "triangle", 0.035);
+  rooms.scr = chord([82.4, 123.5, 164.8, 207.7], "sine", 0.045);
   // the warmer tone
   const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = 330;
   const g = ctx.createGain(); g.gain.value = 0; o.connect(g); g.connect(master); o.start();
@@ -65,7 +66,7 @@ export function step(surface = "hub") {
   if (!ctx) return;
   const src = ctx.createBufferSource(); src.buffer = noise;
   const bp = ctx.createBiquadFilter(); bp.type = "bandpass";
-  bp.frequency.value = {hub: 420, tri: 300, miu: 520, wood: 700}[surface] * (0.9 + Math.random() * 0.2); bp.Q.value = 1.2;
+  bp.frequency.value = ({hub: 420, tri: 300, miu: 520, scr: 380, wood: 700}[surface] || 420) * (0.9 + Math.random() * 0.2); bp.Q.value = 1.2;
   const g = ctx.createGain(), t = ctx.currentTime;
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.09, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.11);
   src.connect(bp); bp.connect(g); g.connect(master);
