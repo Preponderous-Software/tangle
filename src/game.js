@@ -910,7 +910,6 @@ function captions(now) {
   if (showing) { showing = null; el.classList.add("out"); return; }
   if (!queue.length || state.card) return;
   showing = queue.shift(); showUntil = now + showing.ms;
-  if (touchFirst) { const o = $("objective").getBoundingClientRect(); el.style.top = `${Math.round(o.bottom + 8)}px`; }
   el.textContent = showing.text; el.hidden = false;
   requestAnimationFrame(() => el.classList.remove("out"));
 }
@@ -928,6 +927,24 @@ function setCard(name) {
   document.body.classList.toggle("carded", !!name);
   if (name && document.pointerLockElement) document.exitPointerLock();
   if (name) keys.clear();
+  holdView(!!name);
+}
+// While a card is up nothing in the house needs to move, so stop drawing it: on a slow, software-
+// rendered machine each frame can take a second or more, and the card's buttons wait behind it. A
+// frame or two still draws first, so the house shows (dimmed) behind the card.
+function holdView(hold) {
+  if (!kit || driven) return;
+  if (hold) {
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (state.card) kit.running = false; }));
+  } else {
+    // A loop frame still pending from before the hold was asked for earlier than this one, so it
+    // runs first, sees running is false and stops: there is never a second loop.
+    requestAnimationFrame(() => {
+      if (state.card || kit.running) return;
+      document.dispatchEvent(new Event("visibilitychange"));  // the kit restarts its frame-time window
+      kit.start();
+    });
+  }
 }
 function play() {  // leave a card and go back to the house
   setCard(null);
@@ -1280,8 +1297,11 @@ async function boot() {
   buildScene();
   state.room = roomAt(me.x, me.z);
   if (driven) { setCard(null); welcomeBack(); } else { setCard("title"); $("begin").focus(); }
-  if (!driven) kit.start();
+  if (!driven) kit.start();  // setCard("title") above stops it again after the first frame
+  // The loader fades out over a few frames, which on a slow machine is seconds of a ghostly "Loading"
+  // card over the title. index.html hides it outright once it's done; this makes sure.
   StrataLoader.done();
+  for (const l of document.querySelectorAll(".sk-loader")) if (StrataLoader.state === "done") l.hidden = true;
   // tools (tools/shots.cjs) drive the game through this
   window.__tangle = {
     state, get me() { return me; },
