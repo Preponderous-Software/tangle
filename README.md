@@ -139,6 +139,8 @@ A title card teaches the controls:
 
 - **Keyboard and mouse:** W A S D to walk (Shift to run), the mouse to look, E or a click to use
   things, Esc to pause.
+- **Keyboard only:** the arrow keys turn and PageUp/PageDown look up and down. At any desk or lectern,
+  the number keys 1–9 press its buttons in label order, and Enter presses the List's CHECK.
 - **Touch:** the stick walks, dragging looks around, the Use button (or a tap) presses things, and
   ≡ pauses.
 
