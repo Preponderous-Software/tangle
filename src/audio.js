@@ -84,6 +84,28 @@ export function cue(kind) {
   if (kind === "open") [440, 554].forEach((f, i) => note(f, i * 0.07, 0.3, 0.05));
 }
 
+// Room 6: the Prover at work, a burst of relay clicks (called a few times a second while it searches;
+// busier as it speeds up), and the thump of its stamp.
+function tick(at, freq, gain) {
+  const t = ctx.currentTime + at, src = ctx.createBufferSource(); src.buffer = noise;
+  const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = freq; bp.Q.value = 6;
+  const g = ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.025);
+  src.connect(bp); bp.connect(g); g.connect(master); src.start(t, Math.random() * 0.9, 0.04);
+}
+export function proverWork(busy = 0.5) {
+  if (!ctx) return;
+  const n = 2 + Math.round(4 * Math.min(1, busy));
+  for (let i = 0; i < n; i++) tick(Math.random() * 0.28, 1800 + Math.random() * 2600, 0.05 + Math.random() * 0.04);
+}
+export function stamp() {
+  if (!ctx) return;
+  const t = ctx.currentTime, src = ctx.createBufferSource(); src.buffer = noise;
+  const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 500;
+  const g = ctx.createGain(); g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.0005, t + 0.16);
+  src.connect(lp); lp.connect(g); g.connect(master); src.start(t, 0, 0.2);
+  note(90, 0, 0.18, 0.18, "sine");
+}
+
 // A Shepard tone for pitch class pc (semitones, any integer): the same note in eight octaves at
 // once, loudest in the middle, so a scale of them seems to rise forever without getting high.
 export function shepard(pc, dur = 0.35, gain = 0.07, at = 0) {
