@@ -123,9 +123,12 @@ export const PLAQUES = {
   hub: {kicker: "Welcome", title: "Tangle: a house of strange loops", w: 6.4, h: 3.3, bodySize: 0.036,
     body: "A strange loop is a path that keeps going forward, or upward, and still ends up back where it started. " +
       "The idea comes from the book Gödel, Escher, Bach by Douglas Hofstadter.\n" +
-      "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you)."},
+      "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you) and the Staircase beyond it."},
   soon: {kicker: "Coming soon", title: "More rooms", w: 2.1, h: 1.5, titleSize: 0.1, dark: true,
-    body: "A staircase that climbs forever. A list that can't hold everything.", bodySize: 0.075},
+    body: "A list that can't hold everything.", bodySize: 0.085},
+  stair: {kicker: "The Staircase", title: "Climb to the top", w: 2.2, h: 2.2, bodySize: 0.05,
+    body: "Bach wrote a canon that rises a whole tone every time it repeats. These stairs do the same: " +
+      "each flight is one key higher, C, D, E, F\u266f, G\u266f, A\u266f.\nGo through the door, climb, and find the top. Then come back here."},
   scr: {kicker: "The Screen", title: "A picture of itself", w: 3.0, h: 2.0, bodySize: 0.043,
     body: "The big screen shows exactly what you see, turned a little.\nWalk up to it and look straight at it. What does a screen show when it is showing itself?\n" +
       "Then try the sentences on the right: each one talks about itself."},
@@ -146,9 +149,9 @@ export const PLAQUES = {
 };
 
 export function progressPlaque(solved) {
-  const n = (solved.tribar ? 1 : 0) + (solved.miu ? 1 : 0) + (solved.scr ? 1 : 0);
-  return {kicker: "Progress", title: `${n} of 3 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
-    body: n === 3 ? "That's this part of the house, for now." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : "Next: the Screen, behind you.",
+  const n = (solved.tribar ? 1 : 0) + (solved.miu ? 1 : 0) + (solved.scr ? 1 : 0) + (solved.stair ? 1 : 0);
+  return {kicker: "Progress", title: `${n} of 4 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
+    body: n === 4 ? "That's this part of the house, for now." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : "Next: the Staircase, beyond the Screen.",
     bodySize: 0.075, dark: true};
 }
 
@@ -228,6 +231,35 @@ export function sentenceBoard(doc, {locked, index, total, sentence, message, goo
     g.font = `600 36px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
     let yy = H - 40 - 46 * (wrap(g, message, W - 100).length - 1);
     for (const l of wrap(g, message, W - 100)) { g.fillText(l, 50, yy); yy += 46; }
+  }
+  return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
+}
+
+// A landing's key sign: the note name, large.
+export function keySign(doc, name) {
+  const W = 512, H = 512, c = doc.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#15131f"; g.fillRect(0, 0, W, H);
+  g.strokeStyle = "#c9a24f"; g.lineWidth = 10; g.strokeRect(14, 14, W - 28, H - 28);
+  g.fillStyle = "#e8d5a8"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.font = `700 ${name.length > 1 ? 230 : 280}px ${SERIF}`; g.fillText(name, W / 2, H / 2 - 20);
+  g.fillStyle = "#c9a24f"; g.font = `600 34px ${MONO}`; g.fillText("LANDING", W / 2, H - 70);
+  return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
+}
+
+// The vestibule's question board.
+export function topBoard(doc, {locked, message, good, solved}) {
+  const W = 1400, H = 560, c = doc.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#151a1d"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#c9a24f"; g.font = `600 30px ${MONO}`; g.fillText("OUTSIDE THE STAIRS", 50, 62);
+  g.fillStyle = "#f1ece2"; g.font = `700 70px ${SERIF}`; g.fillText("Where is the top of the staircase?", 50, 170);
+  g.font = `400 36px ${SERIF}`; g.fillStyle = "#9aa3a6";
+  g.fillText(locked ? "Climb the stairs first: go all the way round, past A\u266f." : solved ? "Solved." : "Press your answer on the lectern.", 50, 240);
+  if (message) {
+    g.font = `600 38px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
+    let y = H - 40 - 48 * (wrap(g, message, W - 100).length - 1);
+    for (const l of wrap(g, message, W - 100)) { g.fillText(l, 50, y); y += 48; }
   }
   return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
 }

@@ -30,6 +30,12 @@ const SHOTS = [
   ["17-scr-lectern", [5.35, 15.0, Math.PI, 0.32], "answerFirst"],
   ["18-scr-liar", [5.35, 15.0, Math.PI - 0.05, 0.05], "toLiar"],
   ["19-scr-solved", [5.35, 15.0, Math.PI - 0.05, 0.05], "solveLiar"],
+  ["20-vestibule", [-9.5, 18.6, Math.PI / 2, 0.08], "frames10"],
+  ["21-stairs-c-landing", [-11.7, 16.6, Math.PI / 2, -0.28], "frames10"],
+  ["22-stairs-well", [-13.0, 11.0, Math.atan2(-5.0, 4.0), 0.55], "frames10"],
+  ["23-stairs-up", [-22.1, 16.0, Math.PI, -0.55], "frames10"],
+  ["24-vest-wrong", [-9.5, 14.6, Math.PI / 2, 0.42], "topWrong"],
+  ["25-vest-solved", [-9.5, 14.6, Math.PI / 2, 0.2], "topRight"],
 ];
 
 (async () => {
@@ -60,6 +66,8 @@ const SHOTS = [
       if (setup === "menu") g.openMenu();
       if (setup === "answerFirst") g.press("true");
       if (setup === "toLiar") ["false", "true", "false", "true"].forEach((b) => g.press(b));
+      if (setup === "topWrong") { g.state.loopedOnce = true; g.press("a_as"); }
+      if (setup === "topRight") g.press("a_loop");
       if (setup === "solveLiar") ["false", "neither"].forEach((b) => g.press(b));
     }, { pose, setup });
     await drive(setup === "hold" ? 90 : setup === "half" ? 16 : /^frames(\d+)$/.test(setup || "") ? Number(setup.slice(6)) : 3);

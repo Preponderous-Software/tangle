@@ -50,3 +50,36 @@ test("hub to the Screen room: the big screen and the lectern", () => {
   me = walk(me, [[5.6, 15]], w);
   assert.ok(Math.hypot(me.x - 5.6, me.z - 15) < 0.3, "at the lectern");
 });
+
+// The game wraps the walker's height into 0..rise on the stairs and counts the loops.
+function wrapStairs(me) {
+  const R = World.STAIR.rise;
+  if (me.x < World.STAIR.x1 + 0.01 && me.z > World.STAIR.z0 && me.y >= R - 1e-6) { me.y -= R; me.loops = (me.loops || 0) + 1; }
+  if (me.x < World.STAIR.x1 + 0.01 && me.z > World.STAIR.z0 && me.y < -1e-6) { me.y += R; me.loops = (me.loops || 0) - 1; }
+  return me;
+}
+function walkStairs(me, points, world, limit = 120) {
+  let t = 0, highest = 0;
+  for (const [x, z] of points) {
+    while (Math.hypot(me.x - x, me.z - z) > 0.25 && t < limit) {
+      me.yaw = Math.atan2(-(z - me.z), -(x - me.x));
+      me = wrapStairs({...Walk.step(me, {forward: 1, right: 0}, 1 / 30, world), loops: me.loops});
+      highest = Math.max(highest, (me.loops || 0) * World.STAIR.rise + me.y);
+      t += 1 / 30;
+    }
+  }
+  return {me, highest};
+}
+
+test("the staircase climbs forever: once round, you are back at the C landing, a loop higher", () => {
+  const w = World.collision({gateOpen: false});
+  let me = walk(Walk.spawn(0, 2, -Math.PI / 2), [[0, 5.5], [0, 9.5], [-2, 16], [-7.5, 16], [-9.5, 16], [-11.9, 16]], w);
+  assert.ok(Math.hypot(me.x + 11.9, me.z - 16) < 0.3, `on the C landing (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
+  const path = [[-11.9, 13], [-11.9, 10.9], [-17, 10.9], [-22.1, 10.9], [-22.1, 16], [-22.1, 21.1], [-17, 21.1], [-11.9, 21.1], [-11.9, 16]];
+  const up = walkStairs({...me, loops: 0}, path, w);
+  assert.equal(up.me.loops, 1, "one loop climbed");
+  assert.ok(Math.abs(up.me.y) < 0.05, `back at the C landing's height (y ${up.me.y})`);
+  assert.ok(up.highest > 4.7, `climbed the whole rise (${up.highest.toFixed(2)})`);
+  const down = walkStairs(up.me, path.slice(0, -1).reverse().concat([[-11.9, 16]]), w);
+  assert.equal(down.me.loops, 0, "and back down again");
+});

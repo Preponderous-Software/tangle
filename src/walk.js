@@ -5,16 +5,21 @@
 
 export const EYE = 1.62, RADIUS = 0.3, WALK = 2.6, RUN = 4.8, ACCEL = 9, DAMP = 12, STEP = 0.35;
 
-// world: {boxes: [{x0, z0, x1, z1, when?(me)}], floors: [{x0, z0, x1, z1, h(x, z)}]}
-// A box is solid while its `when` (if any) says so. The ground (height 0) is always a floor.
+// world: {boxes: [{x0, z0, x1, z1, when?(me)}], floors: [{x0, z0, x1, z1, h(x, z), only?}]}
+// A box is solid while its `when` (if any) says so. The ground (height 0) is a floor everywhere,
+// except where a floor marked `only` covers the point (a staircase whose flights go below 0).
+// The highest floor within a step of fromY wins; if none is within reach, the walker stays put.
 export function floorAt(world, x, z, fromY) {
-  let best = 0;
+  let best = -Infinity, ground = true;
   for (const f of world.floors) {
     if (x < f.x0 || x > f.x1 || z < f.z0 || z > f.z1) continue;
+    if (f.only && (!f.inside || f.inside(x, z))) ground = false;
+    if (f.inside && !f.inside(x, z)) continue;
     const h = f.h(x, z);
     if (h <= fromY + STEP && h > best) best = h;
   }
-  return best;
+  if (ground && 0 <= fromY + STEP && 0 > best) best = 0;
+  return best === -Infinity ? fromY : best;
 }
 
 export function resolve(world, me, x, z) {

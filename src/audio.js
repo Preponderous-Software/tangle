@@ -81,3 +81,24 @@ export function cue(kind) {
   if (kind === "solve") [523, 659, 784, 1047, 1319].forEach((f, i) => note(f, i * 0.13, 1.6, 0.09));
   if (kind === "open") [440, 554].forEach((f, i) => note(f, i * 0.07, 0.3, 0.05));
 }
+
+// A Shepard tone for pitch class pc (semitones, any integer): the same note in eight octaves at
+// once, loudest in the middle, so a scale of them seems to rise forever without getting high.
+export function shepard(pc, dur = 0.35, gain = 0.07, at = 0) {
+  if (!ctx) return;
+  const t = ctx.currentTime + at, base = 32.7, k = ((pc % 12) + 12) % 12;
+  for (let oct = 0; oct < 8; oct++) {
+    const pos = oct + k / 12, f = base * Math.pow(2, pos);
+    const w = Math.exp(-Math.pow((pos - 4) / 1.6, 2));
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(master);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain * w, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0003, t + dur); o.start(t); o.stop(t + dur + 0.05);
+  }
+}
+
+// A landing's key, as a rising major chord of Shepard tones.
+export function keyChord(pc) {
+  if (!ctx) return;
+  [0, 4, 7].forEach((iv, i) => shepard(pc + iv, 1.4, 0.05, i * 0.09));
+}

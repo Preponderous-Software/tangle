@@ -5,7 +5,7 @@ A small first-person game about strange loops, the idea at the heart of Douglas 
 built as a puzzle that you solve by understanding it. When you solve one, a short debrief
 appears in place.
 
-**Status: playable.** It has a hub and three rooms:
+**Status: playable.** It has a hub and four rooms:
 
 - **The Triangle (Escher).** A real impossible triangle stands in the room. From almost everywhere
   it is visibly an open, bent bar. Find the one spot where it closes. When you walk away, it
@@ -23,8 +23,13 @@ appears in place.
   debrief explains how Gödel's "This sentence can't be proved" differs: it isn't a paradox, it's true
   and unprovable.
 
-Rooms planned next: a staircase that climbs forever (Shepard tone), and a list that can't hold
-everything (the diagonal argument).
+- **The Staircase (Bach, Escher).** Six flights around an open well, each one whole tone higher: the
+  landings are C, D, E, F♯, G♯ and A♯. The flight past A♯ climbs back to C, at the door you came in,
+  and the stairs carry on. You can climb forever: a readout says how far above the door you are,
+  footsteps play Shepard tones that rise endlessly, and the stairs repeat above and below. Outside
+  the stairs, in the vestibule, the wall asks: where is the top?
+
+Planned next: a list that can't hold everything (the diagonal argument), then a Gödel finale.
 
 ## Play
 
@@ -68,6 +73,11 @@ itself.
     if you're too close.
   - The target is 6 levels in landscape and 4 on a portrait phone, where the copies shrink faster.
   - Wrong answers at the lectern explain why.
+- **The Staircase:**
+  - Every floor exists in three copies, a loop's height apart.
+  - Each time you pass C, the game quietly moves you down (or up) one loop. The geometry repeats, so
+    the view doesn't change.
+  - It counts the loops, so the height readout keeps climbing.
 - **Sound:** all synthesized: footsteps, a quiet tone for each room, button clicks, and chords when
   you solve something.
 

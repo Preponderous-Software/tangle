@@ -35,7 +35,8 @@ const saved = read(SAVE_KEY);
 const settings = Object.assign({sens: 1, invert: false, sound: true, fov: 66, text: 1}, read(SETTINGS_KEY));
 document.documentElement.style.setProperty("--ui", settings.text);
 const state = {
-  solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr},
+  solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr, stair: !!saved.stair},
+  loops: 0, loopedOnce: !!saved.loopedOnce || !!saved.stair, lastKey: -1, topMsg: null, topGood: false,
   screenDone: !!saved.screenDone || !!saved.scr,   // Room 3, part 1: seen the screen inside itself
   sentence: saved.sentence || 0, liarTried: saved.liarTried || {}, neitherOn: !!saved.neitherOn, boardMsg: null, boardGood: false,
   depth: 0, depthHold: 0,
@@ -56,9 +57,9 @@ const state = {
   glow: 0,                // the sculpture's solve light, fading
   boardShown: !!saved.boardShown || !!saved.miu,
 };
-const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.made.length > 1 || state.seenRooms.size > 0;
+const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.solved.stair || state.made.length > 1 || state.seenRooms.size > 0;
 function save() {
-  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, scr: state.solved.scr,
+  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, scr: state.solved.scr, stair: state.solved.stair, loopedOnce: state.loopedOnce,
     screenDone: state.screenDone, sentence: state.sentence, liarTried: state.liarTried, neitherOn: state.neitherOn, gateOpen: state.gateOpen,
     made: state.made.slice(-200), word: state.word, trail: state.history.slice(-40), presses: state.presses,
     seen: [...state.seenRooms], boardShown: state.boardShown, pose: {x: me.x, z: me.z, y: me.y, yaw: me.yaw, pitch: me.pitch}}));
@@ -105,7 +106,8 @@ function rows(fn, list) {
 
 // ------------------------------------------------------------------ building the house
 const SLOT = {shells: 1, props: 2, tribar: 3, pole: 4, gate: 5, hub: 10, west: 11, east: 12, tri: 13, rules: 14,
-  declare: 15, progress: 16, legend: 17, gatesign: 18, soon: 19, rug: 21, scrPlaque: 22, south: 23, lectern: 24, display: 30, board: 31, screen: 32, sentences: 33};
+  declare: 15, progress: 16, legend: 17, gatesign: 18, soon: 19, rug: 21, scrPlaque: 22, south: 23, lectern: 24, vestPlaque: 25, door4: 26, vestLegend: 27, sealed4: 28, display: 30, board: 31, screen: 32,
+  sentences: 33, top: 34, stairs: 40, stairShell: 41, keySign: 42 /* ..47 */};
 let tribar = null;
 
 function panelMesh(slot, spec, c, normal) {
@@ -142,7 +144,15 @@ function buildScene() {
   // Room 3: the plaque by its door, the sealed door to the rooms still to come, the screen, the lectern
   const R = World.SCR;
   panelMesh(SLOT.scrPlaque, Text.PLAQUES.scr, [-3.6, 1.75, R.z0 + 0.02], [0, 0, 1]);
-  panelMesh(SLOT.soon, Text.PLAQUES.soon, [R.x0 + 0.12, 1.6, 16], [1, 0, 0]);
+  const V = World.VEST;
+  {
+    const sealed = new MeshBuilder();
+    sealed.box([-10.2, 0, V.z1 - 0.1], [-8.8, 2.6, V.z1], [0.13, 0.13, 0.15]);
+    mesh(SLOT.sealed4, sealed);
+  }
+  panelMesh(SLOT.soon, Text.PLAQUES.soon, [-9.5, 1.5, V.z1 - 0.12], [0, 0, -1]);
+  panelMesh(SLOT.vestPlaque, Text.PLAQUES.stair, [V.x0 + 0.02, 1.7, 18.3], [1, 0, 0]);
+  buildStairwell();
   {
     const sc = World.SCREEN, m = new MeshBuilder();
     m.panel(sc.c, [0, 0, -1], sc.w, sc.h);
@@ -177,6 +187,7 @@ function refreshDoors() {
   panelMesh(SLOT.east, Text.doorPlaque(2, "The Machine", "A loop in rules", state.solved.miu), [H.x1 - 0.02, 3.45, 0], [-1, 0, 0]);
   panelMesh(SLOT.south, Text.doorPlaque(3, "The Screen", "A loop of pictures and words", state.solved.scr), [0, 3.45, H.z1 - 0.02], [0, 0, -1]);
   panelMesh(SLOT.progress, Text.progressPlaque(state.solved), [4.6, 1.9, H.z0 + 0.02], [0, 0, 1]);
+  panelMesh(SLOT.door4, Text.doorPlaque(4, "The Staircase", "A loop you can climb", state.solved.stair), [World.SCR.x0 + 0.02, 3.45, 16], [1, 0, 0]);
 }
 
 function refreshGate() {
@@ -187,10 +198,35 @@ function refreshGate() {
 }
 
 function refreshLights() {
-  const L = World.lights().map((l) => l.slice());
+  const L = World.lights().map((l) => l.slice()).concat(World.stairLights());
   if (state.glow > 0.01) L.push([...World.TRIBAR.centre.map((v, i) => v + [1.2, 1.0, 1.6][i]), 7, 1.0, 0.82, 0.5, 2.8 * state.glow]);
   if (state.gateOpen && !state.solved.miu) L.push([12.6, 2.6, 7.2, 6, 1.0, 0.85, 0.55, 1.1]);
   rows(mod._tangle_lights, L);
+}
+
+// Room 4: the stairwell (five copies, a loop apart), its key signs, and the vestibule's lectern.
+function buildStairwell() {
+  mesh(SLOT.stairShell, World.buildStairShell(), -1, LATE);
+  mesh(SLOT.stairs, World.buildStairs());
+  const R = World.STAIR.rise;
+  for (const spot of World.keySignSpots()) {
+    texture(SLOT.keySign + spot.key, Text.keySign(document, World.KEYS[spot.key]));
+    const m = new MeshBuilder();
+    for (const k of [-2, -1, 0, 1, 2]) m.panel([spot.c[0], spot.c[1] + k * R, spot.c[2]], spot.n, 0.9, 0.9);
+    mesh(SLOT.keySign + spot.key, m, SLOT.keySign + spot.key, MESH_UNLIT);
+  }
+  texture(SLOT.vestLegend, Text.legend(document, World.TOP_ANSWERS.map(([id, label, x]) => [id, label, x]), -10.4, 1.8, 40));
+  const lm = new MeshBuilder();
+  lm.panel([-9.5, 0.83, 13.61], [0, 0, 1], 1.8, 0.3);
+  mesh(SLOT.vestLegend, lm, SLOT.vestLegend, MESH_UNLIT);
+  refreshTop();
+}
+
+function refreshTop() {
+  texture(SLOT.top, Text.topBoard(document, {locked: !state.loopedOnce, message: state.topMsg, good: state.topGood, solved: state.solved.stair}));
+  const m = new MeshBuilder();
+  m.panel([-9.5, 2.05, World.VEST.z0 + 0.02], [0, 0, 1], 2.2, 0.88);
+  mesh(SLOT.top, m, SLOT.top, MESH_UNLIT);
 }
 
 function refreshSentences() {
@@ -238,6 +274,11 @@ function refreshItems(now = 0) {
     const col = off ? base.map((c) => c * 0.35) : focus && focus.id === id ? base.map((c) => Math.min(1, c * 1.3)) : base;
     items.push([0, World.ANSWER_X, World.ANSWER_Y - (down ? 0.03 : 0), z, 0.42, 0.08, 0.46, ...col]);
   }
+  for (const [id, , x] of World.TOP_ANSWERS) {
+    const down = pressed.id === id && now < pressed.until, off = !state.loopedOnce || state.solved.stair;
+    const base = [0.62, 0.68, 0.86], col = off ? base.map((c) => c * 0.35) : focus && focus.id === id ? base.map((c) => Math.min(1, c * 1.3)) : base;
+    items.push([0, x, 1.06 - (down ? 0.03 : 0), 13.3, 0.4, 0.08, 0.4, ...col]);
+  }
   const dp = World.MACHINE.declare, ddown = pressed.id === "declare" && now < pressed.until;
   const lit = focus && focus.id === "declare";
   items.push([0, dp[0], dp[1] - (ddown ? 0.03 : 0), dp[2], 0.34, 0.1, 0.34, ...(state.solved.miu ? [0.3, 0.7, 0.4] : lit ? [1, 0.4, 0.3] : [0.85, 0.25, 0.2])]);
@@ -262,6 +303,7 @@ function refreshPoints(t = 0) {
 
 // ------------------------------------------------------------------ the machine
 const LEGEND = {r1: "rule 1: if it ends in I, add U", r2: "rule 2: double everything after M", r3: "rule 3: replace III with U",
+  a_up: "higher up: keep climbing", a_loop: "there isn't one: the stairs loop", a_as: "at the A\u266f landing",
   true: "this sentence is true", false: "this sentence is false", neither: "it can't be true or false",
   r4: "rule 4: remove UU", next: "move the highlight to the next III or UU", undo: "take back the last step", declare: "say: MU can't be made"};
 
@@ -270,6 +312,7 @@ function press(id) {
   pressed = {id, until: now + 160};
   if (id === "declare") { Audio.cue("click"); declare(); return; }
   if (id === "true" || id === "false" || id === "neither") { answerPressed(id); return; }
+  if (id.startsWith("a_")) { topAnswer(id); return; }
   let last = "", ok = true;
   const all = moves(state.word), sp = spotsOf(state.word);
   if (id === "undo") {
@@ -329,6 +372,31 @@ function answerPressed(id) {
   if (r.done) solveScreen();
 }
 
+function topAnswer(id) {
+  if (state.solved.stair) return;
+  if (!state.loopedOnce) { Audio.cue("nope"); say("Climb the stairs first: go all the way round, past A\u266f.", 4500); return; }
+  if (id === "a_loop") {
+    state.topMsg = "Right: there is no top. Every flight goes up, and the stairs come back to where they began."; state.topGood = true;
+    refreshTop(); solveStair(); return;
+  }
+  state.topMsg = id === "a_up" ? "You could climb for as long as you like. The height keeps rising, but you keep arriving at the same door."
+    : "Climb one more flight past A\u266f: it goes up, and lands at C, right by the door you came in.";
+  state.topGood = false; Audio.cue("nope"); refreshTop();
+}
+
+function solveStair() {
+  state.solved.stair = true;
+  save(); refreshDoors(); refreshItems(); Audio.cue("solve"); flash();
+  setTimeout(() => debrief({title: "There is no top.",
+    what: "Every flight went up one whole tone, C to D to E and on to A\u266f, and the next one up brought you back to C, at the door. " +
+      "The height kept rising, yet you never got anywhere. That's what the tones did too: each one sounded higher, and they never got high.",
+    why: "Bach's Canon per Tonos rises a whole tone each time it repeats and, after six climbs, is back in its first key. Escher drew monks walking stairs like these forever, in Ascending and Descending. " +
+      "Hofstadter calls this a strange loop: you move up through the levels of a hierarchy and find yourself back where you began. " +
+      "Gödel found one in mathematics: statements about numbers that turn out to be statements about themselves." +
+      (allSolved() ? " That's every room so far." : "")}), 900);
+  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
+}
+
 function solveScreen() {
   state.solved.scr = true;
   save(); refreshDoors(); refreshItems(); Audio.cue("solve"); flash();
@@ -338,7 +406,30 @@ function solveScreen() {
     why: "Gödel used a careful cousin of this sentence. He built one, in the language of arithmetic, that says \u201cThis sentence can't be proved.\u201d " +
       "It isn't a paradox: if it could be proved, it would be false, so it can't be, and that is exactly what it says. So it's true, but unprovable. " +
       "That's the heart of Gödel, Escher, Bach: a system that can talk about itself always has truths it can't reach."}), 900);
-  objective(allSolved() ? "All three rooms solved. Wander as you like." : nextObjective());
+  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
+}
+
+// Room 4: keep the walker's height within one loop of the stairs (the geometry repeats every loop,
+// so the view doesn't change), count the loops, and mark each landing reached.
+function stairs(before) {
+  if (roomAt(me.x, me.z) !== "stair") return;
+  const R = World.STAIR.rise;
+  if (me.y >= R - 1e-6) { me = {...me, y: me.y - R}; state.loops++; kit.cam.ty -= R; }
+  else if (me.y < -1e-6) { me = {...me, y: me.y + R}; state.loops--; kit.cam.ty += R; }
+  const sg = World.stairSeg(me.x, me.z);
+  if (sg && sg.land && sg.key !== state.lastKey) {
+    state.lastKey = sg.key;
+    Audio.keyChord(sg.key * 2);
+    if (sg.key === 0 && state.loops >= 1 && !state.loopedOnce) {
+      state.loopedOnce = true; save(); refreshTop(); refreshItems();
+      say("Back at C, at the door you came in. Yet every step went up.", 7000, true);
+      say("Go out to the vestibule and answer the question on the wall.", 6000);
+      objective("In the vestibule, answer: where is the top of the staircase?");
+    } else if (sg.key === 0 && state.loops >= 2 && state.saidLoop2 !== state.loops) {
+      state.saidLoop2 = state.loops;
+      say(`Still the same door, ${(state.loops * R).toFixed(1)} metres up. You could climb forever.`, 6000);
+    }
+  }
 }
 
 // Room 3, part 1: how many nested copies of the screen are on screen right now.
@@ -387,10 +478,11 @@ function captureScreen(now) {
   texture(SLOT.screen, {w: grab.width, h: grab.height, rgba: gctx.getImageData(0, 0, grab.width, grab.height).data});
 }
 
-function allSolved() { return state.solved.tribar && state.solved.miu && state.solved.scr; }
+function allSolved() { return state.solved.tribar && state.solved.miu && state.solved.scr && state.solved.stair; }
 function nextObjective() {
   return !state.solved.tribar ? "Next: the Triangle, through the hall's left-hand door." :
-    !state.solved.miu ? "Next: the Machine, through the hall's right-hand door." : "Next: the Screen, through the hall's third door, opposite the welcome plaque.";
+    !state.solved.miu ? "Next: the Machine, through the hall's right-hand door." :
+    !state.solved.scr ? "Next: the Screen, through the hall's third door, opposite the welcome plaque." : "Next: the Staircase, through the Screen room's left-hand door.";
 }
 
 function maybeOpenGate() {
@@ -416,7 +508,7 @@ function declare() {
       "arithmetic: there are true statements those rules can never prove. Where is the loop? Gödel's trick was to make arithmetic describe its own rules, " +
       "so the system talks about itself, the way a picture of a picture contains itself. That self-reference is the strange loop at the heart of the book." +
       (allSolved() ? " That's every room so far." : "")}), 900);
-  objective(allSolved() ? "All three rooms solved. Wander as you like." : nextObjective());
+  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
 }
 
 // ------------------------------------------------------------------ the triangle
@@ -461,7 +553,7 @@ function solveTribar() {
     why: "Going round the triangle, you keep moving forward and arrive back where you started. Hofstadter calls that a strange loop. " +
       "It only worked from one point of view, and stepping out of that view showed you how it was done. " +
       "The Machine, across the hall, does the same thing with rules instead of beams."});
-  objective(allSolved() ? "All three rooms solved. Wander as you like." : "Walk sideways and watch it break. " + nextObjective().replace("Next: ", "Then "));
+  objective(allSolved() ? "Every room solved. Wander as you like." : "Walk sideways and watch it break. " + nextObjective().replace("Next: ", "Then "));
 }
 
 // ------------------------------------------------------------------ HUD: captions, objective, cards
@@ -556,16 +648,19 @@ function intro() {
   say("Welcome. Walk up to the plaque on the far wall and read it.", 6000);
 }
 function welcomeBack() {
-  objective(allSolved() ? "All three rooms solved. Wander as you like." : nextObjective());
+  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
 }
 
-function roomAt(x, z = 0) { return z > World.HUB.z1 + 1.5 ? "scr" : x < World.HUB.x0 - 1.5 ? "tri" : x > World.HUB.x1 + 1.5 ? "miu" : "hub"; }
+function roomAt(x, z = 0) {
+  if (z > World.HUB.z1 + 1.5) return x < World.VEST.x0 ? "stair" : x < World.SCR.x0 ? "vest" : "scr";
+  return x < World.HUB.x0 - 1.5 ? "tri" : x > World.HUB.x1 + 1.5 ? "miu" : "hub";
+}
 function enterRoom(r) {
   Audio.room(r);
   if (r === "hub") {
-    const n = (state.solved.tribar ? 1 : 0) + (state.solved.miu ? 1 : 0) + (state.solved.scr ? 1 : 0);
-    if (n === 3 && !state.saidEnd) { state.saidEnd = true; say("That's every room so far. More are coming, behind the sealed door in the Screen room. Thank you for playing.", 9000); }
-    else if (n > 0 && n < 3 && state.saidN !== n) { state.saidN = n; say(`${n === 1 ? "One loop" : "Two loops"} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
+    const n = (state.solved.tribar ? 1 : 0) + (state.solved.miu ? 1 : 0) + (state.solved.scr ? 1 : 0) + (state.solved.stair ? 1 : 0);
+    if (n === 4 && !state.saidEnd) { state.saidEnd = true; say("That's every room so far. More are coming, behind the sealed door by the Staircase. Thank you for playing.", 9000); }
+    else if (n > 0 && n < 4 && state.saidN !== n) { state.saidN = n; say(`${["One loop", "Two loops", "Three loops"][n - 1]} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
   }
   if (state.seenRooms.has(r)) return;
   state.seenRooms.add(r); save();
@@ -573,6 +668,13 @@ function enterRoom(r) {
     say("Somewhere in here is a triangle that shouldn't exist.", 4500);
     say("Read the plaque on the wall to your right, then explore. A tone gets higher as you get close.", 7000);
     objective("Find the one spot where the triangle closes.");
+  }
+  if (r === "vest" && !state.solved.stair) {
+    say("A small room outside a stairwell. Read the plaque, then go through the door on the left and climb.", 7000);
+    objective(state.loopedOnce ? "Answer the question on the wall: where is the top of the staircase?" : "Climb the staircase and find the top.");
+  }
+  if (r === "stair" && !state.solved.stair && !state.loopedOnce) {
+    say("Each landing is one key higher. Listen to your footsteps as you climb.", 6000);
   }
   if (r === "scr" && !state.solved.scr) {
     say("A screen that shows whatever you're looking at. Read the plaque by the door.", 6000);
@@ -673,6 +775,7 @@ function rayHit(o, d, lo, hi) {
 function targets() {
   const t = [];
   for (const [id, , x] of World.BUTTONS) t.push({id, lo: [x - 0.26, World.BUTTON_Y - 0.08, World.BUTTON_Z - 0.24], hi: [x + 0.26, World.BUTTON_Y + 0.1, World.BUTTON_Z + 0.24]});
+  for (const [id, , x] of World.TOP_ANSWERS) t.push({id, lo: [x - 0.22, 0.98, 13.08], hi: [x + 0.22, 1.16, 13.52]});
   for (const [id, , z] of World.ANSWERS) t.push({id, lo: [World.ANSWER_X - 0.24, World.ANSWER_Y - 0.08, z - 0.26], hi: [World.ANSWER_X + 0.24, World.ANSWER_Y + 0.1, z + 0.26]});
   const dp = World.MACHINE.declare;
   if (me.y > 1) t.push({id: "declare", lo: [dp[0] - 0.22, dp[1] - 0.1, dp[2] - 0.22], hi: [dp[0] + 0.22, dp[1] + 0.12, dp[2] + 0.22]});
@@ -712,9 +815,11 @@ function tick(t, now) {
     const inp = input();
     me = Walk.step(me, inp, dt, collide);
     stride += Math.hypot(me.x - before.x, me.z - before.z);
+    stairs(before);
     if (stride > (inp.run ? 1.05 : 0.78)) {
       stride = 0;
-      Audio.step(me.y > 0.05 || (me.x > World.MACHINE.ramp.x0 - 0.6 && me.z > World.MACHINE.ramp.z0 && me.x < World.MACHINE.ramp.x1) ? "wood" : state.room);
+      if (state.room === "stair") Audio.shepard(Math.round((state.loops * World.STAIR.rise + me.y) / World.STAIR.rise * 12));
+      else Audio.step(me.y > 0.05 || (me.x > World.MACHINE.ramp.x0 - 0.6 && me.z > World.MACHINE.ramp.z0 && me.x < World.MACHINE.ramp.x1) ? "wood" : state.room);
     }
     if (t - lastSave > 3) { lastSave = t; save(); }
   }
@@ -744,12 +849,18 @@ function tick(t, now) {
     }
   }
   const prev = focus && focus.id;
-  focus = (r === "miu" || r === "scr") && !state.card ? aim(Walk.lookDir(me.yaw, me.pitch)) : null;
+  focus = (r === "miu" || r === "scr" || r === "vest") && !state.card ? aim(Walk.lookDir(me.yaw, me.pitch)) : null;
   measureScreen(dt);
   $("cross").classList.toggle("active", !!focus);
   $("use").classList.toggle("ready", !!focus);
   const p = $("prompt");
   if (focus) { p.textContent = `${touchFirst ? "Use" : "E"}: ${LEGEND[focus.id]}${preview(focus.id)}`; p.hidden = false; }
+  else if (r === "stair" && !state.card) {
+    const sg = World.stairSeg(me.x, me.z), h = state.loops * World.STAIR.rise + me.y;
+    const where = sg && sg.land ? `${World.KEYS[sg.key]} landing` : "on the stairs";
+    const level = Math.abs(h) < 0.05 ? "level with the door" : h > 0 ? `${h.toFixed(1)} m above the door` : `${(-h).toFixed(1)} m below the door`;
+    p.textContent = `${where}  \u00b7  ${level}`; p.hidden = false;
+  }
   else if (state.tooClose && !state.card) { p.textContent = "Too close: step back a little"; p.hidden = false; }
   else if (state.depth >= 2) {
     const need = state.depthNeed || 6;

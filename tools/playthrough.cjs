@@ -97,9 +97,18 @@ const EYE = 1.62;
     await page.keyboard.press("KeyE"); await frames(2);
   }
   step(`sentences card: ${await closeCard()}`);
+
+  // the Staircase: through the vestibule, once round the stairs (every flight up), back out, answer
+  await walkTo(3, 16); await walkTo(-2, 16); await walkTo(-7.5, 16); await walkTo(-9.5, 16); await walkTo(-11.9, 16);
+  for (const [x, z] of [[-11.9, 13], [-11.9, 10.9], [-17, 10.9], [-22.1, 10.9], [-22.1, 16], [-22.1, 21.1], [-17, 21.1], [-11.9, 21.1], [-11.9, 16]]) await walkTo(x, z);
+  step(`stairs: ${await page.evaluate(() => `loops ${window.__tangle.state.loops}, looped ${window.__tangle.state.loopedOnce}, prompt "${document.getElementById("prompt").textContent}"`)}`);
+  await walkTo(-9.5, 16); await walkTo(-9.5, 14.4);
+  await lookAt([-9.5, 1.08, 13.3]); await frames(3);
+  await page.keyboard.press("KeyE"); await frames(3);
+  step(`staircase card: ${await closeCard()}`);
   const end = await st();
   step(`end: ${JSON.stringify(end.solved)}`);
   console.log("errors", errors);
   await browser.close();
-  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || errors.length) process.exit(1);
+  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || errors.length) process.exit(1);
 })().catch((e) => { console.error(e.message); process.exit(1); });
