@@ -99,7 +99,7 @@ export function board(doc, words) {
     const k = countI(wd) % 3, label = `${wd}  ${countI(wd)}`;
     const w = g.measureText(label).width + 28;
     if (x + w > W - 70) { x = 70; y += 50; }
-    if (y > 410) break;
+    if (y > 250) break;  // two rows of chips leave room for the explanation, in larger type
     g.fillStyle = k === 1 ? TEAL : k === 2 ? GOLD : RED;
     g.fillRect(x, y, w, 40);
     g.fillStyle = "#fff"; g.fillText(label, x + 14, y + 30);
@@ -113,9 +113,13 @@ export function board(doc, words) {
     "MU has 0 I's, and 0 is a multiple of 3. So no amount of pressing will ever make MU.",
     "You can't see that by pressing buttons. You see it from out here, looking at the machine as a whole.",
   ];
-  let yy = 500;
-  g.font = `400 31px ${SERIF}`;
-  for (const l of lines) { g.fillText(l, 70, yy); yy += 50; }
+  // larger and higher than it was (players read it from the balcony at a slant), the key line in bold
+  let yy = y + 100;
+  lines.forEach((l, i) => {
+    g.font = i === 3 ? `700 34px ${SERIF}` : `400 33px ${SERIF}`;
+    for (const w of wrap(g, l, W - 130)) { g.fillText(w, 70, yy); yy += 43; }
+    yy += 6;
+  });
   return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
 }
 
