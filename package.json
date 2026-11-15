@@ -1,0 +1,14 @@
+{
+  "name": "tangle",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "shots": "node tools/shots.cjs",
+    "playthrough": "node tools/playthrough.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.61.1"
+  },
+  "license": "MIT"
+}

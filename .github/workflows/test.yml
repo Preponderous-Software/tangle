@@ -1,0 +1,19 @@
+name: test
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # the rules, the tribar, walking and every route through the house (no dependencies needed)
+      - run: npm test
+      # the page's modules parse
+      - run: for f in src/*.js; do node --check "$f"; done
