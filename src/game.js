@@ -9,6 +9,7 @@ import * as World from "./world.js";
 import * as Text from "./text.js";
 import * as Audio from "./audio.js";
 import {SENTENCES, answer as answerSentence, nestingDepth} from "./sentences.js";
+import * as Diag from "./diagonal.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -30,12 +31,26 @@ if (params.get("new") === "1") {  // play-tangle.bat new: start over, once (the 
   params.delete("new");
   history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : ""));
 }
+function validRow(r) { return Array.isArray(r) && r.length === Diag.N && r.every((b) => b === 0 || b === 1) ? r.slice() : null; }
+function validList(l) { return Array.isArray(l) && l.length === Diag.N && l.every(validRow) ? l.map((r) => r.slice()) : null; }
+if (params.get("skip") === "4") {  // playtesting the List: the first four rooms solved, standing in the vestibule
+  store.set(SAVE_KEY, JSON.stringify({tribar: true, miu: true, scr: true, stair: true, gateOpen: true, screenDone: true, loopedOnce: true,
+    boardShown: true, sentence: 4, seen: ["hub", "tri", "miu", "scr", "vest", "stair"], pose: {x: -9.5, z: 15.6, y: 0, yaw: -Math.PI / 2, pitch: 0}}));
+  params.delete("skip");
+  history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : ""));
+}
 const read = (k) => { try { return JSON.parse(store.get(k) || "{}"); } catch (e) { return {}; } };
 const saved = read(SAVE_KEY);
 const settings = Object.assign({sens: 1, invert: false, sound: true, fov: 66, text: 1}, read(SETTINGS_KEY));
 document.documentElement.style.setProperty("--ui", settings.text);
 const state = {
-  solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr, stair: !!saved.stair},
+  solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr, stair: !!saved.stair, list: !!saved.list},
+  // Room 5: the librarian's list. round 0: the first list; 1: your row added; 2: beaten twice (the question)
+  diag: {list: validList(saved.diag && saved.diag.list) || Diag.START.map((r) => r.slice()),
+    guess: (saved.diag && validRow(saved.diag.guess)) || Array(Diag.N).fill(0),
+    round: (saved.diag && saved.diag.round) || (saved.list ? 2 : 0), checks: (saved.diag && saved.diag.checks) || 0,
+    escaped: !!(saved.diag && saved.diag.escaped) || !!saved.list, hint: (saved.diag && saved.diag.hint) || 0,
+    diffs: null, later: null, msg: null, good: false, busy: false, qMsg: null, qGood: !!saved.list},
   loops: 0, loopedOnce: !!saved.loopedOnce || !!saved.stair, lastKey: -1, topMsg: null, topGood: false,
   screenDone: !!saved.screenDone || !!saved.scr,   // Room 3, part 1: seen the screen inside itself
   sentence: saved.sentence || 0, liarTried: saved.liarTried || {}, neitherOn: !!saved.neitherOn, boardMsg: null, boardGood: false,
@@ -57,9 +72,10 @@ const state = {
   glow: 0,                // the sculpture's solve light, fading
   boardShown: !!saved.boardShown || !!saved.miu,
 };
-const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.solved.stair || state.made.length > 1 || state.seenRooms.size > 0;
+const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.solved.stair || state.solved.list || state.made.length > 1 || state.seenRooms.size > 0;
 function save() {
-  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, scr: state.solved.scr, stair: state.solved.stair, loopedOnce: state.loopedOnce,
+  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, scr: state.solved.scr, stair: state.solved.stair, list: state.solved.list, loopedOnce: state.loopedOnce,
+    diag: {list: state.diag.list, guess: state.diag.guess, round: state.diag.round, checks: state.diag.checks, escaped: state.diag.escaped, hint: state.diag.hint},
     screenDone: state.screenDone, sentence: state.sentence, liarTried: state.liarTried, neitherOn: state.neitherOn, gateOpen: state.gateOpen,
     made: state.made.slice(-200), word: state.word, trail: state.history.slice(-40), presses: state.presses,
     seen: [...state.seenRooms], boardShown: state.boardShown, pose: {x: me.x, z: me.z, y: me.y, yaw: me.yaw, pitch: me.pitch}}));
@@ -107,7 +123,8 @@ function rows(fn, list) {
 // ------------------------------------------------------------------ building the house
 const SLOT = {shells: 1, props: 2, tribar: 3, pole: 4, gate: 5, hub: 10, west: 11, east: 12, tri: 13, rules: 14,
   declare: 15, progress: 16, legend: 17, gatesign: 18, soon: 19, rug: 21, scrPlaque: 22, south: 23, lectern: 24, vestPlaque: 25, door4: 26, vestLegend: 27, sealed4: 28, display: 30, board: 31, screen: 32,
-  sentences: 33, top: 34, stairs: 40, stairShell: 41, keySign: 42 /* ..47 */};
+  sentences: 33, top: 34, stairs: 40, stairShell: 41, keySign: 42 /* ..47 */,
+  list: 50, listBoard: 51, qBoard: 52, qLegend: 53, deskLegend: 54, listPlaque: 55, door5: 56};
 let tribar = null;
 
 function panelMesh(slot, spec, c, normal) {
@@ -145,14 +162,9 @@ function buildScene() {
   const R = World.SCR;
   panelMesh(SLOT.scrPlaque, Text.PLAQUES.scr, [-3.6, 1.75, R.z0 + 0.02], [0, 0, 1]);
   const V = World.VEST;
-  {
-    const sealed = new MeshBuilder();
-    sealed.box([-10.2, 0, V.z1 - 0.1], [-8.8, 2.6, V.z1], [0.13, 0.13, 0.15]);
-    mesh(SLOT.sealed4, sealed);
-  }
-  panelMesh(SLOT.soon, Text.PLAQUES.soon, [-9.5, 1.5, V.z1 - 0.12], [0, 0, -1]);
   panelMesh(SLOT.vestPlaque, Text.PLAQUES.stair, [V.x0 + 0.02, 1.7, 18.3], [1, 0, 0]);
   buildStairwell();
+  buildListRoom();
   {
     const sc = World.SCREEN, m = new MeshBuilder();
     m.panel(sc.c, [0, 0, -1], sc.w, sc.h);
@@ -188,6 +200,9 @@ function refreshDoors() {
   panelMesh(SLOT.south, Text.doorPlaque(3, "The Screen", "A loop of pictures and words", state.solved.scr), [0, 3.45, H.z1 - 0.02], [0, 0, -1]);
   panelMesh(SLOT.progress, Text.progressPlaque(state.solved), [4.6, 1.9, H.z0 + 0.02], [0, 0, 1]);
   panelMesh(SLOT.door4, Text.doorPlaque(4, "The Staircase", "A loop you can climb", state.solved.stair), [World.SCR.x0 + 0.02, 3.45, 16], [1, 0, 0]);
+  // Room 5's plaque: on the vestibule's east wall, beside the south door (no room above a door there)
+  panelMesh(SLOT.door5, {...Text.doorPlaque(5, "The List", "A list that can't hold everything", state.solved.list), w: 1.7, h: 0.86},
+    [World.VEST.x1 - 0.02, 1.75, 18.35], [-1, 0, 0]);
 }
 
 function refreshGate() {
@@ -198,7 +213,7 @@ function refreshGate() {
 }
 
 function refreshLights() {
-  const L = World.lights().map((l) => l.slice()).concat(World.stairLights());
+  const L = World.lights().map((l) => l.slice()).concat(World.stairLights(), World.listLights());
   if (state.glow > 0.01) L.push([...World.TRIBAR.centre.map((v, i) => v + [1.2, 1.0, 1.6][i]), 7, 1.0, 0.82, 0.5, 2.8 * state.glow]);
   if (state.gateOpen && !state.solved.miu) L.push([12.6, 2.6, 7.2, 6, 1.0, 0.85, 0.55, 1.1]);
   rows(mod._tangle_lights, L);
@@ -227,6 +242,124 @@ function refreshTop() {
   const m = new MeshBuilder();
   m.panel([-9.5, 2.05, World.VEST.z0 + 0.02], [0, 0, 1], 2.2, 0.88);
   mesh(SLOT.top, m, SLOT.top, MESH_UNLIT);
+}
+
+// Room 5: the List. The desk of switches, the librarian's list, the question and its lectern.
+function buildListRoom() {
+  const L = World.LIST;
+  mesh(SLOT.list, World.buildList());
+  panelMesh(SLOT.listPlaque, Text.PLAQUES.list, [-14.0, 1.75, L.z1 - 0.02], [0, 0, -1]);
+  panelMesh(SLOT.soon, Text.PLAQUES.soon, [L.x0 + 0.12, 1.5, 31.0], [1, 0, 0]);
+  const k = World.DESK;
+  texture(SLOT.deskLegend, Text.legend(document, World.SWITCHES.map(([id, label, x]) => [id, label, k.x1 - x]), 0, k.x1 - k.x0, 52));
+  const dm = new MeshBuilder();
+  dm.panel([(k.x0 + k.x1) / 2, k.h - 0.17, k.z0 - 0.01], [0, 0, -1], k.x1 - k.x0, 0.3);
+  mesh(SLOT.deskLegend, dm, SLOT.deskLegend, MESH_UNLIT);
+  const q = World.QLECTERN;
+  texture(SLOT.qLegend, Text.legend(document, Diag.QUESTION.map(([id, label]) => [id, label, World.QANSWERS_Z[id]]), q.z0, q.z1 - q.z0, 52));
+  const qm = new MeshBuilder();
+  qm.panel([q.x0 - 0.01, q.h - 0.17, (q.z0 + q.z1) / 2], [-1, 0, 0], q.z1 - q.z0, 0.3);
+  mesh(SLOT.qLegend, qm, SLOT.qLegend, MESH_UNLIT);
+  if (state.diag.round === 0 && state.diag.escaped) insertRow();  // reloaded while the librarian was adding it
+  refreshList(); refreshQuestion();
+}
+
+function refreshList() {
+  const d = state.diag;
+  texture(SLOT.listBoard, Text.listBoard(document, {rows: d.list, guess: d.guess, diffs: d.diffs, diag: d.hint >= 2 || d.round > 0,
+    later: d.later, escaped: d.escaped, message: d.msg, good: d.good, round: d.round > 0 ? 1 : 0}));
+  const b = World.LIST_BOARD, m = new MeshBuilder();
+  m.panel(b.c, [0, 0, -1], b.w, b.h);
+  mesh(SLOT.listBoard, m, SLOT.listBoard, MESH_UNLIT);
+}
+
+function refreshQuestion() {
+  const d = state.diag;
+  texture(SLOT.qBoard, Text.questionBoard(document, {locked: d.round < 2, message: d.qMsg, good: d.qGood, solved: state.solved.list}));
+  const b = World.QBOARD, m = new MeshBuilder();
+  m.panel(b.c, [-1, 0, 0], b.w, b.h);
+  mesh(SLOT.qBoard, m, SLOT.qBoard, MESH_UNLIT);
+}
+
+function toggleTile(i) {
+  const d = state.diag;
+  if (d.round >= 2 || d.busy) { Audio.cue("nope"); if (d.round >= 2) say("You've beaten the list. Now the question on the left-hand wall.", 4000); return; }
+  d.guess[i] = 1 - d.guess[i]; d.diffs = null; d.later = null; d.msg = null;
+  Audio.cue("click"); refreshList(); refreshItems(performance.now()); save();
+}
+
+function checkRow() {
+  const d = state.diag;
+  if (d.round >= 2 || d.busy) { Audio.cue("nope"); return; }
+  const r = Diag.check(d.guess, d.list);
+  d.checks++; d.diffs = r.diffs; d.later = null; d.good = r.kind === "escapes";
+  if (r.kind === "row") {
+    d.msg = `That's row ${r.row}, tile for tile. Change something and check again.`;
+    Audio.cue("nope");
+  } else if (r.kind === "later") {
+    d.later = {row: r.row, tiles: d.guess.slice()};
+    d.msg = `Yours differs from rows 1 to 8, but row ${r.row}, further down, starts just like it. Does yours differ later on? You'd have to check forever.`;
+    Audio.cue("nope");
+    if (d.checks === 2) say("You can't check every row: the list never ends. Instead, can you make sure your row differs from row 1? And from row 2? From every row?", 10000, true);
+    if (d.checks >= 3 && d.hint < 2) {
+      d.hint = 2;
+      say("Look at the lit tiles: row 1's tile 1, row 2's tile 2, row 3's tile 3, and on down the list.", 9000);
+    }
+    if (d.checks >= 5 && d.hint < 3) {
+      d.hint = 3;
+      say("Make each of your tiles the opposite of the lit tile in its column. Then your row differs from every row somewhere.", 10000);
+    }
+  } else {
+    d.escaped = true;
+    d.msg = "Row 1 differs at tile 1, row 2 at tile 2: row n differs at tile n, for every n, however far down. Your row is nowhere in the list.";
+    Audio.cue("gate");
+    if (d.round === 0) {
+      d.busy = true;
+      say("Your row differs from every row in the list, even the ones you can't see.", 6000, true);
+      setTimeout(insertRow, 5500);
+    } else {
+      d.round = 2;
+      say("Beaten again, the same way. Now answer the question on the left-hand wall.", 7000, true);
+      objective("Answer the question on the left-hand wall: which list could hold every endless row?");
+      refreshQuestion();
+    }
+  }
+  refreshList(); refreshItems(performance.now()); save();
+}
+
+function insertRow() {
+  const d = state.diag;
+  d.list = Diag.addRow(d.list, d.guess); d.guess = Array(Diag.N).fill(0);
+  d.round = 1; d.busy = false; d.escaped = false; d.diffs = null; d.later = null; d.good = false;
+  d.msg = "The librarian added your row at the top, and every row moved down one. Is every row in the list now?";
+  if (kit) {
+    say("The librarian has added your row to the list. Can you beat it again?", 7000, true);
+    objective("The librarian added your row. Make a row that still isn't in the list.");
+    Audio.cue("open"); refreshList(); refreshItems(performance.now()); save();
+  }
+}
+
+function questionAnswer(id) {
+  if (state.solved.list) return;
+  if (state.diag.round < 2) { Audio.cue("nope"); say("First beat the list: make a row it doesn't hold.", 4500); return; }
+  const r = Diag.answerQuestion(id);
+  state.diag.qMsg = r.message; state.diag.qGood = r.ok;
+  refreshQuestion();
+  if (r.ok) solveList(); else Audio.cue("nope");
+}
+
+function solveList() {
+  state.solved.list = true;
+  save(); refreshDoors(); refreshItems(); Audio.cue("solve"); flash();
+  setTimeout(() => debrief({title: "No list holds them all.",
+    what: "You built your row from the list itself: tile 1 the opposite of row 1's tile 1, tile 2 the opposite of row 2's tile 2, and on down. " +
+      "So it differs from every row somewhere, however long the list is. When the librarian added it, the same trick beat the new list.",
+    why: "Georg Cantor found this diagonal in 1891. It shows there are more endless rows than counting numbers, so some infinities are bigger than others. " +
+      "Gödel's proof makes the same move. He gave every statement about numbers a number of its own, and built a sentence that says, in effect, " +
+      "\u201cI am not on the list of things arithmetic can prove.\u201d Like your row, it is made from the list it escapes. " +
+      "Alan Turing used the diagonal again to show that no program can tell, for every program, whether it will ever stop." +
+      (allSolved() ? " That's every room so far." : "")}), 900);
+  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
 }
 
 function refreshSentences() {
@@ -279,6 +412,21 @@ function refreshItems(now = 0) {
     const base = [0.62, 0.68, 0.86], col = off ? base.map((c) => c * 0.35) : focus && focus.id === id ? base.map((c) => Math.min(1, c * 1.3)) : base;
     items.push([0, x, 1.06 - (down ? 0.03 : 0), 13.3, 0.4, 0.08, 0.4, ...col]);
   }
+  {
+    const d = state.diag, off = d.round >= 2 || d.busy;
+    for (const [id, , x] of World.SWITCHES) {
+      const down = pressed.id === id && now < pressed.until, lit = focus && focus.id === id;
+      let col = id === "check" ? [0.3, 0.66, 0.68] : d.guess[Number(id.slice(1))] ? [0.93, 0.9, 0.8] : [0.16, 0.16, 0.18];
+      if (lit) col = col.map((c) => Math.min(1, c * 1.25 + 0.08));
+      if (off && id === "check") col = col.map((c) => c * 0.4);
+      items.push([0, x, World.SWITCH_Y - (down ? 0.03 : 0), World.SWITCH_Z, id === "check" ? 0.8 : 0.4, 0.08, 0.42, ...col]);
+    }
+    for (const [id] of Diag.QUESTION) {
+      const down = pressed.id === id && now < pressed.until, qoff = d.round < 2 || state.solved.list;
+      const base = [0.62, 0.68, 0.86], col = qoff ? base.map((c) => c * 0.35) : focus && focus.id === id ? base.map((c) => Math.min(1, c * 1.3)) : base;
+      items.push([0, World.QANSWER_X, 1.06 - (down ? 0.03 : 0), World.QANSWERS_Z[id], 0.42, 0.08, 0.46, ...col]);
+    }
+  }
   const dp = World.MACHINE.declare, ddown = pressed.id === "declare" && now < pressed.until;
   const lit = focus && focus.id === "declare";
   items.push([0, dp[0], dp[1] - (ddown ? 0.03 : 0), dp[2], 0.34, 0.1, 0.34, ...(state.solved.miu ? [0.3, 0.7, 0.4] : lit ? [1, 0.4, 0.3] : [0.85, 0.25, 0.2])]);
@@ -305,7 +453,13 @@ function refreshPoints(t = 0) {
 const LEGEND = {r1: "rule 1: if it ends in I, add U", r2: "rule 2: double everything after M", r3: "rule 3: replace III with U",
   a_up: "higher up: keep climbing", a_loop: "there isn't one: the stairs loop", a_as: "at the A\u266f landing",
   true: "this sentence is true", false: "this sentence is false", neither: "it can't be true or false",
-  r4: "rule 4: remove UU", next: "move the highlight to the next III or UU", undo: "take back the last step", declare: "say: MU can't be made"};
+  r4: "rule 4: remove UU", check: "check your row against the list",
+  q_long: "a longer list could hold them all", q_endless: "an endless list could hold them all", q_none: "no list can hold them all", next: "move the highlight to the next III or UU", undo: "take back the last step", declare: "say: MU can't be made"};
+
+function label(id) {
+  if (/^t\d$/.test(id)) { const i = Number(id.slice(1)); return `tile ${i + 1}: make it ${state.diag.guess[i] ? "dark" : "light"}`; }
+  return LEGEND[id];
+}
 
 function press(id) {
   const now = performance.now();
@@ -313,6 +467,9 @@ function press(id) {
   if (id === "declare") { Audio.cue("click"); declare(); return; }
   if (id === "true" || id === "false" || id === "neither") { answerPressed(id); return; }
   if (id.startsWith("a_")) { topAnswer(id); return; }
+  if (/^t\d$/.test(id)) { toggleTile(Number(id.slice(1))); return; }
+  if (id === "check") { checkRow(); return; }
+  if (id.startsWith("q_")) { questionAnswer(id); return; }
   let last = "", ok = true;
   const all = moves(state.word), sp = spotsOf(state.word);
   if (id === "undo") {
@@ -478,11 +635,13 @@ function captureScreen(now) {
   texture(SLOT.screen, {w: grab.width, h: grab.height, rgba: gctx.getImageData(0, 0, grab.width, grab.height).data});
 }
 
-function allSolved() { return state.solved.tribar && state.solved.miu && state.solved.scr && state.solved.stair; }
+function allSolved() { return state.solved.tribar && state.solved.miu && state.solved.scr && state.solved.stair && state.solved.list; }
 function nextObjective() {
   return !state.solved.tribar ? "Next: the Triangle, through the hall's left-hand door." :
     !state.solved.miu ? "Next: the Machine, through the hall's right-hand door." :
-    !state.solved.scr ? "Next: the Screen, through the hall's third door, opposite the welcome plaque." : "Next: the Staircase, through the Screen room's left-hand door.";
+    !state.solved.scr ? "Next: the Screen, through the hall's third door, opposite the welcome plaque." :
+    !state.solved.stair ? "Next: the Staircase, through the Screen room's left-hand door." :
+    "Next: the List, through the Screen room's left-hand door, then the small room's left-hand door.";
 }
 
 function maybeOpenGate() {
@@ -652,15 +811,16 @@ function welcomeBack() {
 }
 
 function roomAt(x, z = 0) {
+  if (z > World.LIST.z0 - 0.5) return "list";
   if (z > World.HUB.z1 + 1.5) return x < World.VEST.x0 ? "stair" : x < World.SCR.x0 ? "vest" : "scr";
   return x < World.HUB.x0 - 1.5 ? "tri" : x > World.HUB.x1 + 1.5 ? "miu" : "hub";
 }
 function enterRoom(r) {
   Audio.room(r);
   if (r === "hub") {
-    const n = (state.solved.tribar ? 1 : 0) + (state.solved.miu ? 1 : 0) + (state.solved.scr ? 1 : 0) + (state.solved.stair ? 1 : 0);
-    if (n === 4 && !state.saidEnd) { state.saidEnd = true; say("That's every room so far. More are coming, behind the sealed door by the Staircase. Thank you for playing.", 9000); }
-    else if (n > 0 && n < 4 && state.saidN !== n) { state.saidN = n; say(`${["One loop", "Two loops", "Three loops"][n - 1]} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
+    const n = ["tribar", "miu", "scr", "stair", "list"].filter((k) => state.solved[k]).length;
+    if (n === 5 && !state.saidEnd) { state.saidEnd = true; say("That's every room so far. The last one is coming, behind the sealed door in the List. Thank you for playing.", 9000); }
+    else if (n > 0 && n < 5 && state.saidN !== n) { state.saidN = n; say(`${["One loop", "Two loops", "Three loops", "Four loops"][n - 1]} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
   }
   if (state.seenRooms.has(r)) return;
   state.seenRooms.add(r); save();
@@ -670,11 +830,17 @@ function enterRoom(r) {
     objective("Find the one spot where the triangle closes.");
   }
   if (r === "vest" && !state.solved.stair) {
-    say("A small room outside a stairwell. Read the plaque, then go through the door on the left and climb.", 7000);
+    say("A small room outside a stairwell. Read the plaque, then go through the door straight ahead and climb.", 7000);
     objective(state.loopedOnce ? "Answer the question on the wall: where is the top of the staircase?" : "Climb the staircase and find the top.");
   }
   if (r === "stair" && !state.solved.stair && !state.loopedOnce) {
     say("Each landing is one key higher. Listen to your footsteps as you climb.", 6000);
+  }
+  if (r === "list" && !state.solved.list) {
+    say("A library, and a list that claims to hold everything. Read the plaque to the right of the list.", 7000);
+    say("Set the switches on the desk to make a row, then press CHECK.", 6000);
+    objective(state.diag.round >= 2 ? "Answer the question on the left-hand wall: which list could hold every endless row?" :
+      state.diag.round === 1 ? "The librarian added your row. Make a row that still isn't in the list." : "Make a row of tiles that isn't anywhere in the librarian's list.");
   }
   if (r === "scr" && !state.solved.scr) {
     say("A screen that shows whatever you're looking at. Read the plaque by the door.", 6000);
@@ -696,7 +862,7 @@ addEventListener("keydown", (e) => {
   if (state.card) return;
   keys.add(e.code);
   if (e.code === "KeyE" && !e.repeat) use();
-  if (["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+  if (["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown"].includes(e.code)) e.preventDefault();
 });
 addEventListener("keyup", (e) => keys.delete(e.code));
 addEventListener("blur", () => keys.clear());
@@ -749,12 +915,18 @@ stickEl.addEventListener("pointerup", stickEnd); stickEl.addEventListener("point
 $("use").addEventListener("click", () => use());
 if (touchFirst) document.body.classList.add("touch");
 
-function input() {
+function input(dt) {
   const k = (c) => keys.has(c);
   let forward = (k("KeyW") || k("ArrowUp") ? 1 : 0) - (k("KeyS") || k("ArrowDown") ? 1 : 0);
   let right = (k("KeyD") ? 1 : 0) - (k("KeyA") ? 1 : 0);
-  if (k("ArrowLeft") && kit) { kit.cam.yaw -= 0.03 * settings.sens; camSeen = {yaw: kit.cam.yaw, pitch: kit.cam.pitch}; }
-  if (k("ArrowRight") && kit) { kit.cam.yaw += 0.03 * settings.sens; camSeen = {yaw: kit.cam.yaw, pitch: kit.cam.pitch}; }
+  // the arrow keys turn at a steady 1.8 rad a second (about 103 degrees), whatever the frame rate
+  if (k("ArrowLeft") && kit) { kit.cam.yaw -= 1.8 * dt * settings.sens; camSeen = {yaw: kit.cam.yaw, pitch: kit.cam.pitch}; }
+  if (k("ArrowRight") && kit) { kit.cam.yaw += 1.8 * dt * settings.sens; camSeen = {yaw: kit.cam.yaw, pitch: kit.cam.pitch}; }
+  // Page Up / Page Down tilt the view (for keyboard-only players)
+  if ((k("PageUp") || k("PageDown")) && kit) {
+    kit.cam.pitch = Math.min(Math.max(kit.cam.pitch + (k("PageDown") ? 1 : -1) * 1.2 * dt * settings.sens, -1.2), 1.2);
+    camSeen = {yaw: kit.cam.yaw, pitch: kit.cam.pitch};
+  }
   if (stickId != null) { forward = stickInput.forward; right = stickInput.right; }
   return {forward, right, run: k("ShiftLeft") || k("ShiftRight") || stickInput.run};
 }
@@ -777,6 +949,15 @@ function targets() {
   for (const [id, , x] of World.BUTTONS) t.push({id, lo: [x - 0.26, World.BUTTON_Y - 0.08, World.BUTTON_Z - 0.24], hi: [x + 0.26, World.BUTTON_Y + 0.1, World.BUTTON_Z + 0.24]});
   for (const [id, , x] of World.TOP_ANSWERS) t.push({id, lo: [x - 0.22, 0.98, 13.08], hi: [x + 0.22, 1.16, 13.52]});
   for (const [id, , z] of World.ANSWERS) t.push({id, lo: [World.ANSWER_X - 0.24, World.ANSWER_Y - 0.08, z - 0.26], hi: [World.ANSWER_X + 0.24, World.ANSWER_Y + 0.1, z + 0.26]});
+  for (const [id, , x] of World.SWITCHES) {
+    // the switch's own size (0.4 wide, top at +0.04): bigger boxes catch a glancing look at the next one
+    const hw = id === "check" ? 0.4 : 0.2;
+    t.push({id, lo: [x - hw, World.SWITCH_Y - 0.06, World.SWITCH_Z - 0.21], hi: [x + hw, World.SWITCH_Y + 0.045, World.SWITCH_Z + 0.21]});
+  }
+  for (const [id] of Diag.QUESTION) {
+    const z = World.QANSWERS_Z[id];
+    t.push({id, lo: [World.QANSWER_X - 0.24, 0.98, z - 0.26], hi: [World.QANSWER_X + 0.24, 1.16, z + 0.26]});
+  }
   const dp = World.MACHINE.declare;
   if (me.y > 1) t.push({id: "declare", lo: [dp[0] - 0.22, dp[1] - 0.1, dp[2] - 0.22], hi: [dp[0] + 0.22, dp[1] + 0.12, dp[2] + 0.22]});
   return t;
@@ -812,7 +993,7 @@ function tick(t, now) {
   fitFov();
   if (!state.card) {
     const before = me;
-    const inp = input();
+    const inp = input(dt);
     me = Walk.step(me, inp, dt, collide);
     stride += Math.hypot(me.x - before.x, me.z - before.z);
     stairs(before);
@@ -849,12 +1030,12 @@ function tick(t, now) {
     }
   }
   const prev = focus && focus.id;
-  focus = (r === "miu" || r === "scr" || r === "vest") && !state.card ? aim(Walk.lookDir(me.yaw, me.pitch)) : null;
+  focus = (r === "miu" || r === "scr" || r === "vest" || r === "list") && !state.card ? aim(Walk.lookDir(me.yaw, me.pitch)) : null;
   measureScreen(dt);
   $("cross").classList.toggle("active", !!focus);
   $("use").classList.toggle("ready", !!focus);
   const p = $("prompt");
-  if (focus) { p.textContent = `${touchFirst ? "Use" : "E"}: ${LEGEND[focus.id]}${preview(focus.id)}`; p.hidden = false; }
+  if (focus) { p.textContent = `${touchFirst ? "Use" : "E"}: ${label(focus.id)}${preview(focus.id)}`; p.hidden = false; }
   else if (r === "stair" && !state.card) {
     const sg = World.stairSeg(me.x, me.z), h = state.loops * World.STAIR.rise + me.y;
     const where = sg && sg.land ? `${World.KEYS[sg.key]} landing` : "on the stairs";
@@ -911,4 +1092,5 @@ async function boot() {
     reset() { store.set(SAVE_KEY, "{}"); },
   };
 }
+if (params.has("probe")) import("./probe.js").then((m) => m.startProbe()).catch(() => {});  // playtester (tools/playtest)
 boot().catch((e) => { console.error(e); StrataLoader.fallback && StrataLoader.fallback("engine", String(e)); });

@@ -123,9 +123,12 @@ export const PLAQUES = {
   hub: {kicker: "Welcome", title: "Tangle: a house of strange loops", w: 6.4, h: 3.3, bodySize: 0.036,
     body: "A strange loop is a path that keeps going forward, or upward, and still ends up back where it started. " +
       "The idea comes from the book Gödel, Escher, Bach by Douglas Hofstadter.\n" +
-      "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you) and the Staircase beyond it."},
-  soon: {kicker: "Coming soon", title: "More rooms", w: 2.1, h: 1.5, titleSize: 0.1, dark: true,
-    body: "A list that can't hold everything.", bodySize: 0.085},
+      "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you), and the Staircase and the List beyond it."},
+  soon: {kicker: "Coming soon", title: "The last room", w: 2.1, h: 1.5, titleSize: 0.1, dark: true,
+    body: "A sentence that says it can't be proved.", bodySize: 0.08},
+  list: {kicker: "The List", title: "Find a row that isn't there", w: 2.6, h: 2.4, bodySize: 0.046,
+    body: "The librarian says this list holds every endless row of light and dark tiles. It goes on forever, row after row, and each row goes on forever too.\n" +
+      "Set the switches on the desk to start a row, and press CHECK. Can you make a row that is certainly nowhere in the list?"},
   stair: {kicker: "The Staircase", title: "Climb to the top", w: 2.2, h: 2.2, bodySize: 0.05,
     body: "Bach wrote a canon that rises a whole tone every time it repeats. These stairs do the same: " +
       "each flight is one key higher, C, D, E, F\u266f, G\u266f, A\u266f.\nGo through the door, climb, and find the top. Then come back here."},
@@ -149,9 +152,9 @@ export const PLAQUES = {
 };
 
 export function progressPlaque(solved) {
-  const n = (solved.tribar ? 1 : 0) + (solved.miu ? 1 : 0) + (solved.scr ? 1 : 0) + (solved.stair ? 1 : 0);
-  return {kicker: "Progress", title: `${n} of 4 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
-    body: n === 4 ? "That's this part of the house, for now." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : "Next: the Staircase, beyond the Screen.",
+  const n = ["tribar", "miu", "scr", "stair", "list"].filter((k) => solved[k]).length;
+  return {kicker: "Progress", title: `${n} of 5 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
+    body: n === 5 ? "That's this part of the house, for now." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : !solved.stair ? "Next: the Staircase, beyond the Screen." : "Next: the List, beyond the Screen.",
     bodySize: 0.075, dark: true};
 }
 
@@ -260,6 +263,87 @@ export function topBoard(doc, {locked, message, good, solved}) {
     g.font = `600 38px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
     let y = H - 40 - 48 * (wrap(g, message, W - 100).length - 1);
     for (const l of wrap(g, message, W - 100)) { g.fillText(l, 50, y); y += 48; }
+  }
+  return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
+}
+
+// Room 5: the librarian's list. rows: the shown corner (N rows of N tiles); guess: your switches;
+// diffs: where each row first differs from your last checked row (or null); diag: light the
+// diagonal; later: {row, tiles} for a row further down that starts like yours; escaped: you won.
+export function listBoard(doc, {rows, guess, diffs, diag, later, escaped, message, good, round}) {
+  const W = 1400, H = Math.round(1400 * 3.5 / 6.0), N = rows.length;
+  const c = doc.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#151a17"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#c9a24f"; g.font = `600 28px ${MONO}`;
+  g.fillText(round ? "THE LIBRARIAN'S LIST  ·  NOW WITH YOUR ROW ADDED AT THE TOP" : "THE LIBRARIAN'S LIST", 46, 52);
+  g.fillStyle = "#f1ece2"; g.font = `700 40px ${SERIF}`;
+  g.fillText("Every endless row of light and dark tiles is in here.", 46, 104);
+  const T = 42, gap = 8, X0 = 210, Y0 = 170, RH = T + 8;
+  const tile = (x, y, b, ring) => {
+    g.fillStyle = b ? "#efe6cf" : "#2b2f33"; g.fillRect(x, y, T, T);
+    g.strokeStyle = "#596057"; g.lineWidth = 2; g.strokeRect(x + 1, y + 1, T - 2, T - 2);
+    if (ring) { g.strokeStyle = ring; g.lineWidth = 6; g.strokeRect(x - 3, y - 3, T + 6, T + 6); }
+  };
+  g.font = `600 24px ${MONO}`; g.fillStyle = "#8d968c"; g.textAlign = "center";
+  for (let i = 0; i < N; i++) g.fillText(`${i + 1}`, X0 + i * (T + gap) + T / 2, Y0 - 14);
+  g.textAlign = "left"; g.fillText("tile", X0 - 92, Y0 - 14);
+  for (let r = 0; r < N; r++) {
+    const y = Y0 + r * RH;
+    g.fillStyle = round && r === 0 ? "#e6c46a" : "#b7bdb2"; g.font = `600 28px ${MONO}`;
+    g.fillText(`row ${r + 1}`, 46, y + 32);
+    for (let i = 0; i < N; i++) {
+      const ring = diffs && diffs[r] === i ? "#e0634a" : diag && i === r ? "#e6c46a" : null;
+      tile(X0 + i * (T + gap), y, rows[r][i], ring);
+    }
+    g.fillStyle = "#8d968c"; g.font = `700 32px ${SERIF}`; g.fillText("…", X0 + N * (T + gap) + 4, y + 32);
+    if (diffs) {
+      g.font = `600 26px ${MONO}`;
+      if (diffs[r] < 0) { g.fillStyle = "#f0a080"; g.fillText("the same as yours", X0 + N * (T + gap) + 56, y + 31); }
+      else { g.fillStyle = "#7fd0a0"; g.fillText(`differs at tile ${diffs[r] + 1}`, X0 + N * (T + gap) + 56, y + 31); }
+    }
+  }
+  let y = Y0 + N * RH;
+  g.fillStyle = "#8d968c"; g.font = `700 34px ${SERIF}`; g.fillText("⋮", 70, y + 30);
+  g.font = `400 26px ${SERIF}`; g.fillText("and on forever", 110, y + 28);
+  if (later) {
+    y += 42;
+    g.fillStyle = "#f0a080"; g.font = `600 28px ${MONO}`; g.fillText(`row ${later.row}`, 46, y + 32);
+    later.tiles.forEach((b, i) => tile(X0 + i * (T + gap), y, b, null));
+    g.fillStyle = "#8d968c"; g.font = `700 32px ${SERIF}`; g.fillText("…", X0 + N * (T + gap) + 4, y + 32);
+    g.fillStyle = "#f0a080"; g.font = `600 26px ${MONO}`; g.fillText("starts just like yours", X0 + N * (T + gap) + 56, y + 31);
+  }
+  y += 58;
+  g.strokeStyle = "#3b4139"; g.lineWidth = 2; g.beginPath(); g.moveTo(46, y - 12); g.lineTo(W - 46, y - 12); g.stroke();
+  g.fillStyle = "#e6c46a"; g.font = `700 28px ${MONO}`; g.fillText("YOUR ROW", 46, y + 32);
+  guess.forEach((b, i) => tile(X0 + i * (T + gap), y, b, escaped ? "#7fd0a0" : null));
+  g.fillStyle = "#8d968c"; g.font = `700 32px ${SERIF}`; g.fillText("…", X0 + N * (T + gap) + 4, y + 32);
+  g.font = `400 26px ${SERIF}`; g.fillStyle = "#b7bdb2";
+  g.fillText(escaped ? "and on by the same rule: tile n is the opposite of row n's tile n" : "set by the switches on the desk", X0 + N * (T + gap) + 56, y + 30);
+  if (message) {
+    g.font = `600 28px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
+    const lines = wrap(g, message, W - 92).slice(0, 2);
+    let yy = H - 26 - 34 * (lines.length - 1);
+    for (const l of lines) { g.fillText(l, 46, yy); yy += 34; }
+  }
+  return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
+}
+
+// Room 5's question board, once the list has been beaten twice.
+export function questionBoard(doc, {locked, message, good, solved}) {
+  const W = 1400, H = Math.round(1400 * 1.6 / 3.8), c = doc.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  g.fillStyle = "#151a1d"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#c9a24f"; g.font = `600 30px ${MONO}`; g.fillText("A QUESTION FOR THE LIBRARIAN", 50, 62);
+  g.fillStyle = "#f1ece2"; g.font = `700 60px ${SERIF}`; g.fillText("Which list could hold every endless row?", 50, 160);
+  g.font = `400 36px ${SERIF}`; g.fillStyle = "#9aa3a6";
+  g.fillText(locked ? "First, beat the list: make a row that isn't in it." : solved ? "Solved." : "Press your answer on the lectern.", 50, 228);
+  g.font = `600 30px ${MONO}`; g.fillStyle = "#e6c46a";
+  g.fillText("LONGER: a longer list   ENDLESS: an endless one   NONE: no list can", 50, 290);
+  if (message) {
+    g.font = `600 36px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
+    let yy = H - 40 - 46 * (wrap(g, message, W - 100).length - 1);
+    for (const l of wrap(g, message, W - 100)) { g.fillText(l, 50, yy); yy += 46; }
   }
   return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
 }

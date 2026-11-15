@@ -1,0 +1,72 @@
+{
+  "$comment": "Tangle in Chromium's app mode under playtester's x11 driver. tools/playtest-launch.sh serves the game and opens the window; the probe (?probe, src/probe.js) is written by tools/serve.py.",
+  "name": "tangle",
+  "title": "Tangle",
+  "description": "a first-person educational game about strange loops (Godel, Escher, Bach) for players with no background: a hub and five puzzle rooms (an impossible triangle, the MIU word machine, a screen that shows itself and sentences about themselves, an endless staircase, and Cantor's diagonal list)",
+  "repository": "Preponderous-Software/tangle",
+  "driver": "x11",
+  "build": {
+    "command": "npm test",
+    "requires": ["node", "python3"]
+  },
+  "launch": {
+    "command": ["{game_dir}/tools/playtest-launch.sh"],
+    "args": ["--data", "{data_dir}", "--width", "{width}", "--height", "{height}"],
+    "cwd": "{game_dir}",
+    "start_timeout_sec": 90,
+    "settle_sec": 5,
+    "lp_threads": 4
+  },
+  "window": {
+    "title_regex": "^Tangle",
+    "width": 1280,
+    "height": 720
+  },
+  "probe": {
+    "flag": "--playtest-out",
+    "ticks_per_second": 60,
+    "world_screens": ["WORLD", "PAUSE", "DEBRIEF"],
+    "screens": ["LOADING", "TITLE", "WORLD", "PAUSE", "DEBRIEF"],
+    "since": "Tangle 0.1.0 (?probe)"
+  },
+  "movement": {
+    "turn": {"method": "keys", "left": "Left", "right": "Right", "degrees_per_second": 103},
+    "yaw_increases": "right",
+    "forward_key": "w",
+    "speed_field": "speed",
+    "default_speed": 2.6,
+    "interact_key": "e",
+    "interact_range": 2.5,
+    "stop_distance": 1.2,
+    "face_tolerance": 6,
+    "nearest_kinds": ["door", "plaque", "button"]
+  },
+  "process_name": "playtest-launch.sh",
+  "crash_patterns": ["Uncaught (TypeError|ReferenceError|RangeError)", "GPU process (crashed|exited)", "WebGL.*CONTEXT_LOST", "engine refused mesh"],
+  "agent_notes": "tangle.md",
+  "cheats": "Do not use the ?drive or ?skip URL parameters, window.__tangle, or edit localStorage, unless your goal says so.",
+  "smoke": {
+    "description": "Leave the title card, walk to the welcome plaque, look at it",
+    "steps": [
+      ["await", "TITLE", "120"],
+      ["shot", "01-title"],
+      ["key", "Return"],
+      ["await", "WORLD", "20"],
+      ["shot", "02-hub"],
+      ["walkto", "plaque", "30"],
+      ["shot", "03-plaque"]
+    ]
+  },
+  "goals": [
+    {"goal": "Play from the very beginning as a brand-new player who has never heard of Godel, Escher, Bach: the title card, the hall, then the Triangle and the Machine. Solve what you can. Note every moment of confusion, whether the captions and plaques told you what to do, and what you think each room was teaching.", "budget_min": 35},
+    {"goal": "Play the Screen room and the Staircase as a new player (start from the beginning, walk through the hall's door opposite the welcome plaque). Solve them if you can. Note whether the screen-inside-a-screen made sense, whether the sentence answers made sense, and whether the endless climb felt endless.", "budget_min": 35},
+    {"goal": "The List (Room 5). Start with --rooms all (the first four rooms count as solved and you stand in the small room outside the stairs); go through the door on your left and down the corridor. Make a row of tiles that isn't in the librarian's list, as a player who has never heard of Cantor. Say how long it took you to see the trick, which hints you needed, and whether the debrief explained why it matters.", "budget_min": 30, "args": ["--rooms", "all"]},
+    {"goal": "Graphics and layout hunt in every room (hall, Triangle, Machine and balcony, Screen, vestibule, Staircase, List). Look in every direction, up and down. Screenshot and describe anything that looks wrong: gaps or seams, flicker, surfaces fighting, unreadable or overlapping text, walls you can see through or walk through, places you get stuck.", "budget_min": 30, "args": ["--rooms", "all"]}
+  ],
+  "questions": [
+    "In your own words, what is a strange loop, and what did each room you played show about it?",
+    "Which moment was the most confusing, and why?",
+    "Did anything look broken on screen? Describe each problem, where you were and which way you were facing."
+  ],
+  "evidence_dir": "docs/playtests"
+}

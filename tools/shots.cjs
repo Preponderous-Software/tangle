@@ -36,6 +36,16 @@ const SHOTS = [
   ["23-stairs-up", [-22.1, 16.0, Math.PI, -0.55], "frames10"],
   ["24-vest-wrong", [-9.5, 14.6, Math.PI / 2, 0.42], "topWrong"],
   ["25-vest-solved", [-9.5, 14.6, Math.PI / 2, 0.2], "topRight"],
+  ["26-vest-door5", [-9.5, 15.2, -Math.PI / 2 + 0.35, 0.05], "frames10"],
+  ["27-list-entrance", [-9.5, 25.8, -Math.PI / 2 - 0.35, 0.0], "frames10"],
+  ["28-list-board", [-8.8, 30.6, -Math.PI / 2, -0.1], "frames6"],
+  ["29-list-desk", [-8.6, 32.7, -Math.PI / 2, 0.42], "listTry"],
+  ["30-list-hint", [-8.8, 31.4, -Math.PI / 2, -0.12], "listHint"],
+  ["31-list-escaped", [-8.8, 31.4, -Math.PI / 2, -0.12], "listEscape"],
+  ["32-list-round2", [-8.8, 31.4, -Math.PI / 2, -0.12], "wait6"],
+  ["33-list-question", [-4.4, 31.0, Math.PI, 0.12], "listQuestion"],
+  ["34-list-solved", [-4.4, 31.0, Math.PI, 0.12], "listSolve"],
+  ["35-list-shelves", [-11.5, 28.0, 0.5, 0.05], "frames6"],
 ];
 
 (async () => {
@@ -68,8 +78,16 @@ const SHOTS = [
       if (setup === "toLiar") ["false", "true", "false", "true"].forEach((b) => g.press(b));
       if (setup === "topWrong") { g.state.loopedOnce = true; g.press("a_as"); }
       if (setup === "topRight") g.press("a_loop");
+      const flipTo = (want) => want.forEach((b, i) => { if (g.state.diag.guess[i] !== b) g.press(`t${i}`); });
+      const flipped = () => g.state.diag.list.map((r, i) => 1 - r[i]);
+      if (setup === "listTry") { ["t0", "t2", "t3"].forEach((b) => g.press(b)); g.press("check"); }
+      if (setup === "listHint") { g.press("t5"); g.press("check"); g.press("t6"); g.press("check"); }
+      if (setup === "listEscape") { flipTo(flipped()); g.press("check"); }
+      if (setup === "listQuestion") { flipTo(flipped()); g.press("check"); g.press("q_long"); }
+      if (setup === "listSolve") g.press("q_none");
       if (setup === "solveLiar") ["false", "neither"].forEach((b) => g.press(b));
     }, { pose, setup });
+    if (setup === "wait6") await page.waitForTimeout(6200);
     await drive(setup === "hold" ? 90 : setup === "half" ? 16 : /^frames(\d+)$/.test(setup || "") ? Number(setup.slice(6)) : 3);
     await page.screenshot({ path: path.join(out, name + ".png") });
     const st = await page.evaluate(() => ({ room: window.__tangle.state.room, solved: window.__tangle.state.solved, me: window.__tangle.me }));

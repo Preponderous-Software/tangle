@@ -5,7 +5,7 @@ A small first-person game about strange loops, the idea at the heart of Douglas 
 built as a puzzle that you solve by understanding it. When you solve one, a short debrief
 appears in place.
 
-**Status: playable.** It has a hub and four rooms:
+**Status: playable.** It has a hub and five rooms:
 
 - **The Triangle (Escher).** A real impossible triangle stands in the room. From almost everywhere
   it is visibly an open, bent bar. Find the one spot where it closes. When you walk away, it
@@ -29,7 +29,16 @@ appears in place.
   footsteps play Shepard tones that rise endlessly, and the stairs repeat above and below. Outside
   the stairs, in the vestibule, the wall asks: where is the top?
 
-Planned next: a list that can't hold everything (the diagonal argument), then a Gödel finale.
+- **The List (Cantor, Gödel).** A library. The librarian's list claims to hold every endless row of
+  light and dark tiles: it goes on forever, and so does each row. Set eight switches to start a row
+  and press CHECK. Whatever you try, the librarian finds a row further down that starts the same way,
+  and you can't check forever. The way out is the diagonal: make tile 1 the opposite of row 1's
+  tile 1, tile 2 the opposite of row 2's tile 2, and so on. That row differs from every row
+  somewhere. The librarian adds your row to the top of the list, and you beat it again the same way.
+  Then the wall asks which list could hold every row. The debrief connects it to Cantor's bigger
+  infinities, Gödel's "I am not provable" and Turing's halting problem.
+
+Planned next: a Gödel finale, behind the sealed door in the List.
 
 ## Play
 
@@ -94,6 +103,8 @@ itself.
   - `src/walk.js`: walking, collision, floors and the ramp. Pure, with node tests.
   - `src/miu.js`: the MIU rules.
   - `src/sentences.js`: Room 3's sentences, with checks that each answer is true of itself.
+  - `src/diagonal.js`: Room 5's list, the diagonal and the librarian's answers.
+  - `src/probe.js`: the playtester probe (only with `?probe`).
   - `src/tribar.js`: the tribar construction.
   - `src/world.js`: the house layout.
   - `src/text.js`: plaques drawn on a canvas.
@@ -112,7 +123,13 @@ itself.
     `shots/`, and fails on any console error, including a mesh the engine refuses.
   - `npm run playthrough` plays the whole slice
     through the real inputs: W to walk, turning toward each waypoint, E to press what the
-    crosshair is on. It exits non-zero unless both rooms end solved with no errors.
+    crosshair is on. It exits non-zero unless every room ends solved with no errors.
+- **AI playtests.** `tools/playtest/tangle.json` is a profile for
+  [playtester](https://github.com/Preponderous-Software/playtester): AI agents play the real game in
+  headless Chromium windows (`tools/playtest-launch.sh`), steered by a probe the page writes with
+  `?probe` (`src/probe.js`, through `tools/serve.py --probe-dir`). Run
+  `pt smoke --profile tools/playtest/tangle.json --game-dir .`; the evidence from each run goes in
+  `docs/playtests/<version>/`.
 
 ## Related
 

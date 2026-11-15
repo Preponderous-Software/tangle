@@ -1,6 +1,6 @@
 // A whole playthrough through the real inputs: the W key walks, the camera is turned toward each
 // waypoint (as a player would with the mouse), E presses what the crosshair is on. Fails unless
-// both rooms end solved with no console errors.
+// every room ends solved with no console errors.
 // npm run playthrough -- [url]   (after npm install && npx playwright install chromium)
 const { chromium } = require("playwright");
 const url = process.argv[2] || "http://127.0.0.1:8781/";
@@ -106,9 +106,29 @@ const EYE = 1.62;
   await lookAt([-9.5, 1.08, 13.3]); await frames(3);
   await page.keyboard.press("KeyE"); await frames(3);
   step(`staircase card: ${await closeCard()}`);
+
+  // the List: a guess first (the librarian finds it further down), then the flipped diagonal, twice
+  await walkTo(-9.5, 16); await walkTo(-9.5, 19.2); await walkTo(-9.5, 24); await walkTo(-9.5, 27); await walkTo(-8.6, 32.7);
+  const SW = (i) => (i === "check" ? -10.9 : -6.3 - 0.5 * i);
+  const pressSwitch = async (i) => { await lookAt([SW(i), 1.1, 34.0]); await frames(2); await page.keyboard.press("KeyE"); await frames(2); };
+  const diag = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__tangle.state.diag)));
+  await pressSwitch(2); await pressSwitch(5); await pressSwitch("check");
+  step(`list guess: ${(await diag()).msg}`);
+  for (const round of [0, 1]) {
+    const d = await diag(), want = d.list.map((r, i) => 1 - r[i]);
+    for (let i = 0; i < 8; i++) if (d.guess[i] !== want[i]) await pressSwitch(i);
+    await pressSwitch("check");
+    step(`list round ${round}: escaped ${(await diag()).escaped}`);
+    if (round === 0) { for (let k = 0; k < 80 && (await diag()).round === 0; k++) { await page.waitForTimeout(100); await frames(1); } }
+  }
+  step(`list: round ${(await diag()).round}`);
+  await walkTo(-4.4, 31.0);
+  await lookAt([-2.62, 1.08, 31.55]); await frames(3);
+  await page.keyboard.press("KeyE"); await frames(3);
+  step(`list card: ${await closeCard()}`);
   const end = await st();
   step(`end: ${JSON.stringify(end.solved)}`);
   console.log("errors", errors);
   await browser.close();
-  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || errors.length) process.exit(1);
+  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || !end.solved.list || errors.length) process.exit(1);
 })().catch((e) => { console.error(e.message); process.exit(1); });

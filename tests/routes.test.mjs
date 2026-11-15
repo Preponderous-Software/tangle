@@ -83,3 +83,17 @@ test("the staircase climbs forever: once round, you are back at the C landing, a
   const down = walkStairs(up.me, path.slice(0, -1).reverse().concat([[-11.9, 16]]), w);
   assert.equal(down.me.loops, 0, "and back down again");
 });
+
+test("the vestibule to the List: the desk of switches and the question's lectern", () => {
+  const w = World.collision({gateOpen: false});
+  let me = walk(Walk.spawn(-9.5, 16, -Math.PI / 2), [[-9.5, 19], [-9.5, 24], [-9.5, 27], [-8.6, 32.7]], w);
+  assert.ok(Math.hypot(me.x + 8.6, me.z - 32.7) < 0.3, `at the desk (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
+  for (const [, , x] of World.SWITCHES) {
+    const d = Math.hypot(x - me.x, World.SWITCH_Y - (me.y + Walk.EYE), World.SWITCH_Z - me.z);
+    assert.ok(d < 3.1, `switch at x ${x} within reach (${d.toFixed(2)} m)`);
+  }
+  me = walk(me, [[-4.4, 31]], w);
+  assert.ok(Math.hypot(me.x + 4.4, me.z - 31) < 0.3, "at the question's lectern");
+  me = walk(me, [[-9, 35.5]], w, 10);
+  assert.ok(me.z < World.DESK.z0, "the desk stops a walk through it");
+});

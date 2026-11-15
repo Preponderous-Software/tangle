@@ -13,6 +13,19 @@ export const STAIR = {x0: -23, z0: 10, x1: -11, z1: 22, wd: 1.8, rise: 4.8};
 export const DOOR4 = [14.8, 17.2];   // z range of the doors between Room 3, the vestibule and the stairs
 export const TOP_ANSWERS = [["a_up", "KEEP CLIMBING", -10.0], ["a_loop", "IT LOOPS", -9.5], ["a_as", "AT A\u266f", -9.0]];
 export const KEYS = ["C", "D", "E", "F\u266f", "G\u266f", "A\u266f"];
+// Room 5: the List, down a corridor from the vestibule's south door. The librarian's list is on the
+// far wall, the switches for your row on a desk in front of it, the question on the east wall.
+export const LIST = {x0: -16, z0: 25, x1: -2, z1: 37, h: 5};
+export const DOOR5 = [-10.2, -8.8];  // x range of the vestibule's south door and the corridor to the List
+export const LIST_BOARD = {c: [-9, 2.75, 36.83], w: 6.0, h: 3.5};  // in front of its frame (36.86)
+export const DESK = {x0: -11.5, x1: -5.7, z0: 33.6, z1: 34.4, h: 1.0};
+export const SWITCH_Y = 1.06, SWITCH_Z = 34.0;
+// [id, label, x]: tile 1 on the left as you face the list (+x), CHECK on the right
+export const SWITCHES = [...Array.from({length: 8}, (_, i) => [`t${i}`, String(i + 1), -6.3 - 0.5 * i]), ["check", "CHECK", -10.9]];
+export const QLECTERN = {x0: -2.95, x1: -2.3, z0: 29.8, z1: 32.2, h: 1.0};
+export const QANSWER_X = -2.62;
+export const QANSWERS_Z = {q_long: 30.45, q_endless: 31.0, q_none: 31.55};
+export const QBOARD = {c: [-2.13, 2.35, 31.0], w: 3.8, h: 1.6};  // in front of its frame (-2.1)
 
 // The stairwell, going up: landings (flat) and flights (each one whole tone, 0.8 m, higher).
 // Flight `dir`: +1 rises as the coordinate along `along` grows, -1 as it shrinks.
@@ -103,7 +116,13 @@ export function collision(state) {
   const boxes = [
     ...wallBoxes(HUB, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1]}),
     ...wallBoxes(SCR, {n: [DOOR.z0, DOOR.z1], w: DOOR4}),
-    ...wallBoxes(VEST, {w: DOOR4, e: DOOR4}),
+    ...wallBoxes(VEST, {w: DOOR4, e: DOOR4, s: DOOR5}),
+    ...wallBoxes(LIST, {n: DOOR5}),
+    {x0: DOOR5[0] - 0.3, z0: VEST.z1, x1: DOOR5[0], z1: LIST.z0}, {x0: DOOR5[1], z0: VEST.z1, x1: DOOR5[1] + 0.3, z1: LIST.z0},
+    {x0: DESK.x0, z0: DESK.z0, x1: DESK.x1, z1: DESK.z1},
+    {x0: QLECTERN.x0, z0: QLECTERN.z0, x1: QLECTERN.x1, z1: QLECTERN.z1},
+    {x0: LIST.x0, z0: 25.6, x1: LIST.x0 + 0.45, z1: 29.4}, {x0: LIST.x0, z0: 32.6, x1: LIST.x0 + 0.45, z1: 36.4},  // shelves
+    {x0: -15.4, z0: LIST.z0, x1: -11.0, z1: LIST.z0 + 0.45}, {x0: -7.9, z0: LIST.z0, x1: -2.6, z1: LIST.z0 + 0.45},
     ...wallBoxes(STAIR, {e: DOOR4}),
     {x0: STAIR.x0 + STAIR.wd, z0: STAIR.z0 + STAIR.wd, x1: STAIR.x1 - STAIR.wd, z1: STAIR.z1 - STAIR.wd},  // the well's rail
     {x0: -10.4, z0: 13.0, x1: -8.6, z1: 13.6},  // the vestibule's lectern
@@ -146,6 +165,7 @@ const C = {
   hubWall: [0.62, 0.58, 0.54], hubFloor: [0.30, 0.31, 0.34], hubCeil: [0.78, 0.76, 0.72], trim: [0.20, 0.19, 0.18],
   triWall: [0.20, 0.25, 0.33], triFloor: [0.42, 0.40, 0.38], triCeil: [0.16, 0.19, 0.25],
   miuWall: [0.16, 0.30, 0.30], miuFloor: [0.34, 0.31, 0.27], miuCeil: [0.12, 0.20, 0.21],
+  listWall: [0.22, 0.27, 0.22], listFloor: [0.33, 0.26, 0.19], listCeil: [0.14, 0.16, 0.13],
   scrWall: [0.30, 0.22, 0.30], scrFloor: [0.28, 0.27, 0.29], scrCeil: [0.17, 0.13, 0.18],
   brass: [0.72, 0.56, 0.26], dark: [0.10, 0.11, 0.12], wood: [0.42, 0.29, 0.18], rail: [0.70, 0.72, 0.74],
 };
@@ -178,8 +198,8 @@ function shell(m, r, colors, doors) {
 }
 
 // A corridor running along z (x between the door's edges), from z0 to z1.
-function corridorZ(m, z0, z1, colors) {
-  const x0 = DOOR.z0, x1 = DOOR.z1, h = DOOR.h, mid = [0, h / 2, (z0 + z1) / 2];
+function corridorZ(m, z0, z1, colors, x0 = DOOR.z0, x1 = DOOR.z1) {
+  const h = DOOR.h, mid = [(x0 + x1) / 2, h / 2, (z0 + z1) / 2];
   const q = (pts, col) => m.facing(pts, col, mid);
   q([[x0, 0, z0], [x1, 0, z0], [x1, 0, z1], [x0, 0, z1]], colors.floor);
   q([[x0, h, z0], [x1, h, z0], [x1, h, z1], [x0, h, z1]], colors.ceil);
@@ -211,8 +231,10 @@ export function buildShells() {
   const hub = {wall: C.hubWall, floor: C.hubFloor, ceil: C.hubCeil};
   shell(m, HUB, hub, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1]});
   shell(m, SCR, {wall: C.scrWall, floor: C.scrFloor, ceil: C.scrCeil}, {n: [DOOR.z0, DOOR.z1], w: DOOR4});
-  shell(m, VEST, hub, {w: DOOR4, e: DOOR4});
+  shell(m, VEST, hub, {w: DOOR4, e: DOOR4, s: DOOR5});
   corridorZ(m, HUB.z1, SCR.z0, hub);
+  corridorZ(m, VEST.z1, LIST.z0, hub, DOOR5[0], DOOR5[1]);
+  shell(m, LIST, {wall: C.listWall, floor: C.listFloor, ceil: C.listCeil}, {n: DOOR5});
   shell(m, TRI, {wall: C.triWall, floor: C.triFloor, ceil: C.triCeil}, {e: [DOOR.z0, DOOR.z1]});
   shell(m, MIU, {wall: C.miuWall, floor: C.miuFloor, ceil: C.miuCeil}, {w: [DOOR.z0, DOOR.z1]});
   corridor(m, TRI.x1, HUB.x0, hub);
@@ -399,4 +421,52 @@ export function keySignSpots() {
 
 export function stairLights() {  // one over each landing
   return STAIR_SEGS.filter((g) => g.land).map((g) => [(g.x[0] + g.x[1]) / 2, g.h + 2.5, (g.z[0] + g.z[1]) / 2, 7, 1.0, 0.86, 0.62, 0.8]);
+}
+
+// ------------------------------------------------------------------- the List (Room 5)
+// The desk of switches, the frames of the list and the question board, the question's lectern,
+// shelves of books (it's a library) and the sealed door to the last room.
+export function buildList() {
+  const m = new MeshBuilder(), L = LIST;
+  const k = DESK;
+  m.box([k.x0, 0, k.z0], [k.x1, k.h, k.z1], C.dark);
+  m.box([k.x0 - 0.05, k.h, k.z0 - 0.05], [k.x1 + 0.05, k.h + 0.04, k.z1 + 0.05], C.brass);
+  const b = LIST_BOARD;
+  m.box([b.c[0] - b.w / 2 - 0.16, b.c[1] - b.h / 2 - 0.16, L.z1 - 0.14], [b.c[0] + b.w / 2 + 0.16, b.c[1] + b.h / 2 + 0.16, L.z1], C.brass);
+  const q = QLECTERN;
+  m.box([q.x0, 0, q.z0], [q.x1, q.h, q.z1], C.dark);
+  m.box([q.x0 - 0.04, q.h, q.z0 - 0.04], [q.x1 + 0.04, q.h + 0.04, q.z1 + 0.04], C.brass);
+  const qb = QBOARD;
+  m.box([L.x1 - 0.1, qb.c[1] - qb.h / 2 - 0.12, qb.c[2] - qb.w / 2 - 0.12], [L.x1, qb.c[1] + qb.h / 2 + 0.12, qb.c[2] + qb.w / 2 + 0.12], C.brass);
+  // the sealed door to the last room, on the west wall
+  m.box([L.x0, 0, 30.3], [L.x0 + 0.1, 2.6, 31.7], [0.13, 0.13, 0.15]);
+  // shelves: a dark case with rows of books, along the walls (x0..x1 along `along`, against a wall)
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const BOOKS = [[0.45, 0.16, 0.12], [0.16, 0.28, 0.42], [0.2, 0.36, 0.24], [0.55, 0.42, 0.2], [0.32, 0.18, 0.34], [0.62, 0.58, 0.5]];
+  const shelf = (a0, a1, wall, along, depth) => {
+    const H = 2.6, rows = 5, box = (u0, u1, y0, y1, d0, d1, col) => {
+      if (along === "z") m.box([wall + Math.min(d0, d1), y0, u0], [wall + Math.max(d0, d1), y1, u1], col);
+      else m.box([u0, y0, wall + Math.min(d0, d1)], [u1, y1, wall + Math.max(d0, d1)], col);
+    };
+    box(a0, a1, 0, H, 0, depth * 0.15, C.wood.map((c) => c * 0.6));  // back
+    for (let r = 0; r <= rows; r++) box(a0, a1, r * H / rows, r * H / rows + 0.04, 0, depth, C.wood);
+    for (const a of [a0, a1]) box(a - 0.03, a + 0.03, 0, H, 0, depth, C.wood);
+    for (let r = 0; r < rows; r++) {
+      let u = a0 + 0.06;
+      while (u < a1 - 0.1) {
+        const w = 0.04 + rnd() * 0.05, h = (H / rows) * (0.62 + rnd() * 0.3);
+        if (u + w > a1 - 0.06) break;
+        box(u, u + w, r * H / rows + 0.04, r * H / rows + 0.04 + h, depth * 0.15, depth * (0.75 + rnd() * 0.2), BOOKS[Math.floor(rnd() * BOOKS.length)]);
+        u += w + 0.005 + (rnd() < 0.08 ? 0.12 : 0);
+      }
+    }
+  };
+  shelf(25.6, 29.4, L.x0, "z", 0.42); shelf(32.6, 36.4, L.x0, "z", 0.42);
+  shelf(-15.4, -11.0, L.z0, "x", 0.42); shelf(-7.9, -2.6, L.z0, "x", 0.42);
+  return m;
+}
+
+export function listLights() {
+  return [[-9, 4.4, 30, 14, 1.0, 0.92, 0.8, 0.85], [-9, 3.4, 34.5, 6, 1.0, 0.88, 0.65, 0.8], [-3.5, 3.2, 31, 5, 1.0, 0.9, 0.75, 0.6]];
 }
