@@ -13,7 +13,7 @@ appears in place.
 [MP4 version](docs/media/triangle-closes.mp4)
 <!-- darkroom:end -->
 
-**Status: complete.** It has a hub and six rooms:
+**Status: complete.** It has a hub, six rooms and an epilogue:
 
 - **The Triangle (Escher).** A real impossible triangle stands in the room. From almost everywhere
   it is visibly an open, bent bar. Find the one spot where it closes. When you walk away, it
@@ -49,10 +49,18 @@ appears in place.
 - **The Prover (Gödel).** The last room, behind a door the List opens. The Prover tries every proof,
   shortest first, and it is honest: it never proves anything false. Feed it `2 + 2 = 4` and it stamps
   the card PROVED; feed it `2 + 2 = 5` and it searches forever. Every card has a number, so card 81,
-  "The Prover can't prove card __", can be set to talk about itself. Fed in, it runs forever too, and
+  "The Prover can't prove card __", can be set to talk about itself: its blank is a two-digit dial
+  (TENS and ONES buttons), and nothing says which number to dial. You have to see that the card's own
+  number is the one it needs; every wrong number is explained. Fed in, it runs forever too, and
   a lectern asks why: if the Prover proved card 81 it would have proved something false, so it never
   does, and that is exactly what card 81 says. It's true, and it can't be proved. A closing card
   gathers every room's loop into Hofstadter's idea that "I" is a strange loop.
+
+- **The epilogue.** Once all six rooms are solved, the welcome plaque gives way to a door in the hall's
+  far wall: "The way out". A short passage holds the last plaque, on "I" as a strange loop. Keep walking
+  straight ahead and you come back into the hall through the door opposite. Through the far door you
+  can see the hall inside itself, again and again. It is built like the staircase: copies of the hall
+  stand beyond the passage, and a step past its end moves you back one loop.
 
 ## Pictures
 
@@ -210,7 +218,8 @@ itself.
     through the real inputs: W to walk, turning toward each waypoint, E to press what the
     crosshair is on. It exits non-zero unless every room ends solved with no errors.
 - **Pictures.** `media.json` is a [darkroom](https://github.com/Preponderous-Software/darkroom) shot list: the stills
-  and GIFs in this README, driven frame by frame (`?drive=1`, `?skip=4`, `?skip=5`). `darkroom gallery media.json --insert README.md`
+  and GIFs in this README, driven frame by frame (`?drive=1`, `?skip=4`, `?skip=5`, and `?skip=6`: every
+  room solved, standing in the hall facing the epilogue's door). `darkroom gallery media.json --insert README.md`
   refreshes the gallery.
 - **AI playtests.** `tools/playtest/tangle.json` is a profile for
   [playtester](https://github.com/Preponderous-Software/playtester): AI agents play the real game in

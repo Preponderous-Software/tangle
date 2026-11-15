@@ -128,6 +128,13 @@ export const PLAQUES = {
     body: "A strange loop is a path that keeps going forward, or upward, and still ends up back where it started. " +
       "The idea comes from the book Gödel, Escher, Bach by Douglas Hofstadter.\n" +
       "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you), and the Staircase, the List and the Prover beyond it."},
+  // the epilogue: over the hall's new north door, and in the passage beyond it
+  wayOut: {kicker: "Every room solved", title: "The way out", w: 3.6, h: 1.05, titleSize: 0.085, bodySize: 0.05, dark: true,
+    body: "Go through, and keep walking straight ahead."},
+  last: {kicker: "The last loop", title: "\u201cI\u201d is a strange loop", w: 2.2, h: 1.6, bodySize: 0.05,
+    body: "Your brain is full of patterns that stand for things: a cup, a face, a word. Hofstadter's last idea is that one of " +
+      "those patterns stands for you, the brain that is making it. A pattern that points back at itself, like card 81, " +
+      "like the screen inside the screen. That loop, he says, is what you mean when you say \u201cI\u201d.\nKeep walking."},
   sealed: {kicker: "Room 6  ·  sealed", title: "The Prover", w: 1.2, h: 1.0, titleSize: 0.12, dark: true,
     body: "Opens when you've beaten the list.", bodySize: 0.08},
   prover: {kicker: "The Prover", title: "A sentence about itself", w: 3.0, h: 2.6, bodySize: 0.058,
@@ -159,10 +166,10 @@ export const PLAQUES = {
   declare: {title: "MU can't be made", body: "Press the red button to say so.", w: 0.85, h: 0.42, titleSize: 0.11, bodySize: 0.08, dark: true},
 };
 
-export function progressPlaque(solved) {
+export function progressPlaque(solved, looped = false) {
   const n = ["tribar", "miu", "scr", "stair", "list", "godel"].filter((k) => solved[k]).length;
   return {kicker: "Progress", title: `${n} of 6 rooms solved`, w: 2.4, h: 1.15, titleSize: 0.105,
-    body: n === 6 ? "Every loop in the house, found. Thank you for playing." : solved.list ? "Next: the Prover, beyond the List." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : !solved.stair ? "Next: the Staircase, beyond the Screen." : "Next: the List, beyond the Screen.",
+    body: n === 6 ? (looped ? "And the hall itself is a loop. Thank you for playing." : "One door left: the way out, beside me.") : solved.list ? "Next: the Prover, beyond the List." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : !solved.stair ? "Next: the Staircase, beyond the Screen." : "Next: the List, beyond the Screen.",
     bodySize: 0.09, dark: true};
 }
 
@@ -378,10 +385,17 @@ export function proverBoard(doc, {fed, blank, run, message, good, solved, unlock
       g.font = `700 42px ${SERIF}`; g.fillStyle = self ? "#f1ece2" : INK;
       g.fillText("The Prover can't prove", 74, y + 96);
       g.fillText("card", 74, y + 150);
-      const bx = 74 + g.measureText("card ").width;
-      g.fillStyle = self ? "#e6c46a" : "#c9a24f"; g.fillRect(bx, y + 110, 96, 54);
-      g.fillStyle = "#14121b"; g.fillText(String(blank), bx + 8, y + 151);
-      g.fillStyle = self ? "#f1ece2" : INK; g.fillText(".", bx + 100, y + 150);
+      // the blank: two digit wheels, tens and ones, each turned by its own button on the desk
+      const bx = 74 + g.measureText("card ").width, digits = String(blank).padStart(2, "0");
+      for (let i = 0; i < 2; i++) {
+        g.fillStyle = self ? "#e6c46a" : "#c9a24f"; g.fillRect(bx + i * 56, y + 110, 50, 54);
+        g.fillStyle = "#14121b"; g.textAlign = "center"; g.fillText(digits[i], bx + i * 56 + 25, y + 151); g.textAlign = "left";
+      }
+      g.fillStyle = self ? "#f1ece2" : INK; g.fillText(".", bx + 112, y + 150);
+      if (!solved) {
+        g.fillStyle = self ? "#b39a5a" : "#7a6f5c"; g.font = `600 17px ${MONO}`; g.textAlign = "center";
+        g.fillText("TENS", bx + 25, y + 182); g.fillText("ONES", bx + 81, y + 182); g.textAlign = "left";
+      }
       if (self) { g.fillStyle = "#e6c46a"; g.font = `600 26px ${MONO}`; g.fillText("ABOUT ITSELF", 470, y + 42); }
     }
     const proving = run && run.n === 12 && run.kind === "proved" && run.count < 4;  // the stamp lands when the proof is done

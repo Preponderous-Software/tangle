@@ -43,6 +43,14 @@ if (params.get("skip") === "4" || params.get("skip") === "5") {
   params.delete("skip");
   history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : ""));
 }
+if (params.get("skip") === "6") {
+  // playtesting the epilogue: all six rooms solved, standing in the hall facing its new north door
+  store.set(SAVE_KEY, JSON.stringify({tribar: true, miu: true, scr: true, stair: true, list: true, godel: true, gateOpen: true, screenDone: true, loopedOnce: true,
+    boardShown: true, sentence: 4, prv: {fed: [12, 47], blank: 81, selfFed: true, q: 2},
+    seen: ["hub", "tri", "miu", "scr", "vest", "stair", "list", "prv"], pose: {x: 0, z: 2.5, y: 0, yaw: Math.PI / 2, pitch: 0}}));
+  params.delete("skip");
+  history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : ""));
+}
 const read = (k) => { try { return JSON.parse(store.get(k) || "{}"); } catch (e) { return {}; } };
 const saved = read(SAVE_KEY);
 const settings = Object.assign({sens: 1, invert: false, sound: true, fov: 66, text: 1}, read(SETTINGS_KEY));
@@ -51,7 +59,7 @@ const state = {
   solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr, stair: !!saved.stair, list: !!saved.list, godel: !!saved.godel},
   // Room 6: the Prover. fed: cards fed so far; blank: card 81's number; selfFed: card 81 fed while about itself; q: question
   prv: {fed: Array.isArray(saved.prv && saved.prv.fed) ? saved.prv.fed.filter((n) => n === 12 || n === 47) : [],
-    blank: Prover.NUMBERS.includes(saved.prv && saved.prv.blank) ? saved.prv.blank : 12,
+    blank: Prover.validBlank(saved.prv && saved.prv.blank) ? saved.prv.blank : Prover.START,
     selfFed: !!(saved.prv && saved.prv.selfFed) || !!saved.godel, q: saved.godel ? Prover.QUESTIONS.length : Math.min(1, (saved.prv && saved.prv.q) || 0),
     run: null, msg: null, good: false, qMsg: null, qGood: !!saved.godel},
   // Room 5: the librarian's list. round 0: the first list; 1: your row added; 2: beaten twice (the question)
@@ -80,6 +88,8 @@ const state = {
   seenRooms: new Set(saved.seen || []),
   glow: 0,                // the sculpture's solve light, fading
   boardShown: !!saved.boardShown || !!saved.miu,
+  epilogue: !!saved.epilogue,   // walked the hall's last loop (out of the north door, in through the south)
+  hallLoops: 0,
 };
 const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.solved.stair || state.solved.list || state.solved.godel || state.made.length > 1 || state.seenRooms.size > 0;
 function save() {
@@ -87,7 +97,7 @@ function save() {
     diag: {list: state.diag.list, guess: state.diag.guess, round: state.diag.round, checks: state.diag.checks, escaped: state.diag.escaped, hint: state.diag.hint},
     screenDone: state.screenDone, sentence: state.sentence, liarTried: state.liarTried, neitherOn: state.neitherOn, gateOpen: state.gateOpen,
     made: state.made.slice(-200), word: state.word, trail: state.history.slice(-40), presses: state.presses,
-    seen: [...state.seenRooms], boardShown: state.boardShown, pose: {x: me.x, z: me.z, y: me.y, yaw: me.yaw, pitch: me.pitch}}));
+    seen: [...state.seenRooms], boardShown: state.boardShown, epilogue: state.epilogue, pose: {x: me.x, z: me.z, y: me.y, yaw: me.yaw, pitch: me.pitch}}));
 }
 function saveSettings() { store.set(SETTINGS_KEY, JSON.stringify(settings)); }
 
@@ -134,7 +144,8 @@ const SLOT = {shells: 1, props: 2, tribar: 3, pole: 4, gate: 5, hub: 10, west: 1
   declare: 15, progress: 16, legend: 17, gatesign: 18, soon: 19, rug: 21, scrPlaque: 22, south: 23, lectern: 24, vestPlaque: 25, door4: 26, vestLegend: 27, sealed4: 28, display: 30, board: 31, screen: 32,
   sentences: 33, top: 34, stairs: 40, stairShell: 41, keySign: 42 /* ..47 */,
   list: 50, listBoard: 51, qBoard: 52, qLegend: 53, deskLegend: 54, listPlaque: 55, door5: 56,
-  ridge: 80 /* ..86 */, prv: 57, pBoard: 58, pLegend: 59, gBoard: 60, gLegend: 61, prvPlaque: 62, door6: 63, sealed6: 64, sealedPlaque: 65};
+  ridge: 80 /* ..86 */, prv: 57, pBoard: 58, pLegend: 59, gBoard: 60, gLegend: 61, prvPlaque: 62, door6: 63, sealed6: 64, sealedPlaque: 65,
+  hallDoor: 90, epilogue: 91, epiRug: 92, wayOut: 93, lastPlaque: 94};
 let tribar = null;
 
 // A second copy of a desk's button legend, standing on the far edge of its top and tilted back
@@ -166,7 +177,6 @@ function buildScene() {
   mesh(SLOT.pole, pole);
   collide.boxes.push({x0: foot[0] - 0.45, z0: foot[2] - 0.45, x1: foot[0] + 0.45, z1: foot[2] + 0.45});
   const H = World.HUB, D = World.MACHINE;
-  panelMesh(SLOT.hub, Text.PLAQUES.hub, [0, 2.2, H.z0 + 0.02], [0, 0, 1]);
   panelMesh(SLOT.tri, Text.PLAQUES.tri, [-10.9, 1.75, World.TRI.z0 + 0.02], [0, 0, 1]);
   panelMesh(SLOT.rules, Text.PLAQUES.rules, D.rules.c, [0, 0, 1]);
   panelMesh(SLOT.declare, Text.PLAQUES.declare, [D.declare[0] + 0.45, D.declare[1] + 0.75, D.declare[2]], [-1, 0, 0]);
@@ -215,12 +225,21 @@ function buildScene() {
   refreshPoints();
 }
 
+// A plaque in the hall: once the north door is open, the same plaque in each copy of the hall too.
+function hallPanel(slot, spec, c, normal) {
+  texture(slot, Text.plaque(document, spec));
+  const m = new MeshBuilder();
+  for (const k of World.hallDoorOpen(state.solved) ? [0, ...World.HALL_COPIES] : [0]) m.panel([c[0], c[1], c[2] - k * World.LOOP], normal, spec.w, spec.h);
+  mesh(slot, m, slot, MESH_UNLIT);
+}
+
 function refreshDoors() {
   const H = World.HUB;
-  panelMesh(SLOT.west, Text.doorPlaque(1, "The Triangle", "A loop you can see", state.solved.tribar), [H.x0 + 0.02, 3.45, 0], [1, 0, 0]);
-  panelMesh(SLOT.east, Text.doorPlaque(2, "The Machine", "A loop in rules", state.solved.miu), [H.x1 - 0.02, 3.45, 0], [-1, 0, 0]);
-  panelMesh(SLOT.south, Text.doorPlaque(3, "The Screen", "A loop of pictures and words", state.solved.scr), [0, 3.45, H.z1 - 0.02], [0, 0, -1]);
-  panelMesh(SLOT.progress, Text.progressPlaque(state.solved), [4.6, 1.9, H.z0 + 0.02], [0, 0, 1]);
+  hallPanel(SLOT.west, Text.doorPlaque(1, "The Triangle", "A loop you can see", state.solved.tribar), [H.x0 + 0.02, 3.45, 0], [1, 0, 0]);
+  hallPanel(SLOT.east, Text.doorPlaque(2, "The Machine", "A loop in rules", state.solved.miu), [H.x1 - 0.02, 3.45, 0], [-1, 0, 0]);
+  hallPanel(SLOT.south, Text.doorPlaque(3, "The Screen", "A loop of pictures and words", state.solved.scr), [0, 3.45, H.z1 - 0.02], [0, 0, -1]);
+  hallPanel(SLOT.progress, Text.progressPlaque(state.solved, state.epilogue), [4.6, 1.9, H.z0 + 0.02], [0, 0, 1]);
+  refreshHallDoor();
   panelMesh(SLOT.door4, Text.doorPlaque(4, "The Staircase", "A loop you can climb", state.solved.stair), [World.SCR.x0 + 0.02, 3.45, 16], [1, 0, 0]);
   // Room 5's plaque: on the vestibule's east wall, beside the south door (no room above a door there)
   panelMesh(SLOT.door5, {...Text.doorPlaque(5, "The List", "A list that can't hold everything", state.solved.list), w: 1.7, h: 0.86},
@@ -229,6 +248,29 @@ function refreshDoors() {
   panelMesh(SLOT.door6, Text.doorPlaque(6, "The Prover", "A sentence about itself", state.solved.godel), [World.LIST.x0 + 0.02, 3.45, 31.0], [1, 0, 0]);
   if (state.solved.list) { mesh(SLOT.sealed6, EMPTY); mesh(SLOT.sealedPlaque, EMPTY); }
   else { mesh(SLOT.sealed6, World.buildSealedDoor()); panelMesh(SLOT.sealedPlaque, Text.PLAQUES.sealed, [World.LIST.x0 + 0.09, 1.6, 31.0], [1, 0, 0]); }
+}
+
+// The epilogue: the hall's north wall opens once every room is solved (the welcome plaque gives way
+// to the door), and beyond it stand the passage and the copies of the hall (world.js, buildEpilogue).
+let hallDoorBuilt = null;
+function refreshHallDoor() {
+  const open = World.hallDoorOpen(state.solved), H = World.HUB;
+  if (open === hallDoorBuilt) return;
+  hallDoorBuilt = open;
+  const rug = new MeshBuilder();
+  if (!open) {
+    mesh(SLOT.hallDoor, World.buildHallDoor());
+    panelMesh(SLOT.hub, Text.PLAQUES.hub, [0, 2.2, H.z0 + 0.02], [0, 0, 1]);
+    for (const slot of [SLOT.epilogue, SLOT.epiRug, SLOT.wayOut, SLOT.lastPlaque]) mesh(slot, EMPTY);
+    return;
+  }
+  mesh(SLOT.hallDoor, EMPTY); mesh(SLOT.hub, EMPTY);
+  mesh(SLOT.epilogue, World.buildEpilogue(), -1, LATE);
+  for (const k of World.HALL_COPIES) rug.panel([0, 0.012, 1.4 - k * World.LOOP], [0, 1, 0], 4.2, 4.2, [0, 0, -1]);
+  mesh(SLOT.epiRug, rug, SLOT.rug, 0);
+  // over the door, on the hall side; and the last plaque, on the passage's left-hand wall
+  hallPanel(SLOT.wayOut, Text.PLAQUES.wayOut, [0, 3.52, H.z0 + 0.02], [0, 0, 1]);
+  hallPanel(SLOT.lastPlaque, Text.PLAQUES.last, [-1.18, 1.62, (World.PASSAGE.z0 + World.PASSAGE.z1) / 2], [1, 0, 0]);
 }
 
 function refreshGate() {
@@ -240,6 +282,9 @@ function refreshGate() {
 
 function refreshLights() {
   const L = World.lights().map((l) => l.slice()).concat(World.stairLights(), World.listLights(), World.proverLights(state.solved.godel));
+  if (World.hallDoorOpen(state.solved)) for (const k of World.HALL_COPIES) {  // the hall's copies, lit as the hall is
+    for (const i of [0, 6]) { const l = World.lights()[i].slice(); l[2] -= k * World.LOOP; L.push(l); }
+  }
   if (state.glow > 0.01) L.push([...World.TRIBAR.centre.map((v, i) => v + [1.2, 1.0, 1.6][i]), 7, 1.0, 0.82, 0.5, 2.8 * state.glow]);
   if (state.gateOpen && !state.solved.miu) L.push([12.6, 2.6, 7.2, 6, 1.0, 0.85, 0.55, 1.1]);
   rows(mod._tangle_lights, L);
@@ -368,12 +413,18 @@ function feedCard(n) {
   if (n === 81) say("Card 81 says: “The Prover can't prove card 81.” It's talking about itself. Watch what the Prover does.", 8000, true);
   refreshProver(); refreshItems(performance.now()); save();
 }
-function turnBlank() {
+function turnBlank(digit) {
   const p = state.prv;
   if (state.solved.godel) { Audio.cue("nope"); return; }
-  p.blank = Prover.nextNumber(p.blank);
-  p.msg = p.blank === Prover.SELF ? "Card 81 now says: “The Prover can't prove card 81.” It talks about itself." : `Card 81 now talks about card ${p.blank}.`;
-  p.good = p.blank === Prover.SELF;
+  p.blank = Prover.turn(p.blank, digit);
+  const a = Prover.about(p.blank, p.fed);
+  p.msg = a.message; p.good = a.self;
+  if (a.self) say("Card 81 now talks about itself: “The Prover can't prove card 81.” Feed it in.", 6000, true);
+  p.turns = (p.turns || 0) + 1;
+  if (!a.self && p.turns >= 10 && !p.dialHint) {  // turning without a plan: point at the card's own number
+    p.dialHint = true;
+    say("Which card is card 81? Its own number is printed at the top of it on the board. TENS sets the first digit, ONES the second.", 9000, true);
+  }
   if (p.run && p.run.n === 81) p.run = null;  // a different card now
   Audio.cue("click");
   refreshProver(); refreshItems(performance.now()); save();
@@ -439,7 +490,7 @@ function solveGodel() {
       "Stairs that climb back to where they started. A row made from the list it escapes. A sentence that says it can't be proved.",
     why: "Each of these is what Douglas Hofstadter calls a strange loop: you move up through levels, and find yourself back where you began. " +
       "In Gödel, Escher, Bach he suggests that your sense of “I” is a loop like this: a pattern in the brain that ends up standing for itself. " +
-      "Thank you for playing Tangle."};
+      "One last door has opened, in the hall's far wall, where the welcome plaque was."};
   objective(allSolved() ? "Every loop found. Walk back to the desk: the Prover's board now shows why card 81 is true." : nextObjective());
 }
 let pendingEnd = null;
@@ -527,7 +578,7 @@ function solveList() {
       "\u201cI am not on the list of things arithmetic can prove.\u201d Like your row, it is made from the list it escapes. " +
       "Alan Turing used the diagonal again to show that no program can tell, for every program, whether it will ever stop." +
       (allSolved() ? " Every room is solved." : state.solved.godel ? "" : " One room is left. Its door, the one that was sealed, is on the wall to your right as you come into the library. It has opened.")}), 900);
-  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
+  objective(allSolved() ? endObjective() : nextObjective());
 }
 
 function refreshSentences() {
@@ -598,10 +649,11 @@ function refreshItems(now = 0) {
   {
     const p = state.prv, down = (id) => pressed.id === id && now < pressed.until, lit = (id) => focus && focus.id === id;
     for (const [id, , z] of World.PKEYS) {
-      let col = id === "gnum" ? [0.3, 0.66, 0.68] : id === "g81" && p.blank === Prover.SELF ? [0.95, 0.75, 0.3] : [0.9, 0.86, 0.76];
+      const dial = id === "gten" || id === "gone";
+      let col = dial ? [0.3, 0.66, 0.68] : id === "g81" && p.blank === Prover.SELF ? [0.95, 0.75, 0.3] : [0.9, 0.86, 0.76];
       if (id === "g81" && !(p.fed.includes(12) && p.fed.includes(47))) col = col.map((c) => c * 0.4);
       if (lit(id)) col = col.map((c) => Math.min(1, c * 1.25 + 0.06));
-      items.push([0, World.PKEY_X, World.PKEY_Y - (down(id) ? 0.03 : 0), z, 0.42, 0.08, id === "gnum" ? 0.6 : 0.46, ...col]);
+      items.push([0, World.PKEY_X, World.PKEY_Y - (down(id) ? 0.03 : 0), z, 0.42, 0.08, 0.46, ...col]);
     }
     const off = !p.selfFed || state.solved.godel;
     for (const id of Prover.ANSWER_IDS) {
@@ -619,6 +671,7 @@ function refreshItems(now = 0) {
 function refreshPoints(t = 0) {
   const pts = [];
   for (const l of World.lights().slice(0, 3)) pts.push([l[0], l[1] - 0.05, l[2], 10, 0.5, 1.0, 0.95, 0.85, 0.9]);
+  if (World.hallDoorOpen(state.solved)) for (const k of World.HALL_COPIES) { const l = World.lights()[0]; pts.push([l[0], l[1] - 0.05, l[2] - k * World.LOOP, 10, 0.5, 1.0, 0.95, 0.85, 0.9]); }
   pts.push([-19.6, 5.35, -3.6, 8, 0.35, 1.0, 0.9, 0.75, 0.8], [16, 2.35, -3.5, 6, 0.0, 1, 0.85, 0.6, 0.0]);
   if (state.hint || state.solved.tribar) {
     const [ex, , ez] = World.TRIBAR.eye, solved = state.solved.tribar;
@@ -650,7 +703,7 @@ const LEGEND = {r1: "rule 1: if it ends in I, add U", r2: "rule 2: double everyt
 
 function label(id) {
   if (id === "g12" || id === "g47" || id === "g81") return `feed card ${id.slice(1)} to the Prover: \u201c${Prover.cardText(Number(id.slice(1)), state.prv.blank)}\u201d`;
-  if (id === "gnum") return `change card 81's number (it says card ${state.prv.blank} now)`;
+  if (id === "gten" || id === "gone") return `turn the ${id === "gten" ? "tens" : "ones"} of card 81's number (card ${Prover.pad2(state.prv.blank)} now)`;
   if (id === "ga" || id === "gb" || id === "gc") return `answer ${Prover.QUESTIONS[Math.min(state.prv.q, Prover.QUESTIONS.length - 1)].buttons[Prover.ANSWER_IDS.indexOf(id)]}`;
   if (/^t\d$/.test(id)) { const i = Number(id.slice(1)); return `tile ${i + 1}: make it ${state.diag.guess[i] ? "dark" : "light"}`; }
   return LEGEND[id];
@@ -666,7 +719,7 @@ function press(id) {
   if (id === "check") { checkRow(); return; }
   if (id.startsWith("q_")) { questionAnswer(id); return; }
   if (id === "g12" || id === "g47" || id === "g81") { feedCard(Number(id.slice(1))); return; }
-  if (id === "gnum") { turnBlank(); return; }
+  if (id === "gten" || id === "gone") { turnBlank(id === "gten" ? "tens" : "ones"); return; }
   if (id === "ga" || id === "gb" || id === "gc") { proverAnswer(id); return; }
   let last = "", ok = true;
   const all = moves(state.word), sp = spotsOf(state.word);
@@ -752,7 +805,7 @@ function solveStair() {
       "Hofstadter calls this a strange loop: you move up through the levels of a hierarchy and find yourself back where you began. " +
       "Gödel found one in mathematics: statements about numbers that turn out to be statements about themselves." +
       (allSolved() ? " Every room is solved." : "")}), 900);
-  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
+  objective(allSolved() ? endObjective() : nextObjective());
 }
 
 function solveScreen() {
@@ -764,7 +817,7 @@ function solveScreen() {
     why: "Gödel used a careful cousin of this sentence. He built one, in the language of arithmetic, that says \u201cThis sentence can't be proved.\u201d " +
       "It isn't a paradox: if it could be proved, it would be false, so it can't be, and that is exactly what it says. So it's true, but unprovable. " +
       "That's the heart of Gödel, Escher, Bach: a system that can talk about itself always has truths it can't reach."}), 900);
-  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
+  objective(allSolved() ? endObjective() : nextObjective());
 }
 
 // Room 4: keep the walker's height within one loop of the stairs (the geometry repeats every loop,
@@ -793,6 +846,25 @@ function stairs(before) {
       say(`Still the same door, ${(state.loops * R).toFixed(1)} metres up. You could climb forever.`, 6000);
     }
   }
+}
+
+// The epilogue: past the end of the passage north of the hall, you are one loop on, in a copy of the
+// hall; it looks exactly like the hall, so move back by a loop and you're walking into the real one,
+// through its south door. The view doesn't change; only where you are does.
+function loopHall() {
+  if (!World.hallDoorOpen(state.solved) || me.z >= World.WRAP_Z) return;
+  me = {...me, z: me.z + World.LOOP}; kit.cam.tz += World.LOOP;
+  state.hallLoops++;
+  if (state.epilogue) { if (state.hallLoops > 1) say("Round again: straight ahead, and back in the hall.", 4000); return; }
+  state.epilogue = true;
+  save(); refreshDoors(); Audio.cue("solve");
+  say("You walked straight ahead, out through the far wall, and came back into the hall through the door opposite.", 8000, true);
+  objective(endObjective());
+  setTimeout(() => debrief({title: "Back where you started.",
+    what: "You left the hall by its far door and walked straight on. You came back in through the door opposite it, the Screen's door, behind you now. " +
+      "Every step went forward, and you're in the same hall. Look at the far door: through it is this hall, and through that, this hall again, like the screen inside the screen.",
+    why: "That's the shape of every room in the house: keep going, and arrive where you began. Hofstadter thought your sense of \u201cI\u201d has the same shape: " +
+      "a pattern in your brain that, followed far enough, comes back round to itself. Thank you for playing Tangle."}), 3500);
 }
 
 // Room 3, part 1: how many nested copies of the screen are on screen right now.
@@ -841,6 +913,9 @@ function captureScreen(now) {
   texture(SLOT.screen, {w: grab.width, h: grab.height, rgba: gctx.getImageData(0, 0, grab.width, grab.height).data});
 }
 
+function endObjective() {
+  return state.epilogue ? "Every loop found, the hall's too. Wander as you like." : "Every room solved. One last door: the way out, in the hall's far wall.";
+}
 function allSolved() { return state.solved.tribar && state.solved.miu && state.solved.scr && state.solved.stair && state.solved.list && state.solved.godel; }
 function nextObjective() {
   return !state.solved.tribar ? "Next: the Triangle, through the hall's left-hand door." :
@@ -874,7 +949,7 @@ function declare() {
       "arithmetic: there are true statements those rules can never prove. Where is the loop? Gödel's trick was to make arithmetic describe its own rules, " +
       "so the system talks about itself, the way a picture of a picture contains itself. That self-reference is the strange loop at the heart of the book." +
       (allSolved() ? " Every room is solved." : "")}), 900);
-  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
+  objective(allSolved() ? endObjective() : nextObjective());
 }
 
 // ------------------------------------------------------------------ the triangle
@@ -913,14 +988,14 @@ function solveTribar() {
   document.querySelector("#cross .fill").style.strokeDashoffset = 69.1;
   say("There: three beams closing into a loop. Now take a few steps sideways and watch it.", 7000, true);
   state.solvedAt = {x: me.x, z: me.z, t: performance.now()};
-  state.tribarDebrief = (stepped) => (objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective()), debrief({title: "You found it.",
+  state.tribarDebrief = (stepped) => (objective(allSolved() ? endObjective() : nextObjective()), debrief({title: "You found it.",
     what: "From exactly this spot, the far end of one beam lines up with the near end of another, so your eye joins them into a triangle. " +
       (stepped ? "When you stepped aside, the triangle came apart: it was an open, bent bar all along, cut at a slant."
         : "Step aside and it comes apart: it's an open, bent bar, cut at a slant. It only closes from here."),
     why: "Going round the triangle, you keep moving forward and arrive back where you started. Hofstadter calls that a strange loop. " +
       "It only worked from one point of view, and stepping out of that view showed you how it was done. " +
       "The Machine, across the hall, does the same thing with rules instead of beams."}));
-  objective(allSolved() ? "Every room solved. Wander as you like." : "Walk sideways and watch it break. " + nextObjective().replace("Next: ", "Then "));
+  objective(allSolved() ? endObjective() : "Walk sideways and watch it break. " + nextObjective().replace("Next: ", "Then "));
 }
 
 // ------------------------------------------------------------------ HUD: captions, objective, cards
@@ -1035,10 +1110,11 @@ function intro() {
   say("Then take the door on your left, into the Triangle room.", 6000);
 }
 function welcomeBack() {
-  objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
+  objective(allSolved() ? endObjective() : nextObjective());
 }
 
 function roomAt(x, z = 0) {
+  if (z < World.HUB.z0 - 0.3) return "out";   // the epilogue's passage (quiet: no room tone)
   if (z > World.LIST.z0 - 0.5) return x < World.LIST.x0 - 0.15 ? "prv" : "list";
   if (z > World.MIU.z1 + 0.5) return x < World.VEST.x0 ? "stair" : x < World.SCR.x0 ? "vest" : "scr";
   return x < World.HUB.x0 - 1.5 ? "tri" : x > World.HUB.x1 + 1.5 ? "miu" : "hub";
@@ -1047,8 +1123,16 @@ function enterRoom(r) {
   Audio.room(r);
   if (r === "hub") {
     const n = ["tribar", "miu", "scr", "stair", "list", "godel"].filter((k) => state.solved[k]).length;
-    if (n === 6 && !state.saidEnd) { state.saidEnd = true; say("Every loop in the house, found. Thank you for playing.", 9000); }
+    if (n === 6 && !state.epilogue && !state.saidDoor) {
+      state.saidDoor = true;
+      say("Every room is solved, and a door has opened in the hall's far wall, where the welcome plaque was. The way out.", 9000, true);
+      objective(endObjective());
+    }
     else if (n > 0 && n < 6 && state.saidN !== n) { state.saidN = n; say(`${["One loop", "Two loops", "Three loops", "Four loops", "Five loops"][n - 1]} found. ${nextObjective().replace("Next: ", "Next is ")}`, 6000); }
+  }
+  if (r === "out" && !state.epilogue) {
+    say("A short passage. The last plaque is on the wall to your left. Then keep walking straight ahead.", 7000, true);
+    objective("Read the last plaque, then keep walking straight ahead.");
   }
   if (state.seenRooms.has(r)) return;
   state.seenRooms.add(r); save();
@@ -1204,7 +1288,7 @@ function targets() {
     t.push({id, lo: [World.QANSWER_X - 0.24, 0.98, z - 0.26], hi: [World.QANSWER_X + 0.24, 1.16, z + 0.26]});
   }
   for (const [id, , z] of World.PKEYS) {
-    const hz = id === "gnum" ? 0.3 : 0.23;
+    const hz = 0.23;
     t.push({id, lo: [World.PKEY_X - 0.21, World.PKEY_Y - 0.06, z - hz], hi: [World.PKEY_X + 0.21, World.PKEY_Y + 0.045, z + hz]});
   }
   if (!state.solved.godel) for (const id of Prover.ANSWER_IDS) {
@@ -1280,6 +1364,7 @@ function tick(t, now) {
     for (let left = dt; left > 1e-6; left -= 0.05) me = Walk.step(me, inp, Math.min(0.05, left), collide);
     stride += Math.hypot(me.x - before.x, me.z - before.z);
     stairs(before);
+    loopHall();
     if (stride > (inp.run ? 1.05 : 0.78)) {
       stride = 0;
       if (state.room === "stair") Audio.shepard(Math.round((state.loops * World.STAIR.rise + me.y) / World.STAIR.rise * 12));

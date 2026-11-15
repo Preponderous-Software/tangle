@@ -44,9 +44,10 @@ export function resolve(world, me, x, z) {
 
 // Doorways ease you through: walking into one near its edge (where a door frame's corner would
 // stop you dead) adds a sideways drift toward the middle. door: {axis: "x" | "z" (the coordinate
-// fixed along the doorway's line), at, c0, c1 (its span on the other coordinate)}.
+// fixed along the doorway's line), at, c0, c1 (its span on the other coordinate), when?()}.
 export function doorAssist(doors, x, z, vx, vz) {
   for (const d of doors || []) {
+    if (d.when && !d.when()) continue;                                // a closed door eases no one through
     const [along, side, va] = d.axis === "x" ? [x, z, vx] : [z, x, vz];
     const dist = d.at - along;
     if (Math.abs(dist) > 1.0 || va * Math.sign(dist) < 0.3) continue;   // near the doorway, heading into it

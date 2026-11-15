@@ -136,14 +136,19 @@ const EYE = 1.62;
 
   // the Prover: the two sums, then card 81 set to talk about itself, then the two questions
   await walkTo(-9, 31); await walkTo(-13.5, 31); await walkTo(-17, 31); await walkTo(-22.6, 31);
-  const KEY = { g12: 32.9, g47: 32.1, g81: 31.3, gnum: 30.1 };
+  const KEY = { g12: 32.9, g47: 32.1, g81: 31.3, gten: 30.45, gone: 29.85 };
   const pressKey = async (id) => { await lookAt([-24.0, 1.1, KEY[id]]); await frames(2); await page.keyboard.press("KeyE"); await frames(2); };
   const prv = () => page.evaluate(() => { const p = window.__tangle.state.prv; return { fed: p.fed, blank: p.blank, selfFed: p.selfFed, q: p.q, msg: p.msg, qMsg: p.qMsg }; });
   await pressKey("g81");
   step(`prover, card 81 too soon: ${(await prv()).msg}`);
   await pressKey("g12"); await pressKey("g47");
   step(`prover fed: ${JSON.stringify((await prv()).fed)}`);
-  while ((await prv()).blank !== 81) await pressKey("gnum");
+  // card 81's number: a wrong turn of the dial first (aimed), then the rest by the number keys 4 (TENS) and 5 (ONES)
+  await pressKey("gten");
+  step(`prover dial at ${(await prv()).blank}: ${(await prv()).msg}`);
+  for (let k = 0; k < 10 && Math.floor((await prv()).blank / 10) !== 8; k++) { await page.keyboard.press("Digit4"); await frames(2); }
+  for (let k = 0; k < 10 && (await prv()).blank % 10 !== 1; k++) { await page.keyboard.press("Digit5"); await frames(2); }
+  step(`prover dial at ${(await prv()).blank}: ${(await prv()).msg}`);
   await pressKey("g81");
   for (let k = 0; k < 100 && !(await prv()).selfFed; k++) { await page.waitForTimeout(100); await frames(2); }
   step(`prover: card 81 fed, questions ${(await prv()).selfFed ? "open" : "SHUT"}`);
@@ -155,9 +160,21 @@ const EYE = 1.62;
   await answerG("gb"); await answerG("ga");
   step(`prover card: ${await closeCard()}`);
   step(`ending card: ${await closeCard()}`);
+
+  // the epilogue: back to the hall, out through its new north door, and straight on until you're back in it
+  for (const [x, z] of [[-17, 31], [-13.5, 31], [-9, 31], [-9.5, 27], [-9.5, 24], [-9.5, 19.2], [-9.5, 16], [-7.5, 16], [-2, 16], [0, 14], [0, 9.6], [0, 5.5], [0, 0], [0, -4], [0, -7.5]]) await walkTo(x, z);
+  step(`epilogue passage: room ${await page.evaluate(() => window.__tangle.state.room)}, caption "${await page.textContent("#caption")}"`);
+  await lookAt([0, EYE, -20]);
+  await page.keyboard.down("KeyW");
+  for (let k = 0; k < 60 && !(await page.evaluate(() => window.__tangle.state.epilogue)); k++) await frames(3);
+  await page.keyboard.up("KeyW");
+  step(`epilogue: looped ${await page.evaluate(() => window.__tangle.state.epilogue)}, at z ${(await me()).z.toFixed(2)}, room ${await page.evaluate(() => window.__tangle.state.room)}`);
+  step(`epilogue card: ${await closeCard()}`);
+  await walkTo(0, 0);
+  const looped = await page.evaluate(() => window.__tangle.state.epilogue);
   const end = await st();
   step(`end: ${JSON.stringify(end.solved)}`);
   console.log("errors", errors);
   await browser.close();
-  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || !end.solved.list || !end.solved.godel || errors.length) process.exit(1);
+  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || !end.solved.list || !end.solved.godel || !looped || errors.length) process.exit(1);
 })().catch((e) => { console.error(e.message); process.exit(1); });
