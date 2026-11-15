@@ -158,7 +158,7 @@ export const PLAQUES = {
 export function progressPlaque(solved) {
   const n = ["tribar", "miu", "scr", "stair", "list", "godel"].filter((k) => solved[k]).length;
   return {kicker: "Progress", title: `${n} of 6 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
-    body: n === 6 ? "Every loop in the house, found." : solved.list ? "Next: the Prover, beyond the List." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : !solved.stair ? "Next: the Staircase, beyond the Screen." : "Next: the List, beyond the Screen.",
+    body: n === 6 ? "Every loop in the house, found. Thank you for playing." : solved.list ? "Next: the Prover, beyond the List." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : !solved.stair ? "Next: the Staircase, beyond the Screen." : "Next: the List, beyond the Screen.",
     bodySize: 0.075, dark: true};
 }
 
@@ -379,28 +379,51 @@ export function proverBoard(doc, {fed, blank, run, message, good, solved, unlock
       g.fillStyle = self ? "#f1ece2" : INK; g.fillText(".", bx + 100, y + 150);
       if (self) { g.fillStyle = "#e6c46a"; g.font = `600 26px ${MONO}`; g.fillText("ABOUT ITSELF", 470, y + 42); }
     }
-    if (n === 12 && fed.includes(12)) stamp(g, "PROVED", "#2f8f5a", 560, y + 72);
+    const proving = run && run.n === 12 && run.kind === "proved" && run.count < 4;  // the stamp lands when the proof is done
+    if (n === 12 && fed.includes(12) && !proving) stamp(g, "PROVED", "#2f8f5a", 560, y + 72);
     if (n === 47 && fed.includes(47)) stamp(g, "NO PROOF, EVER", "#b0402f", 515, y + 66);
     if (n === 81 && self && solved) stamp(g, "TRUE, UNPROVED", "#c98a1f", 530, y + 150);
     y += h + 22;
   }
   // the Prover's side
   const X = 760;
-  if (!run) {
+  if (!run && !solved) {
     g.fillStyle = "#b9b2c8"; g.font = `400 48px ${SERIF}`;
     for (const [i, l] of wrap(g, "Empty. Press a card on the desk in front of you to feed it in.", W - X - 50).entries()) g.fillText(l, X, 200 + i * 60);
+  } else if (solved) {
+    // the finale: the Prover can't tell card 47 from card 81, but you can
+    g.fillStyle = "#9aa3a6"; g.font = `600 26px ${MONO}`;
+    g.fillText("CARD", X, 186); g.fillText("THE PROVER", X + 110, 186); g.fillText("TRUE?", X + 470, 186);
+    const rows = [[12, "proves it", "#7fd0a0", "yes", "#7fd0a0"], [47, "searches forever", "#f0c080", "no", "#f0a080"], [81, "searches forever", "#f0c080", "YES", "#e6c46a"]];
+    rows.forEach(([n, pv, pc, tv, tc], i) => {
+      const yy = 240 + i * 56;
+      g.font = `700 36px ${MONO}`; g.fillStyle = "#f1ece2"; g.fillText(String(n), X, yy);
+      g.font = `600 34px ${SERIF}`; g.fillStyle = pc; g.fillText(pv, X + 110, yy);
+      g.font = `700 36px ${MONO}`; g.fillStyle = tc; g.fillText(tv, X + 470, yy);
+    });
+    g.strokeStyle = "#e6c46a"; g.lineWidth = 3; g.strokeRect(X - 14, 240 + 56 * 2 - 40, W - X - 40, 54);
+    g.fillStyle = "#b9b2c8"; g.font = `italic 400 32px ${SERIF}`;
+    for (const [i, l] of wrap(g, "To the Prover, cards 47 and 81 look the same. Only from outside can you see that 81 is true.", W - X - 50).entries()) g.fillText(l, X, 432 + i * 40);
   } else {
     g.fillStyle = "#f1ece2"; g.font = `700 46px ${SERIF}`; g.fillText(`Card ${run.n}`, X, 186);
+    if (run.kind !== "proved") {  // a lamp that blinks while it works
+      g.fillStyle = (run.count >> 3) % 2 ? "#e6c46a" : "#5a4a24"; g.beginPath(); g.arc(X + 230, 172, 12, 0, 2 * Math.PI); g.fill();
+    }
     g.fillStyle = "#9aa3a6"; g.font = `600 28px ${MONO}`; g.fillText("proofs tried", X, 246);
-    g.fillStyle = "#e6c46a"; g.font = `700 56px ${MONO}`; g.fillText(run.count.toLocaleString("en-US"), X, 310);
+    const num = run.count.toLocaleString("en-US");
+    let size = 56; g.font = `700 ${size}px ${MONO}`;
+    while (size > 24 && g.measureText(num).width > W - X - 50) { size -= 4; g.font = `700 ${size}px ${MONO}`; }
+    g.fillStyle = "#e6c46a"; g.fillText(num, X, 310);
     if (run.kind === "proved") {
       g.fillStyle = "#7fd0a0"; g.font = `600 34px ${MONO}`;
       run.proof.forEach((l, i) => g.fillText(l, X, 380 + i * 44));
     } else {
       g.fillStyle = "#b9b2c8"; g.font = `italic 400 38px ${SERIF}`;
-      g.fillText(run.long ? "none of them prove it\u2026 still searching" : "searching\u2026", X, 390);
+      g.fillText(run.long ? "none of them prove it\u2026 still searching" : "searching\u2026", X, 375);
+      // the proof it is trying right now: a new jumble of symbols each time the board changes
+      g.fillStyle = "#6f7a7e"; g.font = `500 28px ${MONO}`;
+      g.fillText("trying: " + jumble(run.count, 22), X, 425);
     }
-    if (solved && run.n === 81) { g.fillStyle = "#7fd0a0"; g.font = `700 40px ${SERIF}`; g.fillText("Never proved. And true.", X, 470); }
   }
   if (message) {
     g.font = `600 34px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0c080";
@@ -409,6 +432,12 @@ export function proverBoard(doc, {fed, blank, run, message, good, solved, unlock
     for (const l of ls) { g.fillText(l, X, yy); yy += 44; }
   }
   return {w: W, h: H, rgba: g.getImageData(0, 0, W, H).data};
+}
+function jumble(seed, n) {  // a made-up line of a proof, from a seed: looks like symbols, means nothing
+  const SYM = "0S+\u00d7=()\u2200\u2203\u00ac\u2192\u2227\u2228xyz";
+  let s = Math.imul(seed | 0, 2654435761 | 0) >>> 0, out = "";
+  for (let i = 0; i < n; i++) { s = (Math.imul(s, 1103515245) + 12345) >>> 0; out += SYM[(s >>> 16) % SYM.length]; }
+  return out;
 }
 function stamp(g, text, col, x, y) {
   g.save(); g.translate(x, y); g.rotate(-0.18);
@@ -428,7 +457,12 @@ export function proverQuestion(doc, {locked, ask, legend, step, total, message, 
   g.fillText(locked ? "Make card 81 talk about itself." : ask, 50, 160);
   g.font = `400 36px ${SERIF}`; g.fillStyle = "#9aa3a6";
   g.fillText(locked ? "Then feed it to the Prover, and come back here." : solved ? "Solved." : "Press your answer on the lectern.", 50, 228);
-  if (!locked && !solved) { g.font = `600 30px ${MONO}`; g.fillStyle = "#e6c46a"; g.fillText(legend, 50, 290); }
+  if (!locked && !solved) {
+    g.font = `600 30px ${MONO}`; g.fillStyle = "#e6c46a"; g.fillText(legend, 50, 290);
+    // what you already know, so each question is one small step
+    g.font = `italic 400 34px ${SERIF}`; g.fillStyle = "#b9b2c8";
+    g.fillText(step === 0 ? "Remember: the Prover never proves anything false." : "You've worked out: the Prover never proves card 81.", 50, 360);
+  }
   if (message) {
     g.font = `600 36px ${SERIF}`; g.fillStyle = good ? "#7fd0a0" : "#f0a080";
     let yy = H - 40 - 46 * (wrap(g, message, W - 100).length - 1);
