@@ -1,0 +1,71 @@
+{
+  "session": "s02",
+  "goal": "Confirmation test after fixes. Start with --rooms all (the first four rooms count as solved; you stand in the small room outside the stairs). Solve the List, then the Prover, as someone who has never heard of Cantor or Godel. Check specifically: (1) can you read every lectern's and desk's button labels while aiming at the buttons; (2) after the List is won, does the board's story (the gold diagonal, row n differs at tile n) agree with its side notes; (3) does the List's debrief tell you clearly where the last door is, and can you walk through that door without snagging on the shelves; (4) in the Prover, can you read the plaque, the board and the questions from where you stand, and after the closing cards does the game point you to the board's verdict table. Report anything still confusing.",
+  "build": {"version": "0.2.0", "commit": "39a5be0"},
+  "seed": null,
+  "durationSec": 1245,
+  "outcome": "partial",
+  "findings": [
+    {
+      "severity": "major",
+      "category": "perf",
+      "title": "List desk: aiming at individual tile switches takes 1-2 minutes per tile at the software-render frame rate",
+      "detail": "Rendering ran at a few frames a second. Page Up/Page Down taps change pitch by about 15-17 degrees each (one frame of turning), so the crosshair jumps from the desk front past the switches. Strafing taps move 0.4-1.2 m, about one to two tiles. Strafing also drifts forward or back because the view is not square to the desk, so the crosshair falls off the switch row. Very short key holds (under about 0.1 s) and some single 'e' taps were dropped entirely (tile 5 needed 'pt hold e 0.2'). Setting 3 tiles and pressing CHECK took about 8 minutes of wall time. The whole List could not be finished in the 30-minute budget, and the Prover was never reached. A pitch or turn rate capped per frame, or one switch per key (1-8 number keys), would help.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir . --rooms all; walk to the List desk; pt key Next; pt state (pitchDeg jumps 0 -> 17.2 -> 34.4); pt hold a 0.15 repeatedly; watch prompt skip tiles; pt key e sometimes leaves list.guess unchanged",
+      "screenshot": "shots/l7.png",
+      "tick": 36526
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Vestibule: the staircase door sits right next to the List corridor; walking toward 'the door' drops you onto the endless stairs",
+      "detail": "From the start spot the list corridor is straight ahead, but the staircase door is 1.3 m away and nearer. Heading for a door put me on the stairs ('on the stairs - 0.7 m below the door - going down: turn round to climb'). The stair view is a dark wall or repeating flights, so getting back out took several minutes. The vestibule's two openings could be told apart better, for example with a floor arrow or a sign on the List corridor.",
+      "repro": "pt start ... --rooms all; pt key Return; pt walkto door",
+      "screenshot": "shots/s1.png",
+      "tick": 4586
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Empty black bar at top centre of the view on first entering WORLD",
+      "detail": "In the first frame after Begin, an empty black rectangle (about 540x50 px) sat at top centre and covered part of the NEXT objective box. It looks like an empty caption box. It was gone in later shots.",
+      "repro": "pt start ... --rooms all; pt key Return; pt await WORLD; pt shot start",
+      "screenshot": "shots/start.png",
+      "tick": 1754
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "List desk labels: readable while aiming (check 1 passes for the List desk)",
+      "detail": "Positive confirmation. Tile numbers 1-8 are printed on the back strip and on the desk front, and CHECK is labelled. All of them stayed legible with the crosshair on a switch, and the prompt 'E: tile 5: make it light' names the switch. The Prover lectern was not reached, so its labels were not checked.",
+      "repro": "walk to the List desk, aim at tile 5",
+      "screenshot": "shots/list_desk_labels.png",
+      "tick": 39282
+    },
+    {
+      "severity": "polish",
+      "category": "text",
+      "title": "List feedback after CHECK is clear and good for a beginner",
+      "detail": "Positive. A first CHECK with one light tile marked the differing tile of each row in red and added 'differs at tile N' notes. It also showed 'row 913 ... starts just like yours' with the line 'Does yours differ later on? You'd have to check forever.' A winning row brought up 'Your row differs from every row in the list, even the ones you can't see', a gold diagonal and 'The librarian added your row at the top'. The round-2 diagonal I read off the board matched what flipping the diagonal predicts.",
+      "repro": "set tile 5 light, CHECK; then set the flipped diagonal, CHECK",
+      "screenshot": "shots/list_round2.png",
+      "tick": 70495
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 0,
+    "deaths": 0,
+    "secondsToObjective": {"Reach the List (objective 5 -> 'Make a row...')": 313.8, "First winning CHECK (round 1 of List)": 1152.4},
+    "listChecks": 2,
+    "listRoundsWon": 1,
+    "goalChecksAnswered": 1
+  },
+  "fun": 3,
+  "verdict": "The List's teaching is good. 'Differs at tile N' notes, a 'row 913 starts like yours' tease and a gold diagonal after a win walk a beginner toward Cantor's trick, and the desk labels are readable while aiming (check 1 passes for the List desk). Under software rendering, though, setting one switch takes a minute or two because pitch and strafe steps are huge and some key taps are dropped. I won only round 1 of the List, so checks 2-4 (side notes after the win, the debrief and the Prover door, and the Prover) could not be confirmed this run. Wandering onto the endless stairs from the vestibule cost several more minutes."
+,
+  "answers": [
+    {"question": "In your own words, what is a strange loop, and what did each room you played show about it?", "answer": "From what I played, a strange loop is something that ends up back where it started or talks about itself, like a list that claims to hold everything until you make a row from the list itself that can't be in it. The List showed this: by making my row differ from row 1 at tile 1, row 2 at tile 2 and so on (the gold diagonal), it differed from every row, even after the librarian added it, which kept happening round after round. The staircase I fell onto by accident kept returning to the same landing ('C landing - level with the door') while saying I was going up or down. I did not reach the Prover, so I can't say what it shows."},
+    {"question": "Which moment was the most confusing, and why?", "answer": "Getting dropped onto the endless staircase from the vestibule when I meant to head down the List corridor. The stairs' view was a dark wall or repeating flights, and the prompt said '0.7 m below the door, going down: turn round to climb', so I couldn't tell which way led out. Second: aiming at a single tile switch, because each key tap moved the view or my position by about a whole tile."},
+    {"question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.", "answer": "In the vestibule on the first frame after Begin, facing south down the List corridor (yaw -90), an empty black bar sat at top centre and covered part of the NEXT box. On the stairs, facing a wall, the whole view was flat dark purple with only the crosshair and the prompt, which looked like I was stuck in a void. Nothing else looked broken. List board text was small at 9 m but readable up close."}
+  ]
+}

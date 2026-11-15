@@ -1,0 +1,70 @@
+{
+  "session": "s03",
+  "goal": "Confirmation test after fixes. Start with --rooms prover (the first five rooms count as solved; you stand in the List facing the Prover's door). Go through it and solve the Prover as someone who has never heard of Godel. The number keys 1-9 press the buttons of the desk or lectern you stand at, so you don't need to aim at small buttons. Check specifically: (1) can you read the Prover's plaque, its board and the questions from where you stand to use them; (2) can you read the lectern's and desk's button labels while looking at the buttons; (3) after the closing cards, does the game point you to the board's verdict table, and can you read it; (4) did you understand why card 81 is true but can't be proved. Report anything still confusing.",
+  "build": {"version": "0.2.0", "commit": "dcac3e3"},
+  "seed": null,
+  "durationSec": 575,
+  "outcome": "achieved",
+  "findings": [
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "After the closing cards, 'Turn round' from the lectern shows the verdict table too small and angled to read",
+      "detail": "The NEXT line says 'Every loop found. Turn round: the Prover's board shows why card 81 is true.' Turning round at the lectern (about 5 m from the board, well off its axis) shows the new TRUE, UNPROVED stamp clearly, but the verdict table (card / the Prover / true?) and the text under it are tiny, foreshortened smudges. Walking back to stand at the desk in front of the board makes everything perfectly readable (see verdict_table_readable.png). Expected: the hint to say 'walk back to the desk' or the table to be larger, since a player who only turns round may conclude it is unreadable.",
+      "repro": "pt start --rooms prover; feed 12, 47, set number to 81, feed 81; answer NO then TRUE at the lectern; Return twice; pt face 133; pt key Prior; pt shot",
+      "screenshot": "shots/verdict_from_lectern.png",
+      "tick": 26996
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Caption box covers the board's verdict line for card 47 when viewed from the desk",
+      "detail": "Right after feeding card 47, the caption 'Now card 81. Its number can be changed with the button on the right of the desk.' sits on top of the board's green/gold line 'Still searching, and it always will be: 2 + 2 = 5 is false, and the Prover never proves anything false.', hiding half of it while you look up at the board from the desk. That sentence is a key step toward understanding card 81.",
+      "repro": "pt start --rooms prover; walk to the desk; pt key 1; pt key Prior Prior Prior; pt key 2; pt wait 8; pt shot",
+      "screenshot": "shots/caption_over_board.png",
+      "tick": 15823
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Objective HUD box hides the questions board's 'ABOUT CARD 81 - 1 of 2' header when standing at the lectern",
+      "detail": "Standing at the lectern looking straight at the questions board, the top-left NEXT box overlaps the board's small header. The question itself is fully readable; only the header/progress counter is hidden. Also the line 'Press your answer on the lectern.' is small and faint compared with the rest.",
+      "repro": "pt start --rooms prover; after feeding 81, face the left-hand wall and walk up to the lectern; pt shot",
+      "screenshot": "shots/lect1.png",
+      "tick": 21220
+    },
+    {
+      "severity": "minor",
+      "category": "perf",
+      "title": "Movement keeps going for a while after a key is released at low fps; strafing overshoots",
+      "detail": "With the software renderer, a held strafe/walk key seems to keep acting after release (positions in state kept changing seconds later): pt hold d 3 moved ~5 m, and a following pt hold a 1 still moved further in the d direction before reversing. Positioning in front of the board took several tries. Probably a harness/low-fps artefact rather than a game bug, but worth knowing.",
+      "repro": "in the Prover room: pt hold d 3; pt hold a 1; pt state; pt wait 2; pt state",
+      "screenshot": "shots/board_end2.png",
+      "tick": 29163
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Entering the Prover room it is easy to walk straight past the plaque to the desk",
+      "detail": "The caption says 'Read the plaque on your right', but the red carpet leads straight to the desk and the board; holding w from the List door carries you past the plaque (it ends up behind you at about +124 degrees). Once found, the plaque is readable from about 5 m.",
+      "repro": "pt start --rooms prover; pt hold w 8; pt state",
+      "screenshot": "shots/in2.png",
+      "tick": 2021
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 1,
+    "deaths": 0,
+    "secondsToObjective": {"Solve The Prover": 404.3},
+    "wrongAnswers": 0,
+    "numberKeysWorked": 1,
+    "proverRoomSecondsEntryToSolve": 375.6
+  },
+  "fun": 4,
+  "verdict": "All four confirmation checks pass: the plaque, board and questions are readable from where you use them, desk and lectern labels are readable (front and top), the number keys 1-4 / 1-3 work reliably, and after the closing cards the NEXT line points you back to the board, whose verdict table is clear once you stand at the desk. The Prover now teaches 'true but unprovable' cleanly through the 47-vs-81 comparison; remaining issues are small: 'Turn round' from the lectern leaves the table too far to read, and a caption briefly covers the card-47 verdict line.",
+  "answers": [
+    {"question": "In your own words, what is a strange loop, and what did each room you played show about it?", "answer": "A strange loop is when you go up or out through levels of something and end up back where you started, so a thing ends up referring to or containing itself. I only played the Prover: a card that, through its own number, talks about itself ('the Prover can't prove card 81'). Feeding it in, the Prover searches forever, just like for the false card 47; but from outside you can reason that if it were ever proved the Prover would have proved something false, so it never is, which makes what the card says true. So a system that talks about itself has a true sentence it can never prove. The closing card linked this to the other rooms (triangle, machine, screen, stairs, list) and to the idea that 'I' is such a loop."},
+    {"question": "Which moment was the most confusing, and why?", "answer": "After the closing cards: the NEXT line says to turn round and look at the board, but from the lectern the verdict table is a tiny angled smudge; I had to walk back to the desk to read it. Second: right after feeding card 47 a caption covered the board's explanation of why 47 will never be proved, which is exactly the line you need to reason about card 81. Neither stopped me."},
+    {"question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.", "answer": "Nothing truly broken. In the Prover room at the desk, looking up at the board just after feeding card 47, the subtitle caption overlapped the board's verdict text. At the lectern on the left-hand wall, facing the questions board, the top-left NEXT box covered the board's 'ABOUT CARD 81' header. Once, walking into the plaque wall at an angle near the room entrance (facing roughly east/back toward the door), the plaque's text filled the whole screen in huge blurry letters, which is just being too close. Movement felt laggy and overshot at the low frame rate."}
+  ]
+}

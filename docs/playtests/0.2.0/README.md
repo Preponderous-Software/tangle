@@ -38,3 +38,29 @@ Compared with 0.1.0: every session reached its goal except the graphics hunt, wh
 - **"Page Unresponsive" at launch, input lag and overshooting turns** come from the shared machine's software renderer under load.
 - **Card 81's number picker** cycles 12 → 47 → 81. Testers found it easy, but the puzzle's weight is in the questions, not the picker.
 - **The Machine's balcony board and desk reach** were left for a later pass.
+
+## Confirmation round
+
+Three short sessions on the fixed builds (39a5be0, then dcac3e3) are in `confirmation/` (16 findings: 0 blocker, 1 major, 7 minor, 8 polish).
+
+| Session | Goal | Outcome | Fun |
+| --- | --- | --- | --- |
+| s01 | From the start to the Machine: speed, the Triangle hint, labels | achieved | 4/5 |
+| s02 | The List and the Prover: labels, the board's story, the door | partial (ran out of time in the List) | 3/5 |
+| s03 | The Prover only: readability, labels, the verdict table | achieved | 4/5 |
+
+What each session confirmed:
+- **s01** confirmed the hint ring, watching the triangle break, the NEXT line moving on, and readable labels. It found speed was still low while the machine was busiest.
+- **s02** found that aiming at small switches took minutes per tile at software-render frame rates (major).
+- **s03** confirmed that every Prover check passed and the reasoning landed.
+
+Fixed after it:
+- **Number keys:** 1–9 press the buttons of the desk or lectern you stand at, and Enter presses CHECK, so no aiming is needed and keyboard-only players can play. The title card lists them with the arrow and PageUp/PageDown keys.
+- **Tilt:** a PageUp/PageDown tap tilts a small, fixed step.
+- **Slow frames:** frames up to 0.5 s keep full speed.
+- **The Machine's gate caption:** it no longer contradicts the objective.
+- **The Triangle's column of light:** it is brighter.
+- **The Prover:**
+  - after the closing cards, NEXT sends you back to the desk, where the verdict table can be read
+  - the caption that covered the board's line about card 47 is gone
+  - the plaque's direction is clearer

@@ -1,0 +1,26 @@
+{"type": "screen", "tick": 315, "wallTimeMs": 1794770939466, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 3054, "wallTimeMs": 1794770985127, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 3054, "wallTimeMs": 1794770985128, "how": "created", "seed": 0}
+{"type": "objective", "tick": 3054, "wallTimeMs": 1794770985129, "text": "Read the plaque ahead, then take the door on the left: Room 1, the Triangle."}
+{"type": "status", "tick": 3054, "wallTimeMs": 1794770985130, "text": "Welcome. Read the plaque on the far wall: you can read it from here."}
+{"type": "status", "tick": 3396, "wallTimeMs": 1794770990826, "text": "Then take the door on your left, into the Triangle room."}
+{"type": "objective", "tick": 23265, "wallTimeMs": 1794771321966, "text": "Find the one spot where the triangle closes."}
+{"type": "status", "tick": 23265, "wallTimeMs": 1794771321967, "text": "Somewhere in here is a triangle that shouldn't exist."}
+{"type": "status", "tick": 23455, "wallTimeMs": 1794771325143, "text": "Read the plaque on the wall to your right, then explore. As you get close, a tone rises and the ring round the crosshair glows."}
+{"type": "status", "tick": 27873, "wallTimeMs": 1794771398765, "text": "Hint: a ring of light has appeared on the floor, on your left as you come in from the hall, about six steps in, under a glowing column. Stand in it and look at the triangle."}
+{"type": "status", "tick": 35083, "wallTimeMs": 1794771518940, "text": "Stand inside the ring of light under the glowing column, left of the hall door, and face the triangle."}
+{"type": "status", "tick": 39519, "wallTimeMs": 1794771592865, "text": "Hold still..."}
+{"type": "objective", "tick": 40327, "wallTimeMs": 1794771606342, "text": "Walk sideways and watch it break. Then the Machine, through the hall's right-hand door."}
+{"type": "status", "tick": 40327, "wallTimeMs": 1794771606345, "text": "There: three beams closing into a loop. Now take a few steps sideways and watch it."}
+{"type": "objective_completed", "tick": 40327, "wallTimeMs": 1794771606347, "title": "Solve The Triangle", "id": "tribar", "x": -12.68, "z": 5.45}
+{"type": "screen", "tick": 41891, "wallTimeMs": 1794771632406, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "objective", "tick": 41891, "wallTimeMs": 1794771632406, "text": "The Machine, through the hall's right-hand door."}
+{"type": "debrief", "tick": 41891, "wallTimeMs": 1794771632407, "title": "You found it."}
+{"type": "screen", "tick": 43316, "wallTimeMs": 1794771656152, "from": "DEBRIEF", "to": "WORLD"}
+{"type": "status", "tick": 46002, "wallTimeMs": 1794771700925, "text": "One loop found. Next is the Machine, through the hall's right-hand door."}
+{"type": "objective", "tick": 50032, "wallTimeMs": 1794771768088, "text": "Turn MI into MU, using only the buttons."}
+{"type": "status", "tick": 50032, "wallTimeMs": 1794771768089, "text": "A machine that changes words. The rules are on the wall, the buttons on the desk."}
+{"type": "status", "tick": 50347, "wallTimeMs": 1794771773344, "text": "Look at a button and press it to apply its rule. Try to turn MI into MU."}
+{"type": "status", "tick": 57706, "wallTimeMs": 1794771895988, "text": "You've been working inside the machine's rules. The gate has opened: it's at the foot of the ramp, in the corner on your right as you come in. Follow the lights up and look at the machine from outside."}
+{"type": "objective", "tick": 57706, "wallTimeMs": 1794771895988, "text": "Climb the ramp to the balcony and read the board."}
+{"type": "status", "tick": 66872, "wallTimeMs": 1794772048748, "text": "That's how it works. Keep going: can you reach MU?"}

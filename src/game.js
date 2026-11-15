@@ -363,7 +363,6 @@ function feedCard(n) {
   if (n === 12) say("Watch the board: the Prover finds a proof of 2 + 2 = 4 and stamps the card.", 6000, true);
   if (n === 47) say("2 + 2 = 5 is false. The Prover will never find a proof of it, so it searches forever.", 7000, true);
   if (n !== 81 && p.fed.includes(12) && p.fed.includes(47) && !p.selfFed) {
-    say("Now card 81. Its number can be changed with the button on the right of the desk.", 7000);
     objective("Card 81 says the Prover can't prove some card. Set its number so it talks about itself, then feed it in.");
   }
   if (n === 81) say("Card 81 says: “The Prover can't prove card 81.” It's talking about itself. Watch what the Prover does.", 8000, true);
@@ -441,7 +440,7 @@ function solveGodel() {
     why: "Each of these is what Douglas Hofstadter calls a strange loop: you move up through levels, and find yourself back where you began. " +
       "In Gödel, Escher, Bach he suggests that your sense of “I” is a loop like this: a pattern in the brain that ends up standing for itself. " +
       "Thank you for playing Tangle."};
-  objective(allSolved() ? "Every loop found. Turn round: the Prover's board shows why card 81 is true." : nextObjective());
+  objective(allSolved() ? "Every loop found. Walk back to the desk: the Prover's board now shows why card 81 is true." : nextObjective());
 }
 let pendingEnd = null;
 
@@ -1072,7 +1071,7 @@ function enterRoom(r) {
       state.diag.round === 1 ? "The librarian added your row. Make a row that still isn't in the list." : "Make a row of tiles that isn't anywhere in the librarian's list.");
   }
   if (r === "prv" && !state.solved.godel) {
-    say("The last room. A machine that proves things, and some numbered cards. Read the plaque on your right.", 7000);
+    say("The last room. A machine that proves things, and some numbered cards. Read the plaque on the wall to your right, just inside the door.", 7000);
     say("Press a card on the desk to feed it to the Prover. Start with cards 12 and 47.", 6500);
     objective(state.prv.selfFed ? "Answer the questions on the left-hand wall about card 81." :
       state.prv.fed.length < 2 ? "Feed cards 12 and 47 to the Prover, and watch what it does with each." :

@@ -1,0 +1,82 @@
+{
+  "session": "s01",
+  "goal": "Confirmation test after fixes. Play from the very beginning as a brand-new player who has never heard of Godel, Escher, Bach: the title card, the hall, the Triangle and the Machine. Check specifically: (1) does walking and turning keep its speed (hold w for a few seconds and compare distance with what you expect at 2.6 m/s); (2) if you can't find the Triangle's spot, does the hint's ring of light (with a glowing column above it) show up where the caption says; (3) after solving the Triangle, do you get to watch it break before the card appears, and does the NEXT line move on; (4) can you read the button labels on the Machine's desk while aiming at the buttons. Report anything still confusing.",
+  "build": {"version": "0.2.0", "commit": "39a5be0"},
+  "seed": null,
+  "durationSec": 1229,
+  "outcome": "achieved",
+  "findings": [
+    {
+      "severity": "minor",
+      "category": "perf",
+      "title": "Walk/turn speed ran at ~60% of spec early in the session, full speed later",
+      "detail": "Early in the hall: hold w 2.0s moved 3.18 m (expected 5.2 m), hold s 4.0s moved 6.42 m (1.6 m/s), hold Left 3.0s turned 180 deg (60 deg/s vs 103). tick/wallTime was ~60 tps throughout, so it was slow in real time. Later in the session it was correct: hold w 3.0s moved 7.81 m (2.6 m/s), hold w 1.8s moved 4.82 m (2.68 m/s), hold Right 0.8s turned 82.5 deg. Looks frame-rate dependent (slow when the machine is busy). Note: pt start warned the launcher was built before HEAD 39a5be0, so this build may not include the latest fix.",
+      "repro": "pt start ...; pt key Return; hold w 2.0 / hold Left 3.0 in the hall right after start and compare player x/z/yaw in pt state before and after",
+      "screenshot": "shots/speed.png",
+      "tick": 13658
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Machine gate opens on a timer, caption claims the player has been 'working inside the rules' before any button press",
+      "detail": "About 2 minutes after entering the Machine room, without having pressed a single button, the caption said 'You've been working inside the machine's rules. The gate has opened...' and NEXT changed to 'Climb the ramp to the balcony and read the board.' Then pressing my first button gave 'That's how it works. Keep going: can you reach MU?' while NEXT still said climb the ramp, so two different instructions are on screen at once. Expected: the gate/caption to follow actual button presses, or NEXT and caption to agree.",
+      "repro": "enter Machine room; walk around the desk ~2 min without pressing e; then aim at button 1 and press e",
+      "screenshot": "shots/conflict.png",
+      "tick": 67598
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Keyboard pitch (PageUp/PageDown) too coarse to aim at Machine buttons",
+      "detail": "One tap of Next changes pitch by ~16 deg (6.9 -> 22.9); a 0.1s hold of Prior moved 15 deg. At 2 m from the desk 6.9 deg aims above the buttons and 22.9 below the desk edge, so I could not land on a button with keys alone and had to capture the mouse. A keyboard-only player would be stuck.",
+      "repro": "stand ~2 m in front of the Machine desk; pt key Next / pt hold Prior 0.1 and read pitchDeg and prompt",
+      "screenshot": "shots/labels.png",
+      "tick": 64272
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Triangle hint caption fades fast and the ring was behind me",
+      "detail": "The hint caption (tick 27873) disappeared from the screen within a few seconds while I faced a corner; the ring was behind me. It does match the caption: on the left as you come in, ~5-6 m in, by the bench. The 'glowing column' is a sparse vertical line of faint dots, easy to miss against the dark wall. A follow-up caption ('Stand inside the ring of light...') did appear later, which helped.",
+      "repro": "enter Triangle room, wander without finding the spot ~75 s",
+      "screenshot": "shots/hintok.png",
+      "tick": 27873
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Black empty bar at top centre of the hall on first entry, covering part of the NEXT line",
+      "detail": "Right after Begin, a solid black rectangle (approx x 370-910, y 45-96) sat at the top of the view, hiding the word 'on' in the NEXT line ('take the door [on] the left'). It was gone a few seconds later. May be the caption box drawn under the test-software infobar.",
+      "repro": "pt start; pt key Return; pt await WORLD; pt shot",
+      "screenshot": "shots/hall0.png",
+      "tick": 4086
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Title card does not mention arrow keys to turn or PageUp/PageDown to look up/down",
+      "detail": "Title says walk WASD, look with mouse, use E. The keyboard turn/tilt keys that you need without a mouse capture are not mentioned anywhere on screen.",
+      "repro": "pt start; pt shot title",
+      "screenshot": "shots/title.png",
+      "tick": 2581
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 1,
+    "deaths": 0,
+    "secondsToObjective": {"Solve The Triangle": 672.1},
+    "triangleHintAfterEnteringSec": 77,
+    "walkSpeedEarlyMps": 1.6,
+    "walkSpeedLateMps": 2.62,
+    "turnRateEarlyDegPerSec": 60,
+    "turnRateLateDegPerSec": 103,
+    "keyboardPitchStepDeg": 16
+  },
+  "fun": 4,
+  "verdict": "All four fixes hold up: the hint ring shows where the caption says, the Triangle breaks on screen before the card, NEXT moves on, and the Machine labels are readable while aiming, with a great preview prompt (MIU -> MIUIU). Movement speed was right for most of the run but ran at ~60% early on, so it still seems tied to frame rate. The Machine's timed gate gives a false caption and a NEXT that disagrees with the caption, and keyboard pitch steps are too coarse to aim at a button.",
+  "answers": [
+    {"question": "In your own words, what is a strange loop, and what did each room you played show about it?", "answer": "A path that keeps going forward (or up) and still ends up back where it started. The Triangle: three beams that each turn a corner and seem to close into a loop, but only from one spot; step aside and it is an open bent bar, so the loop was a trick of viewpoint. The Machine: a word (MI) changed only by fixed rules; working inside the rules you keep making new words, and the game hints you need to step outside (the balcony) to see the machine as a whole. I did not finish the Machine, so I can't say what the balcony board shows."},
+    {"question": "Which moment was the most confusing, and why?", "answer": "In the Machine: the gate opened and the caption said I had been working inside the rules before I had pressed anything, and then after my first press the caption said 'keep going: can you reach MU?' while NEXT said to climb the ramp. I didn't know which to follow. Also aiming at a button with PageUp/PageDown was impossible because each step jumps ~16 degrees."},
+    {"question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.", "answer": "In the hall right after Begin, facing the welcome plaque (north), a black empty bar sat at the top centre and hid a word of the NEXT line for a few seconds. Otherwise nothing looked broken; the Triangle closing view from the ring still shows a small gap at one corner when standing at the ring's edge, which is expected."}
+  ]
+}

@@ -1,0 +1,22 @@
+{"type": "screen", "tick": 310, "wallTimeMs": 1794773182304, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 725, "wallTimeMs": 1794773189228, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 726, "wallTimeMs": 1794773189229, "how": "created", "seed": 0}
+{"type": "objective", "tick": 726, "wallTimeMs": 1794773189229, "text": "The Prover, through the door in the List's right-hand wall as you come in."}
+{"type": "objective", "tick": 1762, "wallTimeMs": 1794773206496, "text": "Feed cards 12 and 47 to the Prover, and watch what it does with each."}
+{"type": "status", "tick": 1762, "wallTimeMs": 1794773206496, "text": "The last room. A machine that proves things, and some numbered cards. Read the plaque on your right."}
+{"type": "status", "tick": 2550, "wallTimeMs": 1794773219630, "text": "Press a card on the desk to feed it to the Prover. Start with cards 12 and 47."}
+{"type": "status", "tick": 12992, "wallTimeMs": 1794773393677, "text": "Watch the board: the Prover finds a proof of 2 + 2 = 4 and stamps the card."}
+{"type": "objective", "tick": 14767, "wallTimeMs": 1794773423256, "text": "Card 81 says the Prover can't prove some card. Set its number so it talks about itself, then feed it in."}
+{"type": "status", "tick": 14767, "wallTimeMs": 1794773423257, "text": "2 + 2 = 5 is false. The Prover will never find a proof of it, so it searches forever."}
+{"type": "status", "tick": 15182, "wallTimeMs": 1794773430175, "text": "Now card 81. Its number can be changed with the button on the right of the desk."}
+{"type": "status", "tick": 17989, "wallTimeMs": 1794773476956, "text": "Card 81 says: \u201cThe Prover can't prove card 81.\u201d It's talking about itself. Watch what the Prover does."}
+{"type": "objective", "tick": 18357, "wallTimeMs": 1794773483083, "text": "Answer the questions on the left-hand wall about card 81."}
+{"type": "status", "tick": 18357, "wallTimeMs": 1794773483088, "text": "The lectern on the left-hand wall has woken up. Can the Prover ever prove card 81?"}
+{"type": "status", "tick": 22474, "wallTimeMs": 1794773551700, "text": "Right. If it proved card 81, it would have proved something false, and it never does. So it never will."}
+{"type": "status", "tick": 24256, "wallTimeMs": 1794773581403, "text": "True. It says the Prover can't prove it, and that is exactly so. True, and it can't be proved."}
+{"type": "objective", "tick": 24256, "wallTimeMs": 1794773581400, "text": "Every loop found. Turn round: the Prover's board shows why card 81 is true."}
+{"type": "objective_completed", "tick": 24256, "wallTimeMs": 1794773581404, "title": "Solve The Prover", "id": "godel", "x": -22.35, "z": 33.49}
+{"type": "screen", "tick": 24344, "wallTimeMs": 1794773582864, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 24344, "wallTimeMs": 1794773582864, "title": "True, and it can't be proved."}
+{"type": "debrief", "tick": 25050, "wallTimeMs": 1794773594638, "title": "Strange loops."}
+{"type": "screen", "tick": 25789, "wallTimeMs": 1794773606946, "from": "DEBRIEF", "to": "WORLD"}

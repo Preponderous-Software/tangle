@@ -1,0 +1,10 @@
+{"type": "screen", "tick": 328, "wallTimeMs": 1794770939684, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 1754, "wallTimeMs": 1794770963456, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 1754, "wallTimeMs": 1794770963457, "how": "created", "seed": 0}
+{"type": "objective", "tick": 1754, "wallTimeMs": 1794770963458, "text": "The List, through the Screen room's left-hand door, then the small room's left-hand door."}
+{"type": "objective", "tick": 20587, "wallTimeMs": 1794771277337, "text": "Make a row of tiles that isn't anywhere in the librarian's list."}
+{"type": "status", "tick": 20587, "wallTimeMs": 1794771277339, "text": "A library, and a list that claims to hold everything. Read the plaque on your left as you come in."}
+{"type": "status", "tick": 21005, "wallTimeMs": 1794771284313, "text": "Set the switches on the desk to make a row, then press CHECK."}
+{"type": "status", "tick": 69115, "wallTimeMs": 1794772086137, "text": "Your row differs from every row in the list, even the ones you can't see."}
+{"type": "objective", "tick": 69605, "wallTimeMs": 1794772094314, "text": "The librarian added your row. Make a row that still isn't in the list."}
+{"type": "status", "tick": 69606, "wallTimeMs": 1794772094316, "text": "The librarian has added your row to the list. Can you beat it again?"}
