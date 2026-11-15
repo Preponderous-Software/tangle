@@ -143,7 +143,7 @@ export const PLAQUES = {
   tri: {kicker: "The Triangle", title: "Find where it closes", w: 3.0, h: 2.0, bodySize: 0.043,
     body: "The artist M. C. Escher drew a triangle that cannot exist: three straight beams, each turning a right angle, " +
       "meeting in a loop.\nThe one in this room is real. From almost everywhere it looks broken. Find the one spot where it closes, " +
-      "and look at it from there.\nListen: a tone rises as you get close."},
+      "and look at it from there.\nAs you get close, a tone rises and the ring round the crosshair glows."},
   rules: {kicker: "The Machine", title: "Turn MI into MU", w: 3.4, h: 2.4, bodySize: 0.039,
     body: "Change the word on the screen with the buttons on the desk:\n" +
       "1   If the word ends in I, add a U.   MI → MIU\n" +
@@ -157,9 +157,9 @@ export const PLAQUES = {
 
 export function progressPlaque(solved) {
   const n = ["tribar", "miu", "scr", "stair", "list", "godel"].filter((k) => solved[k]).length;
-  return {kicker: "Progress", title: `${n} of 6 rooms solved`, w: 2.1, h: 1.0, titleSize: 0.1,
+  return {kicker: "Progress", title: `${n} of 6 rooms solved`, w: 2.4, h: 1.15, titleSize: 0.105,
     body: n === 6 ? "Every loop in the house, found. Thank you for playing." : solved.list ? "Next: the Prover, beyond the List." : !solved.tribar ? "Start with the Triangle, on the left." : !solved.miu ? "Next: the Machine, on the right." : !solved.scr ? "Next: the Screen, behind you." : !solved.stair ? "Next: the Staircase, beyond the Screen." : "Next: the List, beyond the Screen.",
-    bodySize: 0.075, dark: true};
+    bodySize: 0.09, dark: true};
 }
 
 // The strip on the console's front edge: each button's symbol under it. xs: button x positions.

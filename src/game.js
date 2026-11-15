@@ -604,10 +604,17 @@ function refreshPoints(t = 0) {
   pts.push([-19.6, 5.35, -3.6, 8, 0.35, 1.0, 0.9, 0.75, 0.8], [16, 2.35, -3.5, 6, 0.0, 1, 0.85, 0.6, 0.0]);
   if (state.hint || state.solved.tribar) {
     const [ex, , ez] = World.TRIBAR.eye, solved = state.solved.tribar;
-    const pulse = solved ? 0.9 : 0.45 + 0.25 * Math.sin(t * 2.2);
+    const pulse = solved ? 0.9 : 0.75 + 0.25 * Math.sin(t * 2.2);   // bright enough to spot from across the room
     for (let k = 0; k < 28; k++) {
       const a = 2 * Math.PI * k / 28;
-      pts.push([ex + 0.42 * Math.cos(a), 0.03, ez + 0.42 * Math.sin(a), 7, 0, ...(solved ? [1.0, 0.8, 0.3] : [0.95, 0.85, 0.55]), pulse]);
+      pts.push([ex + 0.42 * Math.cos(a), 0.03, ez + 0.42 * Math.sin(a), solved ? 7 : 9, 0, ...(solved ? [1.0, 0.8, 0.3] : [0.95, 0.85, 0.55]), pulse]);
+    }
+  }
+  if (state.gateOpen && !state.solved.miu) {  // the Machine: a trail of lights through the open gate and up the ramp
+    const rp = World.MACHINE.ramp, zc = (rp.z0 + rp.z1) / 2;
+    for (let x = 10.0; x < rp.x1 - 0.2; x += 0.5) {
+      const y = Math.max(0, (x - rp.x0) / (rp.x1 - rp.x0)) * rp.top + 0.04;
+      pts.push([x, y, zc, 10, 0, 1.0, 0.82, 0.45, 1.0]);
     }
   }
   pts.push(...proverLamps(t));
@@ -617,7 +624,7 @@ function refreshPoints(t = 0) {
 // ------------------------------------------------------------------ the machine
 const LEGEND = {r1: "rule 1: if it ends in I, add U", r2: "rule 2: double everything after M", r3: "rule 3: replace III with U",
   a_up: "higher up: keep climbing", a_loop: "there isn't one: the stairs loop", a_as: "at the A\u266f landing",
-  true: "answer TRUE", false: "answer FALSE", neither: "answer CAN'T BE EITHER",
+  true: "answer TRUE", false: "answer FALSE", neither: "answer NEITHER: it can't be true or false",
   r4: "rule 4: remove UU", check: "check your row against the list",
   q_long: "a longer list could hold them all", q_endless: "an endless list could hold them all", q_none: "no list can hold them all", next: "move the highlight to the next III or UU", undo: "take back the last step", declare: "say: MU can't be made"};
 
@@ -694,7 +701,7 @@ function answerPressed(id) {
   if (r.tried) state.liarTried = r.tried;
   if (r.unlockNeither && !state.neitherOn) {
     state.neitherOn = true;
-    say("Both answers lead to a contradiction. A third button on the lectern has lit up.", 7000, true);
+    say("Both answers lead to a contradiction. The third button on the lectern, NEITHER, has lit up.", 7000, true);
     Audio.cue("open");
   }
   if (r.ok && r.next != null) { state.sentence = r.next; state.boardMsg = `${r.message} Next one.`; }
@@ -829,9 +836,9 @@ function maybeOpenGate() {
   const distinct = new Set(state.made).size;
   if (distinct >= 9 || state.presses >= 18 || state.machineTime > 120) {
     state.gateOpen = true;
-    refreshGate(); refreshLights(); save();
+    refreshGate(); refreshLights(); refreshPoints(); save();
     Audio.cue("gate");
-    say("You've been working inside the machine's rules. The gate at the foot of the ramp, by the door you came in, has opened: go up and look at the machine from outside.", 9000, true);
+    say("You've been working inside the machine's rules. The gate has opened: it's at the foot of the ramp, in the corner on your right as you come in. Follow the lights up and look at the machine from outside.", 10000, true);
     objective("Climb the ramp to the balcony and read the board.");
   }
 }
@@ -839,7 +846,7 @@ function maybeOpenGate() {
 function declare() {
   if (state.solved.miu) return;
   state.solved.miu = true;
-  save(); refreshDoors(); refreshItems(); refreshLights(); Audio.cue("solve"); flash();
+  save(); refreshDoors(); refreshItems(); refreshLights(); refreshPoints(); Audio.cue("solve"); flash();
   setTimeout(() => debrief({title: "MU can't be made.",
     what: "Inside the machine you could press buttons forever without making MU, and the buttons alone could never tell you to stop. " +
       "Up here you saw the pattern from outside: the number of I's is never a multiple of 3, and MU has none.",
@@ -886,9 +893,10 @@ function solveTribar() {
   document.querySelector("#cross .fill").style.strokeDashoffset = 69.1;
   say("There: three beams closing into a loop. Now take a few steps sideways and watch it.", 7000, true);
   state.solvedAt = {x: me.x, z: me.z, t: performance.now()};
-  state.tribarDebrief = () => debrief({title: "You found it.",
+  state.tribarDebrief = (stepped) => debrief({title: "You found it.",
     what: "From exactly this spot, the far end of one beam lines up with the near end of another, so your eye joins them into a triangle. " +
-      "When you stepped aside, the triangle came apart: it was an open, bent bar all along, cut at a slant.",
+      (stepped ? "When you stepped aside, the triangle came apart: it was an open, bent bar all along, cut at a slant."
+        : "Step aside and it comes apart: it's an open, bent bar, cut at a slant. It only closes from here."),
     why: "Going round the triangle, you keep moving forward and arrive back where you started. Hofstadter calls that a strange loop. " +
       "It only worked from one point of view, and stepping out of that view showed you how it was done. " +
       "The Machine, across the hall, does the same thing with rules instead of beams."});
@@ -1002,8 +1010,9 @@ $("how").innerHTML = touchFirst
 if (hasProgress) { $("begin").textContent = "Continue"; $("fresh").hidden = false; }
 
 function intro() {
-  objective("Read the plaque ahead, then take the door on the left.");
-  say("Welcome. Walk up to the plaque on the far wall and read it.", 6000);
+  objective("Read the plaque ahead, then take the door on the left: Room 1, the Triangle.");
+  say("Welcome. Read the plaque on the far wall: you can read it from here.", 6000);
+  say("Then take the door on your left, into the Triangle room.", 6000);
 }
 function welcomeBack() {
   objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
@@ -1025,7 +1034,7 @@ function enterRoom(r) {
   state.seenRooms.add(r); save();
   if (r === "tri" && !state.solved.tribar) {
     say("Somewhere in here is a triangle that shouldn't exist.", 4500);
-    say("Read the plaque on the wall to your right, then explore. A tone gets higher as you get close.", 7000);
+    say("Read the plaque on the wall to your right, then explore. As you get close, a tone rises and the ring round the crosshair glows.", 8000);
     objective("Find the one spot where the triangle closes.");
   }
   if (r === "vest" && !state.solved.stair) {
@@ -1240,7 +1249,7 @@ function tick(t, now) {
     const a = state.solvedAt, moved = Math.hypot(me.x - a.x, me.z - a.z);
     if (moved > 1.3 || now - a.t > 25000) {
       const show = state.tribarDebrief; state.tribarDebrief = null;  // a function that shows the card
-      setTimeout(show, moved > 1.3 ? 700 : 0);
+      setTimeout(() => show(moved > 1.3), moved > 1.3 ? 700 : 0);
     }
   }
   const prev = focus && focus.id;
