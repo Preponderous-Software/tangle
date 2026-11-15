@@ -86,6 +86,14 @@ itself.
     through the real inputs: W to walk, turning toward each waypoint, E to press what the
     crosshair is on. It exits non-zero unless both rooms end solved with no errors.
 
+## Related
+
+- [Coastline](https://coastline.play.danielstephenson.dev)
+  ([repo](https://github.com/Preponderous-Software/coastline)): a companion game about fractals, covering
+  the coastline paradox, the Koch snowflake and fractal dimension. Tangle covers self-reference and
+  strange loops; Coastline covers self-similarity and how to measure it.
+- [Strata](https://github.com/Preponderous-Software/strata): the engine.
+
 ## License
 
 The code is MIT licensed (see [LICENSE](LICENSE)). The art the game draws (plaques, renders, the loading poster) is CC0.
