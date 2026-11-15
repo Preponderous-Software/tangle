@@ -1,0 +1,35 @@
+{"type": "screen", "tick": 2418, "wallTimeMs": 1794768031885, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 3841, "wallTimeMs": 1794768055600, "from": "TITLE", "to": "WORLD"}
+{"type": "objective", "tick": 3841, "wallTimeMs": 1794768055601, "text": "The List, through the Screen room's left-hand door, then the small room's left-hand door."}
+{"type": "world", "tick": 3841, "wallTimeMs": 1794768055600, "how": "created", "seed": 0}
+{"type": "objective", "tick": 13512, "wallTimeMs": 1794768216784, "text": "Make a row of tiles that isn't anywhere in the librarian's list."}
+{"type": "status", "tick": 13512, "wallTimeMs": 1794768216785, "text": "A library, and a list that claims to hold everything. Read the plaque on your left as you come in."}
+{"type": "status", "tick": 13942, "wallTimeMs": 1794768223949, "text": "Set the switches on the desk to make a row, then press CHECK."}
+{"type": "status", "tick": 27156, "wallTimeMs": 1794768444189, "text": "Your row differs from every row in the list, even the ones you can't see."}
+{"type": "objective", "tick": 27525, "wallTimeMs": 1794768450336, "text": "The librarian added your row. Make a row that still isn't in the list."}
+{"type": "status", "tick": 27525, "wallTimeMs": 1794768450337, "text": "The librarian has added your row to the list. Can you beat it again?"}
+{"type": "objective", "tick": 36823, "wallTimeMs": 1794768605298, "text": "Answer the question on the left-hand wall: which list could hold every endless row?"}
+{"type": "status", "tick": 36823, "wallTimeMs": 1794768605299, "text": "Beaten again, the same way. Now answer the question on the left-hand wall."}
+{"type": "objective", "tick": 42654, "wallTimeMs": 1794768702482, "text": "The Prover, through the door in the List's right-hand wall as you come in."}
+{"type": "objective_completed", "tick": 42654, "wallTimeMs": 1794768702483, "title": "Solve The List", "id": "list", "x": -4.08, "z": 31.27}
+{"type": "screen", "tick": 42763, "wallTimeMs": 1794768704306, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 42763, "wallTimeMs": 1794768704307, "title": "No list holds them all."}
+{"type": "screen", "tick": 43261, "wallTimeMs": 1794768712597, "from": "DEBRIEF", "to": "WORLD"}
+{"type": "objective", "tick": 54222, "wallTimeMs": 1794768895289, "text": "Feed cards 12 and 47 to the Prover, and watch what it does with each."}
+{"type": "status", "tick": 54222, "wallTimeMs": 1794768895291, "text": "The last room. A machine that proves things, and some numbered cards. Read the plaque on your right."}
+{"type": "status", "tick": 54440, "wallTimeMs": 1794768898922, "text": "Press a card on the desk to feed it to the Prover. Start with cards 12 and 47."}
+{"type": "status", "tick": 58642, "wallTimeMs": 1794768968951, "text": "Watch the board: the Prover finds a proof of 2 + 2 = 4 and stamps the card."}
+{"type": "objective", "tick": 62419, "wallTimeMs": 1794769031901, "text": "Card 81 says the Prover can't prove some card. Set its number so it talks about itself, then feed it in."}
+{"type": "status", "tick": 62419, "wallTimeMs": 1794769031903, "text": "2 + 2 = 5 is false. The Prover will never find a proof of it, so it searches forever."}
+{"type": "status", "tick": 62868, "wallTimeMs": 1794769039383, "text": "Now card 81. Its number can be changed with the button on the right of the desk."}
+{"type": "status", "tick": 67082, "wallTimeMs": 1794769109627, "text": "Card 81 says: \u201cThe Prover can't prove card 81.\u201d It's talking about itself. Watch what the Prover does."}
+{"type": "objective", "tick": 67467, "wallTimeMs": 1794769116045, "text": "Answer the questions on the left-hand wall about card 81."}
+{"type": "status", "tick": 67468, "wallTimeMs": 1794769116047, "text": "The lectern on the left-hand wall has woken up. Can the Prover ever prove card 81?"}
+{"type": "status", "tick": 70718, "wallTimeMs": 1794769170220, "text": "Right. If it proved card 81, it would have proved something false, and it never does. So it never will."}
+{"type": "objective", "tick": 72463, "wallTimeMs": 1794769199300, "text": "Every loop found. Wander as you like."}
+{"type": "status", "tick": 72463, "wallTimeMs": 1794769199301, "text": "True. It says the Prover can't prove it, and that is exactly so. True, and it can't be proved."}
+{"type": "objective_completed", "tick": 72463, "wallTimeMs": 1794769199301, "title": "Solve The Prover", "id": "godel", "x": -20.84, "z": 33.99}
+{"type": "screen", "tick": 72554, "wallTimeMs": 1794769200812, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 72554, "wallTimeMs": 1794769200813, "title": "True, and it can't be proved."}
+{"type": "debrief", "tick": 73189, "wallTimeMs": 1794769211401, "title": "Strange loops."}
+{"type": "screen", "tick": 74181, "wallTimeMs": 1794769227933, "from": "DEBRIEF", "to": "WORLD"}

@@ -1,0 +1,103 @@
+{
+  "session": "s04",
+  "goal": "Graphics and layout hunt in the List and the Prover rooms and the doorway between them (start with --rooms prover). Look in every direction, up and down, and walk along every wall. Screenshot and describe anything that looks wrong: gaps or seams, flicker, surfaces fighting, unreadable or overlapping text, text you can't read from where you'd stand to use it, walls you can see through or walk through, places you get stuck.",
+  "build": {
+    "version": "0.2.0",
+    "commit": "5b003a1"
+  },
+  "seed": null,
+  "durationSec": 819,
+  "outcome": "partial",
+  "findings": [
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Prover room plaque 'A sentence about itself' body text is illegible even from ~2m",
+      "detail": "The plaque in the corner right of the card cabinet is the one the game tells you to read on entry ('Read the plaque on your right'). From ~3m only the title reads; from ~2m (as close as is comfortable) the 6-7 body lines ('Feed the Prover a card and it tries every possible proof...', 'Every card has a number... Start with cards 12 and 47') are still low-res and partly unreadable. The black border also renders as a broken, jagged double line. Expected: body text sized so a player standing in front of it can read it.",
+      "repro": "pt start --rooms prover; Return; walk through the Prover door, turn right ~120 deg, walk to the plaque by the card cabinet; pt shot",
+      "screenshot": "shots/f_prover_plaque_near.png",
+      "tick": 39508
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Prover lectern answer buttons have no label visible from the use position",
+      "detail": "Standing at the lectern (1.6m) and looking down at its three buttons, they are plain dark blocks with no text. Their meanings (YES/TRUE, NO/FALSE, ONE DAY/CAN'T BE EITHER) appear only in the probe; the only marks are tiny gold glyphs on the lectern's front face, which you can't see while aiming at the buttons. Questions were not unlocked yet, so labels may appear later, but nothing on screen said so.",
+      "repro": "pt start --rooms prover; Return; walk to the lectern under the side-wall board 'Make card 81 talk about itself'; tilt down (Next) until the top is in view",
+      "screenshot": "shots/f_lectern_unlabeled.png",
+      "tick": 31107
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Prover questions board second line unreadable from the lectern",
+      "detail": "On the side-wall board above the lectern, the headline 'Make card 81 talk about itself.' reads at ~3m, but the 'ABOUT CARD 81' header and the second line (something like 'Then feed it to the Prover...') are thin, blurry text I could not reliably read from where you stand to use the lectern.",
+      "repro": "pt start --rooms prover; Return; enter Prover; walk ~3m toward the lectern on the left wall; pt shot",
+      "screenshot": "shots/f_questions_subline.png",
+      "tick": 27920
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Prover main board header and output column too small to read from lectern or door",
+      "detail": "From the lectern (~4-5m) and the doorway (~8m), card texts on the main board are fine, but the board header ('THE PROVER - it never proves anything false') and the right-hand output column ('Empty. Press a card on the desk in front of you to feed it in.') are tiny blurry text. They only become readable when standing at the desk directly in front. That output column is where the machine's results show, so it should read from a few metres away.",
+      "repro": "pt start --rooms prover; Return; enter Prover; stand by the lectern and face the main board; pt shot",
+      "screenshot": "shots/f_board_right_column.png",
+      "tick": 32670
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "List board layout: grid packed into the left third, right two-thirds empty, explanation squeezed into tiny text",
+      "detail": "On the Librarian's List board, the 8x8 grid and 'your row' boxes take the left third; the rest is empty dark board. Meanwhile the header and the explanation beside 'your row' ('...tile n is the opposite of row n's tile n') are tiny and slanted. The grid and text could be made larger to fill the board.",
+      "repro": "pt start --rooms prover; Return; turn to face the List's big board (yaw ~263 from spawn); pt shot",
+      "screenshot": "shots/f_list_board_layout.png",
+      "tick": 48150
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Black rectangle over the top of the view on the first frame after Begin",
+      "detail": "In the first screenshot after pressing Return on the title (List room, facing the Prover door), a solid black rectangle covered x 370-910, y 45-95, hiding the end of the NEXT objective text and the 'A sentence about itself' sign. Two seconds later it was gone. Probably a leftover from the title card or a frame not yet drawn.",
+      "repro": "pt start --rooms prover; pt await TITLE; pt key Return; pt await WORLD; pt shot immediately",
+      "screenshot": "shots/w0.png",
+      "tick": 4900
+    },
+    {
+      "severity": "minor",
+      "category": "perf",
+      "title": "Heavy input lag: movement and turns were applied many seconds after the keys",
+      "detail": "With this many sessions sharing the software renderer, held keys were processed long after release. 'pt face' often ended 20-75 degrees off, 'pt walkto' timed out without moving, and state.json showed the player still in the List while the screenshot showed the Prover doorway. Ticks ran near 60/s, so frame rate (not game time) seems to be the bottleneck. I could not fully cover every wall in the time budget because of this.",
+      "repro": "pt start --rooms prover; Return; pt face 90; pt hold w 2; compare pt state with pt shot",
+      "screenshot": "shots/door3.png",
+      "tick": 17425
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 1,
+    "deaths": 0,
+    "secondsToObjective": {
+      "The Prover, through the door in the List's right-hand wall as you come in.": 294.3
+    },
+    "wallCollisionsTested": 2,
+    "walkThroughWallsFound": 0,
+    "stuckSpotsFound": 0,
+    "seamsOrZFightingFound": 0
+  },
+  "fun": 3,
+  "verdict": "Geometry in the List, the Prover and the doorway between them held up. Walls, ceilings and the door jambs showed no gaps, z-fighting or walk-through, and sliding along the wall into the doorway worked smoothly. The real problem is text legibility: the Prover's plaque, its questions board subline, the main board's output column and the List board's header and explanation are all too small to read from where a player stands to use them, and the lectern buttons have no visible labels. Bigger fonts, or plaques mounted at eye height, would fix most of it.",
+  "answers": [
+    {
+      "question": "In your own words, what is a strange loop, and what did each room you played show about it?",
+      "answer": "From what I saw, a strange loop is when something ends up referring back to itself: a sentence that talks about itself, or a system that makes a statement about its own powers. The List room (already solved in this start) shows a grid of rows with 'your row' built by flipping each row's diagonal tile, so your row can't be anywhere on the list (a list that can't contain everything). The Prover room sets up cards with numbers, with card 81 reading 'The Prover can't prove card 12', and a board asking you to 'Make card 81 talk about itself', so presumably card 81 ends up saying 'the Prover can't prove me'. I did not feed any cards, so I can't say how the room pays it off."
+    },
+    {
+      "question": "Which moment was the most confusing, and why?",
+      "answer": "Arriving at the Prover lectern. Its three buttons have no labels you can see from where you stand, and the questions board's second line is too small to read, so I could not tell what the lectern was for or what each button meant. Input lag also made it hard to aim at things."
+    },
+    {
+      "question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.",
+      "answer": "(1) The first frame after Begin, in the List facing the Prover door: a black rectangle across the top centre, gone two seconds later. (2) Prover room plaque by the card cabinet (turn right on entry): body text illegible even from 2m, and a jagged broken border. (3) Prover questions board on the left wall above the lectern: the subline is unreadable from the lectern. (4) Prover main board, facing it from the lectern or the door: the header and output column are too small. (5) List board, facing it from the Prover door side: grid crammed into the left third with tiny text. I found no wall gaps, z-fighting, see-through or walk-through walls, and I never got stuck at the doorway; walking into the wall beside the Prover door blocked me cleanly and sliding along it took me through the door."
+    }
+  ]
+}

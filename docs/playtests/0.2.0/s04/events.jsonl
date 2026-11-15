@@ -1,0 +1,7 @@
+{"type": "screen", "tick": 3242, "wallTimeMs": 1794768045628, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 4887, "wallTimeMs": 1794768073032, "from": "TITLE", "to": "WORLD"}
+{"type": "objective", "tick": 4887, "wallTimeMs": 1794768073037, "text": "The Prover, through the door in the List's right-hand wall as you come in."}
+{"type": "world", "tick": 4887, "wallTimeMs": 1794768073035, "how": "created", "seed": 0}
+{"type": "objective", "tick": 17659, "wallTimeMs": 1794768285899, "text": "Feed cards 12 and 47 to the Prover, and watch what it does with each."}
+{"type": "status", "tick": 17659, "wallTimeMs": 1794768285900, "text": "The last room. A machine that proves things, and some numbered cards. Read the plaque on your right."}
+{"type": "status", "tick": 18114, "wallTimeMs": 1794768293494, "text": "Press a card on the desk to feed it to the Prover. Start with cards 12 and 47."}

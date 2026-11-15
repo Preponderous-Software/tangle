@@ -1,0 +1,113 @@
+{
+  "session": "s02",
+  "goal": "Play from the very beginning as a brand-new player who has never heard of Godel, Escher, Bach: the title card, the hall, then the Triangle and the Machine (climb to the balcony when the gate opens). Solve what you can. Note every moment of confusion, any doorway you got stuck in, and whether the captions and plaques told you what to do.",
+  "build": {
+    "version": "0.2.0",
+    "commit": "5b003a1"
+  },
+  "seed": null,
+  "durationSec": 1438,
+  "outcome": "achieved",
+  "findings": [
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Triangle hint says the ring of light is 'near the door you came in', but it is by the bench in the far corner, about 8 m from that door",
+      "detail": "After about 4 minutes in the Triangle room the caption said 'Hint: a ring of light has appeared on the floor, near the door you came in. Stand in it and look at the triangle.' I searched by the triangle door and found nothing. The ring was beside the bench in the corner at about x=-12.2, z=5.2; the probe put the triangle door 8.1 m away. The ring is also on the floor, so at the default pitch you only see it if you tilt the view down or are already a few metres from it. I expected the hint to name the bench or the corner.",
+      "repro": "pt start ...; key Return; walk into the Triangle room (west door); wander for about 4 min until the hint caption; look for the ring near the entrance door",
+      "screenshot": "shots/tri-solved.png",
+      "tick": 47421
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Triangle: views where the beams look closed are not accepted; the only feedback is a faint crosshair ring (and a tone you may not hear)",
+      "detail": "From x=-10.1, z=3.8 (about 1.5 m from the real spot) the triangle looked closed on screen and the crosshair ring glowed faintly, but nothing happened. It was solved only when I stood inside the floor ring and put the crosshair on the triangle. I took about 10 minutes of game time to solve it, most of it moving in small steps. A brighter 'getting warmer' cue, or a tolerance that matches what the eye accepts, would help, especially for players with no sound.",
+      "repro": "pt start ...; go into the Triangle room; strafe left (a) from the doorway while facing the triangle until the beam ends overlap at about x=-10.1, z=3.8; face it",
+      "screenshot": "shots/almost-closed.png",
+      "tick": 27147
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Machine desk: from the end of the desk the far buttons (\u2192 and \u21b6) are out of reach and the word screen is out of view",
+      "detail": "Walking to the desk (pt walkto button) leaves you at its end near rule 1. Rules 1 to 4 can be aimed by tilting the view, but the \u2192 and \u21b6 buttons are about 2.6 m away, so nothing is prompted. From there the word screen is behind your left shoulder, so you can't see what a press did without turning. I expected to stand in front of the desk facing the screen.",
+      "repro": "pt start ...; enter the Machine; pt walkto button; tilt up and down along the desk and watch the prompt",
+      "screenshot": "shots/m10.png",
+      "tick": 62000
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Balcony board explanation is too small to read from the balcony at the angle you have to stand at",
+      "detail": "The board is on a side wall at the end of the narrow balcony, so you see it at a slant. The headline and the 'MU can't be made' sign are legible, but the body text (the argument about counting I's) blurs into lines at about 2 m. The debrief card explained it clearly afterwards, but the board, which the objective tells you to read, didn't.",
+      "repro": "pt start ...; solve or wait out the Machine until the gate opens; climb the ramp; face the balcony board",
+      "screenshot": "shots/board-small.png",
+      "tick": 82399
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Triangle debrief pops up as soon as you sidestep, covering the 'watch it break' moment",
+      "detail": "The objective says 'Walk sideways and watch it break', but after about a metre of strafing the debrief card covered the screen, so I never saw the triangle come apart. The card then says 'When you stepped aside, the triangle came apart'. I expected a short delay before the card.",
+      "repro": "solve the Triangle; hold d for 1.5 s",
+      "screenshot": "shots/t33.png",
+      "tick": 48109
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Got stuck on the Triangle door frame from the hall; movement felt very delayed",
+      "detail": "pt walkto door stopped 1.2 m from the triangle door ('stuck: not getting closer'), against the jamb at a slight angle. A further 2 s hold of w didn't move me; a later 4 s hold did, and then a press of s still carried me forward into the room, as if input was being applied late. Turning with pt face often undershot by 10 to 35 degrees. Some of this is the slow software renderer on a busy machine, but the door frame catching you at a slight angle is real.",
+      "repro": "pt start ...; key Return; face -98; walkto door",
+      "screenshot": "shots/stuck1.png",
+      "tick": 8620
+    },
+    {
+      "severity": "minor",
+      "category": "perf",
+      "title": "Chromium 'Page Unresponsive' dialog over the loading screen at launch",
+      "detail": "The first screenshot showed the 'Page Unresponsive: Exit page / Wait' dialog over 'Loading Tangle 1.0 of 1.0 MB', while the probe already said TITLE. Clicking Wait brought up the title card normally. A real player could click Exit page.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt await TITLE; pt shot",
+      "screenshot": "shots/unresponsive.png",
+      "tick": 3919
+    },
+    {
+      "severity": "polish",
+      "category": "text",
+      "title": "NEXT box still says 'Walk sideways and watch it break' while you walk to the Machine",
+      "detail": "After the Triangle debrief the NEXT box kept 'Walk sideways and watch it break. Then the Machine...' until I entered the Machine room, though that part was done.",
+      "repro": "solve the Triangle; close the debrief; walk back into the hall",
+      "screenshot": "shots/m1.png",
+      "tick": 51000
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 2,
+    "deaths": 0,
+    "secondsToObjective": {
+      "Solve The Triangle": 780.2,
+      "Solve The Machine": 1416.6
+    },
+    "secondsInTriangleRoom": 619,
+    "triangleHintShownAtSec": 430.6,
+    "machineGateOpenedAtSec": 1111.2,
+    "machineWordsMade": 4
+  },
+  "fun": 3,
+  "verdict": "The writing is the star: the welcome plaque, the room plaques, the button prompts and both debriefs explain strange loops and the MU puzzle clearly to someone with no background, and the moment the triangle snapped shut was a real 'oh!'. The Triangle's search is too fussy, though. Almost-closed views aren't accepted, the 'getting warmer' feedback is faint, and the hint points to the door when the ring is by the bench. In the Machine, the balcony board's explanation is unreadable from where you stand, and the desk buttons are awkward to reach from the end of the desk.",
+  "answers": [
+    {
+      "question": "In your own words, what is a strange loop, and what did each room you played show about it?",
+      "answer": "A strange loop is a path that keeps moving forward (or up, or through steps) and still ends up back where it started, often by something describing or containing itself. The Triangle showed one you can see: three beams that seem to go round and close into an impossible triangle, but only from one exact spot; step aside and it's an open bent bar, so the loop was a trick of viewpoint. The Machine showed it with rules: inside you can press buttons forever (MI, MIU, MIUIU...) and never reach MU, and the rules can't tell you to stop. Only by stepping outside (the balcony) and noticing that the number of I's is never a multiple of 3 do you see that MU is impossible. The debrief tied this to Godel: arithmetic can describe its own rules, the system talks about itself, and that self-reference is the loop."
+    },
+    {
+      "question": "Which moment was the most confusing, and why?",
+      "answer": "Finding the spot in the Triangle room. I got the beams to look closed from a couple of places and nothing happened. The only feedback was a faint ring round the crosshair (I could not rely on the tone). The hint said the ring of light was near the door I came in, so I searched there, but it was by the bench in the far corner and on the floor, out of view until I tilted down. Second most confusing: in the Machine, the gate opened on its own while I was still fiddling with the desk, and the board I was told to read upstairs was too small to read."
+    },
+    {
+      "question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.",
+      "answer": "1) At launch, a Chromium 'Page Unresponsive' dialog sat over the 'Loading Tangle' card; clicking Wait fixed it. 2) In the Triangle room, standing near the side wall at about x=-10.1, z=3.8, turning to face the wall made the screen show only a flat blue-grey wall with no floor at a level pitch; I was just very close to the wall. Tilting down at about +8 to +25 pitch made the view look rolled and skewed (t14/t16 screenshots), probably the wide field of view close to the wall rather than a bug. 3) Nothing else looked broken: text, beams and the debrief cards all rendered cleanly, apart from the balcony board's small text, which is too low-resolution to read at a slant."
+    }
+  ]
+}

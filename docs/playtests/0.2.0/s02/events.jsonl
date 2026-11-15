@@ -1,0 +1,32 @@
+{"type": "screen", "tick": 3558, "wallTimeMs": 1794768050882, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 4681, "wallTimeMs": 1794768069599, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 4681, "wallTimeMs": 1794768069600, "how": "created", "seed": 0}
+{"type": "objective", "tick": 4681, "wallTimeMs": 1794768069600, "text": "Read the plaque ahead, then take the door on the left: Room 1, the Triangle."}
+{"type": "status", "tick": 4681, "wallTimeMs": 1794768069600, "text": "Welcome. Read the plaque on the far wall: you can read it from here."}
+{"type": "status", "tick": 5077, "wallTimeMs": 1794768076207, "text": "Then take the door on your left, into the Triangle room."}
+{"type": "objective", "tick": 9691, "wallTimeMs": 1794768153102, "text": "Find the one spot where the triangle closes."}
+{"type": "status", "tick": 9691, "wallTimeMs": 1794768153102, "text": "Somewhere in here is a triangle that shouldn't exist."}
+{"type": "status", "tick": 9979, "wallTimeMs": 1794768157899, "text": "Read the plaque on the wall to your right, then explore. As you get close, a tone rises and the ring round the crosshair glows."}
+{"type": "status", "tick": 25835, "wallTimeMs": 1794768422167, "text": "Hint: a ring of light has appeared on the floor, near the door you came in. Stand in it and look at the triangle."}
+{"type": "status", "tick": 42443, "wallTimeMs": 1794768698963, "text": "Stand inside the ring of light near the door, and face the triangle."}
+{"type": "status", "tick": 46604, "wallTimeMs": 1794768768328, "text": "Hold still..."}
+{"type": "objective", "tick": 46812, "wallTimeMs": 1794768771793, "text": "Walk sideways and watch it break. Then the Machine, through the hall's right-hand door."}
+{"type": "status", "tick": 46812, "wallTimeMs": 1794768771794, "text": "There: three beams closing into a loop. Now take a few steps sideways and watch it."}
+{"type": "objective_completed", "tick": 46812, "wallTimeMs": 1794768771794, "title": "Solve The Triangle", "id": "tribar", "x": -12.19, "z": 5.2}
+{"type": "screen", "tick": 47934, "wallTimeMs": 1794768790490, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 47934, "wallTimeMs": 1794768790490, "title": "You found it."}
+{"type": "screen", "tick": 48442, "wallTimeMs": 1794768798956, "from": "DEBRIEF", "to": "WORLD"}
+{"type": "status", "tick": 49576, "wallTimeMs": 1794768817850, "text": "One loop found. Next is the Machine, through the hall's right-hand door."}
+{"type": "objective", "tick": 52358, "wallTimeMs": 1794768864227, "text": "Turn MI into MU, using only the buttons."}
+{"type": "status", "tick": 52358, "wallTimeMs": 1794768864229, "text": "A machine that changes words. The rules are on the wall, the buttons on the desk."}
+{"type": "status", "tick": 52675, "wallTimeMs": 1794768869503, "text": "Look at a button and press it to apply its rule. Try to turn MI into MU."}
+{"type": "status", "tick": 56705, "wallTimeMs": 1794768936676, "text": "That's how it works. Keep going: can you reach MU?"}
+{"type": "objective", "tick": 66670, "wallTimeMs": 1794769102748, "text": "Climb the ramp to the balcony and read the board."}
+{"type": "status", "tick": 66670, "wallTimeMs": 1794769102749, "text": "You've been working inside the machine's rules. The gate has opened: it's at the foot of the ramp, in the corner on your right as you come in. Follow the lights up and look at the machine from outside."}
+{"type": "status", "tick": 78549, "wallTimeMs": 1794769300741, "text": "From up here you can see the machine from outside. Read the board on the wall: it shows every word you made."}
+{"type": "objective", "tick": 78549, "wallTimeMs": 1794769300740, "text": "Read the board. If you're convinced MU can't be made, press the red button beside it."}
+{"type": "objective", "tick": 84995, "wallTimeMs": 1794769408174, "text": "The Screen, through the hall's third door, opposite the welcome plaque."}
+{"type": "objective_completed", "tick": 84995, "wallTimeMs": 1794769408175, "title": "Solve The Machine", "id": "miu", "x": 20.51, "z": 3.94}
+{"type": "screen", "tick": 85072, "wallTimeMs": 1794769409453, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 85072, "wallTimeMs": 1794769409453, "title": "MU can't be made."}
+{"type": "screen", "tick": 85557, "wallTimeMs": 1794769417534, "from": "DEBRIEF", "to": "WORLD"}

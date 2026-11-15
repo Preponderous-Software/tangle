@@ -1,0 +1,90 @@
+{
+  "session": "s03",
+  "goal": "The end game. Start with --rooms all (the first four rooms count as solved and you stand in the small room outside the stairs). Solve the List (through the door on your left and down the corridor), then find the door it opens and solve the Prover. Note whether you found your way between the rooms, whether the List's debrief told you where to go next, and whether the Prover felt like the right finale after the List.",
+  "build": {"version": "0.2.0", "commit": "5b003a1"},
+  "seed": null,
+  "durationSec": 1249,
+  "outcome": "achieved",
+  "findings": [
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "List's post-win board labels each row with its FIRST mismatch, contradicting the 'row n differs at tile n' caption",
+      "detail": "After the second CHECK wins, the librarian's list shows red boxes and right-hand notes 'differs at tile 1 / 2 / 1 / 4 / 1 / 2 / 1 / 3' (the first tile where each row differs from mine), while the gold diagonal and the line under the board say 'row 1 differs at tile 1, row 2 at tile 2: row n differs at tile n'. Two explanations are drawn at once, and the numbers for rows 3-8 disagree with the diagonal idea the debrief then teaches. A newcomer reading the numbers would not see why the diagonal matters. Expected: annotate the diagonal tile (row n: differs at tile n), or drop the first-mismatch marks.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir . --rooms all; walk down the List corridor; set YOUR ROW to the flipped diagonal, CHECK; repeat for round 2, CHECK; step back and look at the board",
+      "screenshot": "shots/list_mixed_marks.png",
+      "tick": 38742
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "List debrief says the Prover door is 'in this room's right-hand wall' without saying from where",
+      "detail": "The debrief card ends 'One room is left: its door, in this room's right-hand wall, has opened.' When it appears you are at the answer lectern facing the question wall, and from there the Prover door is behind you, not on your right. The NEXT line that follows adds 'as you come in', which fixed it for me, and the door has a lit plaque saying 'The Prover' that is easy to spot once you turn round. Expected: the debrief uses the same wording as the objective ('on your right as you came in', or 'beside the bookshelves').",
+      "repro": "solve the List by answering NONE at the lectern; read the debrief card",
+      "screenshot": "shots/debrief_list.png",
+      "tick": 42763
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Solid black rectangle at top centre clips the NEXT objective line on entering the world",
+      "detail": "Just after pressing Continue on the title, a black box (about x370-910, y45-96) sat at the top centre of the view and cut the objective text off at 'through the Screen room's l...'. It was gone a few seconds later. Expected: no empty overlay; the objective line fully readable.",
+      "repro": "pt start ... --rooms all; pt key Return; pt await WORLD; pt shot",
+      "screenshot": "shots/blackbar.png",
+      "tick": 4394
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Bookshelves either side of the Prover door catch the player; easy to get wedged beside the door",
+      "detail": "Walking from the List's answer lectern toward the Prover door I slid along the left-hand bookshelf and stuck against it about 3 m from the door (x=-15.25 z=34.2). The opening between the shelves is narrow at a diagonal approach; I had to back up and line up square. pt walkto door also timed out at that spot.",
+      "repro": "after solving the List, turn round from the answer lectern and hold w toward the Prover plaque",
+      "screenshot": "shots/prover_found.png",
+      "tick": 54741
+    },
+    {
+      "severity": "polish",
+      "category": "balance",
+      "title": "Card 81's ITS NUMBER button cycles 12 -> 47 -> 81, so 'make it talk about itself' is two presses",
+      "detail": "The key step of the finale (pick card 81's own number) has only three choices, and they cycle in desk order, so pressing until something changes gets it with no thought. The board then says 'Card 81 now says... It talks about itself' and marks it ABOUT ITSELF, which is a good moment, but the player did not have to work it out. A small thought step (for example the choices including other numbers, or a prompt asking 'which number makes it about itself?') would make the click feel earned.",
+      "repro": "in the Prover, feed 12 and 47; aim at ITS NUMBER and press e twice",
+      "screenshot": "shots/w45.png",
+      "tick": 66500
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Prover caption box covers the lectern's button labels",
+      "detail": "After answering question 1, the caption 'Right. If it proved card 81...' sits over the lectern's TRUE/FALSE/CAN'T BE EITHER labels at the bottom of the view while you are deciding question 2. I had to wait or tilt to read which button was which.",
+      "repro": "answer NO to question 1 at the Prover lectern; step back one pace",
+      "screenshot": "shots/w50.png",
+      "tick": 70919
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 6,
+    "deaths": 0,
+    "secondsToObjective": {"Solve The List": 710.9, "Solve The Prover": 1207.7},
+    "listChecksUsed": 2,
+    "listWrongChecks": 0,
+    "proverWrongAnswers": 0,
+    "gameSecondsInListRoomToSolve": 543,
+    "gameSecondsFromListSolvedToProverSolved": 497
+  },
+  "fun": 4,
+  "answers": [
+    {
+      "question": "In your own words, what is a strange loop, and what did each room you played show about it?",
+      "answer": "A strange loop is a path that keeps climbing up levels and still ends where it started, often because something ends up referring to itself. The List: the librarian claims to list every endless row, but by flipping row 1's tile 1, row 2's tile 2 and so on I built a row out of the list itself that differs from every row in it; when the librarian added it, the same trick beat the new list, so no list can hold every row. The Prover: card 81 says 'the Prover can't prove card 81'. If the honest Prover proved it, it would have proved something false, so it never can, and that is exactly what the card says, so the card is true but unprovable. The final card ties it together: the Prover's sentence is made from its own numbering the way my row was made from the list it escapes."
+    },
+    {
+      "question": "Which moment was the most confusing, and why?",
+      "answer": "Right after winning the List's second round: the board drew a gold diagonal and a caption saying 'row n differs at tile n', but also red boxes and notes saying rows differ at tile 1, 2, 1, 4, 1, 2, 1, 3. I had to stop and work out that the notes were the first mismatch, not the diagonal. A smaller one: the List debrief said the Prover door was in 'this room's right-hand wall' while I was facing the question wall, so 'right' pointed the wrong way until the NEXT line added 'as you come in'."
+    },
+    {
+      "question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.",
+      "answer": "1) In the vestibule outside the stairs, facing south down the List corridor, just after Continue: a solid black box at top centre clipped the NEXT objective text; it went away after a few seconds. 2) In the List room, facing the librarian's list after the win: the mixed red first-mismatch marks next to the gold diagonal looked like a mistake. 3) In the List room near the Prover door (west side), facing the door at an angle: I stuck against the bookshelf next to the door. 4) In the Prover room, facing the question lectern: the caption box covered the lectern's button labels. Nothing crashed. The game ran at a few frames a second, so turning and tilting by holding keys overshot often."
+    }
+  ],
+  "verdict": "The end game works and lands: the List teaches the diagonal by having you do it twice, its debrief names Godel and points onward, and the Prover's card 81 is clearly the same move turned on a proof machine, so it feels like the right finale and the closing 'Strange loops.' card ties all six rooms together. Wayfinding was fine (the corridor and the lit 'The Prover' plaque are visible), though the List debrief's 'right-hand wall' needs 'as you come in'. The weakest spots are the List's post-win board, which mixes first-mismatch notes with the diagonal story, and the card-81 number picker, which is solved by pressing until it says 81."
+}

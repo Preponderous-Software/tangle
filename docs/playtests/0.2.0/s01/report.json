@@ -1,0 +1,94 @@
+{
+  "session": "s01",
+  "goal": "The Prover (Room 6, the last room). Start with --rooms prover (the first five rooms count as solved and you stand in the List facing the Prover's door); go through it. Play as someone who has never heard of Godel: feed the cards to the Prover, make card 81 talk about itself, and answer the questions. Say whether you understood WHY card 81 is true but can't be proved, which caption or board made it click (or didn't), and whether the two closing cards felt like a satisfying ending.",
+  "build": {
+    "version": "0.2.0",
+    "commit": "5b003a1"
+  },
+  "seed": null,
+  "durationSec": 770,
+  "outcome": "achieved",
+  "findings": [
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Prover board's best explainer (47 vs 81 table) appears only after the closing cards, behind the player, in tiny text",
+      "detail": "After the last answer the main board shows a summary table: card 12 'proves it' / true yes; 47 'searches forever' / no; 81 'searches forever' / YES, with a line starting 'To the Prover, cards 47 and 81 look the same. Only from outside you can see...'. This was the moment the idea really clicked for me: the Prover behaves identically on a false card and on card 81, but one of them is true. But it appears only after both debrief cards, while the player stands at the lectern on the opposite wall facing away; nothing prompts them to turn around. The key line is the smallest text on the board and was hard to read even ~3 m away at 1280x720. Expected: the table to be shown (or pointed to by a caption) before or during the questions, with the 'look the same' line at the size of the other board captions.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir . --rooms prover; feed 12, 47, set ITS NUMBER to 81, feed 81; answer NO then TRUE at the lectern; Return twice; turn ~180 degrees to the board",
+      "screenshot": "shots/board_table.png",
+      "tick": 42876
+    },
+    {
+      "severity": "major",
+      "category": "perf",
+      "title": "Walking and turning run at about a quarter of their stated speed at low frame rates, though game ticks advance at 60 a second",
+      "detail": "Ticks advanced at a steady ~60 a second (tick 6115 -> 37243 over 518 s wall time), but holding w for 6 s moved 3.4 m (expected ~15 m at 2.6 m/s) and holding Left for 2.9 s turned 72 degrees (expected ~300 at 103 deg/s). On a slow machine every walk and turn takes about four times as long as it should. Because of this, pt face reported ok:false after 8 turns with yaw unchanged, and pt walkto plaque timed out without moving. Expected: movement scaled by elapsed time, not by rendered frames.",
+      "repro": "pt start ... --rooms prover; Return; pt hold w 6; compare pt state player x/z before and after; pt hold Left 2.9; compare yawDeg",
+      "screenshot": "shots/faceslow.png",
+      "tick": 13074
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "NEXT objective banner covers the top-left of the Prover board and the question board when the player stands close",
+      "detail": "At the questions lectern the NEXT banner sits over 'Could the Prover ever stamp card 81 PROVED?' and over the 'About card 81 \u00b7 1 of 2' header; on the main board it covers Card 12's heading when standing at the desk. Expected: the boards to stay readable from where you press their buttons, or the banner to fade while a board fills the view.",
+      "repro": "pt start ... --rooms prover; walk to the lectern on the left-hand wall (prover questions) and look up at the board",
+      "screenshot": "shots/overlap.png",
+      "tick": 31499
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Lectern still shows gold crosshair and 'E: answer TRUE' after the Prover is solved, but E does nothing",
+      "detail": "After both questions and both closing cards, the lectern buttons go dark, yet aiming at TRUE still turns the crosshair gold with the prompt 'E: answer TRUE'. Pressing E does nothing and no event appears. Expected: no prompt, or a short line saying it is already answered.",
+      "repro": "finish the Prover; Return Return; stay at the lectern aimed at TRUE; pt key e",
+      "screenshot": "shots/stalelectern.png",
+      "tick": 39417
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Black empty rectangle flashes at the top centre over the NEXT banner right after Continue",
+      "detail": "In the first frame after pressing Continue on the title card, a solid black box (about x370-910, y45-95) appeared at the top centre and covered the end of the NEXT objective text. It was gone a second later; the sign above the Prover door ('A sentence about itself') had been under it. It looks like a texture or panel that has not finished loading.",
+      "repro": "pt start ... --rooms prover; pt await TITLE; pt key Return; pt await WORLD; pt wait 2; pt shot",
+      "screenshot": "shots/w1.png",
+      "tick": 4773
+    },
+    {
+      "severity": "polish",
+      "category": "text",
+      "title": "Question 1's hint 'Remember: the Prover never proves anything false' is small italic grey text, hard to read from the lectern distance",
+      "detail": "This is the hint that unlocks question 1, but it is the dimmest line on the board, in small grey italics. From the lectern (about 2 m away) it was barely legible until I walked right up. The wrong-answer feedback ('Suppose it did...') was large and clear, so a player who misses the hint still learns, but only after guessing wrong.",
+      "repro": "pt start ... --rooms prover; unlock the questions; stand at the lectern and look at the board",
+      "screenshot": "shots/q1.png",
+      "tick": 28768
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 1,
+    "deaths": 0,
+    "secondsToObjective": {
+      "Solve The Prover": 620.7
+    },
+    "secondsInProverRoomToSolve": 518.8,
+    "wrongAnswers": 2,
+    "cardsFed": 3,
+    "numberButtonPresses": 2
+  },
+  "fun": 4,
+  "verdict": "The Prover works as a lesson: the sequence (2+2=4 gets PROVED, 2+2=5 counts forever, card 81 looks exactly like 47 to the machine) plus the 'Suppose it did...' and 'That was the liar in the Screen room. This one isn't a paradox' wrong-answer captions taught me why card 81 is true and unprovable without any prior knowledge. The strongest explainer, the after-solve table showing 47 and 81 behave the same yet only 81 is true, appears behind the player after the closing cards, in tiny text; move it earlier or point to it. The two closing cards feel like a fitting, quiet ending ('Strange loops' recap ties all six rooms together), though 'Carry on' as the final button is a little flat for the last line of the game.",
+  "answers": [
+    {
+      "question": "In your own words, what is a strange loop, and what did each room you played show about it?",
+      "answer": "A strange loop is something that, by going up through levels (a machine talking about the things it handles, a sentence talking about sentences), comes back round to talk about itself. I only played the Prover. It showed a proving machine that is honest (never proves anything false) being handed a card that, through its own number, says 'the Prover can't prove card 81'. Because the card talks about itself, the Prover can never prove it (proving it would make it false), and that means what it says is true. So there is a true statement the machine can never reach, and you can only see that from outside the machine. The closing card says the other rooms show the same shape: a triangle that closes on itself, stairs that return, a list that misses a row built from itself."
+    },
+    {
+      "question": "Which moment was the most confusing, and why?",
+      "answer": "Question 2, 'So is card 81 true?'. My first instinct was CAN'T BE EITHER, because a sentence saying something about itself sounds like the liar paradox. The feedback ('That was the liar in the Screen room. This one isn't a paradox: you know it can't be proved, and that's all it says') cleared it up right away. Smaller confusions: the ITS NUMBER button only cycles 12 -> 47 -> 81, which is fine but means 'set its number' is guessing, not reasoning; and the best explainer (the table showing 47 and 81 both 'search forever' but only 81 is true) appeared only after the game was over, behind me."
+    },
+    {
+      "question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.",
+      "answer": "1) In the List, facing the Prover door (yaw 0) right after Continue, a solid black rectangle covered the top centre of the screen and the end of the NEXT text for about a second. 2) In the Prover, at the desk and at the questions lectern (left-hand wall, facing west/yaw about -100), the NEXT banner covered the top-left of the boards (Card 12's heading; the question title). 3) After solving, at the lectern facing the TRUE button, the crosshair still went gold with 'E: answer TRUE' although the buttons were dark and E did nothing. 4) Not visual but felt: walking and turning were about a quarter of normal speed at the low frame rate."
+    }
+  ]
+}

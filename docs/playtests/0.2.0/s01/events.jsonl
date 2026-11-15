@@ -1,0 +1,24 @@
+{"type": "screen", "tick": 3510, "wallTimeMs": 1794768050089, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 4339, "wallTimeMs": 1794768063910, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 4339, "wallTimeMs": 1794768063911, "how": "created", "seed": 0}
+{"type": "objective", "tick": 4339, "wallTimeMs": 1794768063912, "text": "The Prover, through the door in the List's right-hand wall as you come in."}
+{"type": "objective", "tick": 6115, "wallTimeMs": 1794768093503, "text": "Feed cards 12 and 47 to the Prover, and watch what it does with each."}
+{"type": "status", "tick": 6115, "wallTimeMs": 1794768093503, "text": "The last room. A machine that proves things, and some numbered cards. Read the plaque on your right."}
+{"type": "status", "tick": 6537, "wallTimeMs": 1794768100540, "text": "Press a card on the desk to feed it to the Prover. Start with cards 12 and 47."}
+{"type": "status", "tick": 17125, "wallTimeMs": 1794768277014, "text": "Watch the board: the Prover finds a proof of 2 + 2 = 4 and stamps the card."}
+{"type": "objective", "tick": 21044, "wallTimeMs": 1794768342331, "text": "Card 81 says the Prover can't prove some card. Set its number so it talks about itself, then feed it in."}
+{"type": "status", "tick": 21044, "wallTimeMs": 1794768342333, "text": "2 + 2 = 5 is false. The Prover will never find a proof of it, so it searches forever."}
+{"type": "status", "tick": 21544, "wallTimeMs": 1794768350658, "text": "Now card 81. Its number can be changed with the button on the right of the desk."}
+{"type": "status", "tick": 26099, "wallTimeMs": 1794768426578, "text": "Card 81 says: \u201cThe Prover can't prove card 81.\u201d It's talking about itself. Watch what the Prover does."}
+{"type": "status", "tick": 26523, "wallTimeMs": 1794768433649, "text": "The lectern on the left-hand wall has woken up. Can the Prover ever prove card 81?"}
+{"type": "objective", "tick": 26523, "wallTimeMs": 1794768433649, "text": "Answer the questions on the left-hand wall about card 81."}
+{"type": "status", "tick": 30551, "wallTimeMs": 1794768500781, "text": "Suppose it did. Card 81 says \u201cI can't be proved\u201d, so that would make card 81 false, and the Prover never proves false things."}
+{"type": "status", "tick": 32345, "wallTimeMs": 1794768530683, "text": "Right. If it proved card 81, it would have proved something false, and it never does. So it never will."}
+{"type": "status", "tick": 35561, "wallTimeMs": 1794768584275, "text": "That was the liar in the Screen room. This one isn't a paradox: you know it can't be proved, and that's all it says."}
+{"type": "objective", "tick": 37243, "wallTimeMs": 1794768612305, "text": "Every loop found. Wander as you like."}
+{"type": "status", "tick": 37243, "wallTimeMs": 1794768612306, "text": "True. It says the Prover can't prove it, and that is exactly so. True, and it can't be proved."}
+{"type": "objective_completed", "tick": 37243, "wallTimeMs": 1794768612314, "title": "Solve The Prover", "id": "godel", "x": -22.34, "z": 33.99}
+{"type": "screen", "tick": 37346, "wallTimeMs": 1794768614032, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 37347, "wallTimeMs": 1794768614037, "title": "True, and it can't be proved."}
+{"type": "debrief", "tick": 37848, "wallTimeMs": 1794768622402, "title": "Strange loops."}
+{"type": "screen", "tick": 38534, "wallTimeMs": 1794768633823, "from": "DEBRIEF", "to": "WORLD"}
