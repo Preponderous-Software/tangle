@@ -136,14 +136,19 @@ const EYE = 1.62;
 
   // the Prover: the two sums, then card 81 set to talk about itself, then the two questions
   await walkTo(-9, 31); await walkTo(-13.5, 31); await walkTo(-17, 31); await walkTo(-22.6, 31);
-  const KEY = { g12: 32.9, g47: 32.1, g81: 31.3, gnum: 30.1 };
+  const KEY = { g12: 32.9, g47: 32.1, g81: 31.3, gten: 30.45, gone: 29.85 };
   const pressKey = async (id) => { await lookAt([-24.0, 1.1, KEY[id]]); await frames(2); await page.keyboard.press("KeyE"); await frames(2); };
   const prv = () => page.evaluate(() => { const p = window.__tangle.state.prv; return { fed: p.fed, blank: p.blank, selfFed: p.selfFed, q: p.q, msg: p.msg, qMsg: p.qMsg }; });
   await pressKey("g81");
   step(`prover, card 81 too soon: ${(await prv()).msg}`);
   await pressKey("g12"); await pressKey("g47");
   step(`prover fed: ${JSON.stringify((await prv()).fed)}`);
-  while ((await prv()).blank !== 81) await pressKey("gnum");
+  // card 81's number: a wrong turn of the dial first (aimed), then the rest by the number keys 4 (TENS) and 5 (ONES)
+  await pressKey("gten");
+  step(`prover dial at ${(await prv()).blank}: ${(await prv()).msg}`);
+  for (let k = 0; k < 10 && Math.floor((await prv()).blank / 10) !== 8; k++) { await page.keyboard.press("Digit4"); await frames(2); }
+  for (let k = 0; k < 10 && (await prv()).blank % 10 !== 1; k++) { await page.keyboard.press("Digit5"); await frames(2); }
+  step(`prover dial at ${(await prv()).blank}: ${(await prv()).msg}`);
   await pressKey("g81");
   for (let k = 0; k < 100 && !(await prv()).selfFed; k++) { await page.waitForTimeout(100); await frames(2); }
   step(`prover: card 81 fed, questions ${(await prv()).selfFed ? "open" : "SHUT"}`);

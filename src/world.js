@@ -35,7 +35,8 @@ export const PCAB = {x0: -27.3, x1: -26.5, z0: 27.2, z1: 34.8, h: 1.1};  // the 
 export const PDESK = {x0: -24.4, x1: -23.6, z0: 29.4, z1: 33.4, h: 1.0};
 export const PKEY_X = -24.0, PKEY_Y = 1.06;
 // [id, label, z]: facing the Prover (-x), card 12 is on the left (+z)
-export const PKEYS = [["g12", "CARD 12", 32.9], ["g47", "CARD 47", 32.1], ["g81", "CARD 81", 31.3], ["gnum", "ITS NUMBER", 30.1]];
+// then card 81's number: a dial of two digits, tens and ones
+export const PKEYS = [["g12", "CARD 12", 32.9], ["g47", "CARD 47", 32.1], ["g81", "CARD 81", 31.3], ["gten", "TENS", 30.45], ["gone", "ONES", 29.85]];
 export const GLECTERN = {x0: -23.2, x1: -20.8, z0: 35.1, z1: 35.75, h: 1.0};  // out from the wall, so the board reads from the lectern
 export const GANSWER_Z = 35.42;
 export const GANSWERS_X = {ga: -21.45, gb: -22.0, gc: -22.55};   // facing the wall (+z), ga is on the left

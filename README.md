@@ -49,7 +49,9 @@ appears in place.
 - **The Prover (Gödel).** The last room, behind a door the List opens. The Prover tries every proof,
   shortest first, and it is honest: it never proves anything false. Feed it `2 + 2 = 4` and it stamps
   the card PROVED; feed it `2 + 2 = 5` and it searches forever. Every card has a number, so card 81,
-  "The Prover can't prove card __", can be set to talk about itself. Fed in, it runs forever too, and
+  "The Prover can't prove card __", can be set to talk about itself: its blank is a two-digit dial
+  (TENS and ONES buttons), and nothing says which number to dial. You have to see that the card's own
+  number is the one it needs; every wrong number is explained. Fed in, it runs forever too, and
   a lectern asks why: if the Prover proved card 81 it would have proved something false, so it never
   does, and that is exactly what card 81 says. It's true, and it can't be proved. A closing card
   gathers every room's loop into Hofstadter's idea that "I" is a strange loop.

@@ -51,7 +51,7 @@ const state = {
   solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr, stair: !!saved.stair, list: !!saved.list, godel: !!saved.godel},
   // Room 6: the Prover. fed: cards fed so far; blank: card 81's number; selfFed: card 81 fed while about itself; q: question
   prv: {fed: Array.isArray(saved.prv && saved.prv.fed) ? saved.prv.fed.filter((n) => n === 12 || n === 47) : [],
-    blank: Prover.NUMBERS.includes(saved.prv && saved.prv.blank) ? saved.prv.blank : 12,
+    blank: Prover.validBlank(saved.prv && saved.prv.blank) ? saved.prv.blank : Prover.START,
     selfFed: !!(saved.prv && saved.prv.selfFed) || !!saved.godel, q: saved.godel ? Prover.QUESTIONS.length : Math.min(1, (saved.prv && saved.prv.q) || 0),
     run: null, msg: null, good: false, qMsg: null, qGood: !!saved.godel},
   // Room 5: the librarian's list. round 0: the first list; 1: your row added; 2: beaten twice (the question)
@@ -368,12 +368,18 @@ function feedCard(n) {
   if (n === 81) say("Card 81 says: “The Prover can't prove card 81.” It's talking about itself. Watch what the Prover does.", 8000, true);
   refreshProver(); refreshItems(performance.now()); save();
 }
-function turnBlank() {
+function turnBlank(digit) {
   const p = state.prv;
   if (state.solved.godel) { Audio.cue("nope"); return; }
-  p.blank = Prover.nextNumber(p.blank);
-  p.msg = p.blank === Prover.SELF ? "Card 81 now says: “The Prover can't prove card 81.” It talks about itself." : `Card 81 now talks about card ${p.blank}.`;
-  p.good = p.blank === Prover.SELF;
+  p.blank = Prover.turn(p.blank, digit);
+  const a = Prover.about(p.blank, p.fed);
+  p.msg = a.message; p.good = a.self;
+  if (a.self) say("Card 81 now talks about itself: “The Prover can't prove card 81.” Feed it in.", 6000, true);
+  p.turns = (p.turns || 0) + 1;
+  if (!a.self && p.turns >= 10 && !p.dialHint) {  // turning without a plan: point at the card's own number
+    p.dialHint = true;
+    say("Which card is card 81? Its own number is printed at the top of it on the board. TENS sets the first digit, ONES the second.", 9000, true);
+  }
   if (p.run && p.run.n === 81) p.run = null;  // a different card now
   Audio.cue("click");
   refreshProver(); refreshItems(performance.now()); save();
@@ -598,10 +604,11 @@ function refreshItems(now = 0) {
   {
     const p = state.prv, down = (id) => pressed.id === id && now < pressed.until, lit = (id) => focus && focus.id === id;
     for (const [id, , z] of World.PKEYS) {
-      let col = id === "gnum" ? [0.3, 0.66, 0.68] : id === "g81" && p.blank === Prover.SELF ? [0.95, 0.75, 0.3] : [0.9, 0.86, 0.76];
+      const dial = id === "gten" || id === "gone";
+      let col = dial ? [0.3, 0.66, 0.68] : id === "g81" && p.blank === Prover.SELF ? [0.95, 0.75, 0.3] : [0.9, 0.86, 0.76];
       if (id === "g81" && !(p.fed.includes(12) && p.fed.includes(47))) col = col.map((c) => c * 0.4);
       if (lit(id)) col = col.map((c) => Math.min(1, c * 1.25 + 0.06));
-      items.push([0, World.PKEY_X, World.PKEY_Y - (down(id) ? 0.03 : 0), z, 0.42, 0.08, id === "gnum" ? 0.6 : 0.46, ...col]);
+      items.push([0, World.PKEY_X, World.PKEY_Y - (down(id) ? 0.03 : 0), z, 0.42, 0.08, 0.46, ...col]);
     }
     const off = !p.selfFed || state.solved.godel;
     for (const id of Prover.ANSWER_IDS) {
@@ -650,7 +657,7 @@ const LEGEND = {r1: "rule 1: if it ends in I, add U", r2: "rule 2: double everyt
 
 function label(id) {
   if (id === "g12" || id === "g47" || id === "g81") return `feed card ${id.slice(1)} to the Prover: \u201c${Prover.cardText(Number(id.slice(1)), state.prv.blank)}\u201d`;
-  if (id === "gnum") return `change card 81's number (it says card ${state.prv.blank} now)`;
+  if (id === "gten" || id === "gone") return `turn the ${id === "gten" ? "tens" : "ones"} of card 81's number (card ${Prover.pad2(state.prv.blank)} now)`;
   if (id === "ga" || id === "gb" || id === "gc") return `answer ${Prover.QUESTIONS[Math.min(state.prv.q, Prover.QUESTIONS.length - 1)].buttons[Prover.ANSWER_IDS.indexOf(id)]}`;
   if (/^t\d$/.test(id)) { const i = Number(id.slice(1)); return `tile ${i + 1}: make it ${state.diag.guess[i] ? "dark" : "light"}`; }
   return LEGEND[id];
@@ -666,7 +673,7 @@ function press(id) {
   if (id === "check") { checkRow(); return; }
   if (id.startsWith("q_")) { questionAnswer(id); return; }
   if (id === "g12" || id === "g47" || id === "g81") { feedCard(Number(id.slice(1))); return; }
-  if (id === "gnum") { turnBlank(); return; }
+  if (id === "gten" || id === "gone") { turnBlank(id === "gten" ? "tens" : "ones"); return; }
   if (id === "ga" || id === "gb" || id === "gc") { proverAnswer(id); return; }
   let last = "", ok = true;
   const all = moves(state.word), sp = spotsOf(state.word);
@@ -1204,7 +1211,7 @@ function targets() {
     t.push({id, lo: [World.QANSWER_X - 0.24, 0.98, z - 0.26], hi: [World.QANSWER_X + 0.24, 1.16, z + 0.26]});
   }
   for (const [id, , z] of World.PKEYS) {
-    const hz = id === "gnum" ? 0.3 : 0.23;
+    const hz = 0.23;
     t.push({id, lo: [World.PKEY_X - 0.21, World.PKEY_Y - 0.06, z - hz], hi: [World.PKEY_X + 0.21, World.PKEY_Y + 0.045, z + hz]});
   }
   if (!state.solved.godel) for (const id of Prover.ANSWER_IDS) {

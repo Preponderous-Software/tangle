@@ -378,10 +378,17 @@ export function proverBoard(doc, {fed, blank, run, message, good, solved, unlock
       g.font = `700 42px ${SERIF}`; g.fillStyle = self ? "#f1ece2" : INK;
       g.fillText("The Prover can't prove", 74, y + 96);
       g.fillText("card", 74, y + 150);
-      const bx = 74 + g.measureText("card ").width;
-      g.fillStyle = self ? "#e6c46a" : "#c9a24f"; g.fillRect(bx, y + 110, 96, 54);
-      g.fillStyle = "#14121b"; g.fillText(String(blank), bx + 8, y + 151);
-      g.fillStyle = self ? "#f1ece2" : INK; g.fillText(".", bx + 100, y + 150);
+      // the blank: two digit wheels, tens and ones, each turned by its own button on the desk
+      const bx = 74 + g.measureText("card ").width, digits = String(blank).padStart(2, "0");
+      for (let i = 0; i < 2; i++) {
+        g.fillStyle = self ? "#e6c46a" : "#c9a24f"; g.fillRect(bx + i * 56, y + 110, 50, 54);
+        g.fillStyle = "#14121b"; g.textAlign = "center"; g.fillText(digits[i], bx + i * 56 + 25, y + 151); g.textAlign = "left";
+      }
+      g.fillStyle = self ? "#f1ece2" : INK; g.fillText(".", bx + 112, y + 150);
+      if (!solved) {
+        g.fillStyle = self ? "#b39a5a" : "#7a6f5c"; g.font = `600 17px ${MONO}`; g.textAlign = "center";
+        g.fillText("TENS", bx + 25, y + 182); g.fillText("ONES", bx + 81, y + 182); g.textAlign = "left";
+      }
       if (self) { g.fillStyle = "#e6c46a"; g.font = `600 26px ${MONO}`; g.fillText("ABOUT ITSELF", 470, y + 42); }
     }
     const proving = run && run.n === 12 && run.kind === "proved" && run.count < 4;  // the stamp lands when the proof is done

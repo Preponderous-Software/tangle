@@ -54,6 +54,8 @@ const SHOTS = [
   ["39-prv-desk", [-22.9, 31.2, 0.0, 0.5], "frames6"],
   ["40-prv-fed12", [-22.6, 31.0, 0.0, -0.12], "prvFeed12", 3000],
   ["41-prv-fed47", [-22.6, 31.0, 0.0, -0.12], "prvFeed47", 5000],
+  ["41b-prv-dial", [-22.6, 31.0, 0.0, -0.12], "prvDial"],
+  ["41c-prv-dial-desk", [-22.9, 31.0, 0.46, 0.43], "frames6"],
   ["42-prv-self", [-22.6, 31.0, 0.0, -0.12], "prvSelf", 7000],
   ["43-prv-question", [-22.0, 34.3, -Math.PI / 2, -0.12], "prvWrong"],
   ["44-prv-q2", [-22.0, 34.3, -Math.PI / 2, 0.3], "prvQ2"],
@@ -104,7 +106,12 @@ const SHOTS = [
       if (setup === "listSolve") g.press("q_none");
       if (setup === "prvFeed12") g.press("g12");
       if (setup === "prvFeed47") g.press("g47");
-      if (setup === "prvSelf") { g.press("gnum"); g.press("gnum"); g.press("g81"); }
+      if (setup === "prvDial") g.press("gten");
+      if (setup === "prvSelf") {
+        for (let k = 0; k < 10 && Math.floor(g.state.prv.blank / 10) !== 8; k++) g.press("gten");
+        for (let k = 0; k < 10 && g.state.prv.blank % 10 !== 1; k++) g.press("gone");
+        g.press("g81");
+      }
       if (setup === "prvWrong") g.press("ga");
       if (setup === "prvQ2") g.press("gb");
       if (setup === "prvSolve") g.press("ga");
