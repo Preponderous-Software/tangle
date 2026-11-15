@@ -629,7 +629,7 @@ function refreshPoints(t = 0) {
       pts.push([ex + 0.42 * Math.cos(a), 0.03, ez + 0.42 * Math.sin(a), solved ? 7 : 9, 0, ...(solved ? [1.0, 0.8, 0.3] : [0.95, 0.85, 0.55]), pulse]);
     }
     // the ring is on the floor, out of view at eye level: a column of light marks it
-    if (!solved) for (let k = 1; k <= 9; k++) pts.push([ex, 0.25 * k, ez, 7, 0, 0.95, 0.85, 0.55, pulse * (1 - k / 12)]);
+    if (!solved) for (let k = 1; k <= 16; k++) pts.push([ex, 0.15 * k, ez, 10, 0, 1.0, 0.9, 0.6, pulse * (1.1 - k / 18)]);
   }
   if (state.gateOpen && !state.solved.miu) {  // the Machine: a trail of lights through the open gate and up the ramp
     const rp = World.MACHINE.ramp, zc = (rp.z0 + rp.z1) / 2;
@@ -689,7 +689,7 @@ function press(id) {
       state.history.push(state.word); state.word = mv.result; state.sel = 0; state.made.push(mv.result);
       state.presses++; last = `rule ${rule}`;
       refreshBoard();
-      if (state.presses === 1) say("That's how it works. Keep going: can you reach MU?", 5000);
+      if (state.presses === 1 && !state.gateOpen) say("That's how it works. Keep going: can you reach MU?", 5000);
     }
   }
   Audio.cue(ok ? "click" : "nope");
@@ -859,7 +859,7 @@ function maybeOpenGate() {
     state.gateOpen = true;
     refreshGate(); refreshLights(); refreshPoints(); save();
     Audio.cue("gate");
-    say("You've been working inside the machine's rules. The gate has opened: it's at the foot of the ramp, in the corner on your right as you come in. Follow the lights up and look at the machine from outside.", 10000, true);
+    say((state.presses ? "You've been working inside the machine's rules." : "You can stop pressing buttons for now.") + " The gate has opened: it's at the foot of the ramp, in the corner on your right as you come in. Follow the lights up and look at the machine from outside.", 10000, true);
     objective("Climb the ramp to the balcony and read the board.");
   }
 }
@@ -1023,11 +1023,11 @@ $("soundon").addEventListener("change", (e) => { settings.sound = e.target.check
 
 const KEYS = touchFirst
   ? [["Stick", "walk (push far to run)"], ["Drag", "look around"], ["Use / tap", "press what you're looking at"], ["≡", "this menu"]]
-  : [["W A S D", "walk (Shift to run)"], ["Mouse", "look around"], ["E / click", "use what you're looking at"], ["Esc", "this menu"]];
+  : [["W A S D", "walk (Shift to run)"], ["Mouse", "look around"], ["← → PgUp PgDn", "turn and look up or down without a mouse"], ["E / click", "use what you're looking at"], ["1–9, Enter", "press a nearby desk's buttons by number"], ["Esc", "this menu"]];
 $("keys").innerHTML = KEYS.map(([k, v]) => `<kbd>${k}</kbd><span>${v}</span>`).join("");
 $("how").innerHTML = touchFirst
   ? "<b>Walk</b> with the stick · <b>look</b> by dragging · <b>use</b> things with the Use button. Each room is a puzzle; read the plaques."
-  : "<b>Walk</b> with W A S D · <b>look</b> with the mouse · <b>use</b> things with E. Esc pauses. Each room is a puzzle; read the plaques.";
+  : "<b>Walk</b> with W A S D · <b>look</b> with the mouse (or the arrow keys) · <b>use</b> things with E, or a desk's number keys. Esc pauses. Each room is a puzzle; read the plaques.";
 if (hasProgress) { $("begin").textContent = "Continue"; $("fresh").hidden = false; }
 
 function intro() {
@@ -1098,6 +1098,15 @@ addEventListener("keydown", (e) => {
   if (state.card) return;
   keys.add(e.code);
   if (e.code === "KeyE" && !e.repeat) use();
+  // number keys press the n-th button of the nearest desk or lectern (Enter: its CHECK), so you
+  // needn't aim at small buttons (slow machines, keyboard-only players)
+  if (/^(Digit|Numpad)[1-9]$/.test(e.code) && !e.repeat) pressNth(Number(e.code.slice(-1)));
+  if ((e.code === "Enter" || e.code === "NumpadEnter") && !e.repeat && nearestPanel() && nearestPanel().enter) press(nearestPanel().enter);
+  // a tap of PageUp/PageDown tilts a small, fixed step (holding keeps tilting)
+  if ((e.code === "PageUp" || e.code === "PageDown") && !e.repeat && kit) {
+    kit.cam.pitch = Math.min(Math.max(kit.cam.pitch + (e.code === "PageDown" ? 0.06 : -0.06), -1.2), 1.2);
+    camSeen = {yaw: kit.cam.yaw, pitch: kit.cam.pitch};
+  }
   if (["KeyW", "KeyA", "KeyS", "KeyD", "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown"].includes(e.code)) e.preventDefault();
 });
 addEventListener("keyup", (e) => keys.delete(e.code));
@@ -1160,7 +1169,7 @@ function input(dt) {
   if (k("ArrowRight") && kit) { kit.cam.yaw += 1.8 * dt * settings.sens; camSeen = {yaw: kit.cam.yaw, pitch: kit.cam.pitch}; }
   // Page Up / Page Down tilt the view (for keyboard-only players)
   if ((k("PageUp") || k("PageDown")) && kit) {
-    kit.cam.pitch = Math.min(Math.max(kit.cam.pitch + (k("PageDown") ? 1 : -1) * 1.2 * dt * settings.sens, -1.2), 1.2);
+    kit.cam.pitch = Math.min(Math.max(kit.cam.pitch + (k("PageDown") ? 1 : -1) * 0.8 * dt * settings.sens, -1.2), 1.2);
     camSeen = {yaw: kit.cam.yaw, pitch: kit.cam.pitch};
   }
   if (stickId != null) { forward = stickInput.forward; right = stickInput.right; }
@@ -1213,6 +1222,34 @@ function aim(dir) {
   for (const t of targets()) { const h = rayHit(o, dir, t.lo, t.hi); if (h != null && h < 3.2 && (!best || h < best.t)) best = {id: t.id, t: h}; }
   return best;
 }
+// Desks and lecterns, for the number keys: the buttons in order (as labelled, left to right) and
+// a centre; the nearest one within reach answers.
+function panels() {
+  const P = [
+    {c: [16, -5.15], ids: World.BUTTONS.map(([id]) => id)},
+    {c: [World.ANSWER_X, 15.0], ids: World.ANSWERS.map(([id]) => id)},
+    {c: [-9.5, 13.3], ids: World.TOP_ANSWERS.map(([id]) => id)},
+    {c: [-8.6, World.SWITCH_Z], ids: World.SWITCHES.filter(([id]) => id !== "check").map(([id]) => id), enter: "check"},
+    {c: [World.QANSWER_X, 31.0], ids: Diag.QUESTION.map(([id]) => id)},
+    {c: [World.PKEY_X, 31.5], ids: World.PKEYS.map(([id]) => id)},
+    {c: [-22.0, World.GANSWER_Z], ids: Prover.ANSWER_IDS},
+  ];
+  if (me.y > 1) P.push({c: [World.MACHINE.declare[0], World.MACHINE.declare[2]], ids: ["declare"]});
+  return P;
+}
+function nearestPanel() {
+  let best = null, bd = 3.2;
+  for (const p of panels()) { const d = Math.hypot(p.c[0] - me.x, p.c[1] - me.z); if (d < bd) { bd = d; best = p; } }
+  return best;
+}
+function pressNth(n) {
+  const p = nearestPanel();
+  if (state.card || !p || n > p.ids.length) return;
+  const id = p.ids[n - 1];
+  if (!targets().some((t) => t.id === id)) { Audio.cue("nope"); return; }  // dark (solved) buttons stay dark
+  press(id);
+}
+
 function use() {
   if (state.card) return;
   if (focus) press(focus.id);
@@ -1233,8 +1270,8 @@ function screenRay(nx, ny) {  // normalised device coords -> world direction
 let lastT = null, stride = 0, lastSave = 0, lastGlowT = 0, lastProverT = 0;
 function tick(t, now) {
   // a slow frame (software rendering can run at 4-5 fps) still moves you the right distance:
-  // up to 0.25 s per frame, walked in steps of at most 50 ms (collision stays fine-grained)
-  const dt = lastT == null ? 0 : Math.min(0.25, t - lastT); lastT = t;
+  // up to 0.5 s per frame, walked in steps of at most 50 ms (collision stays fine-grained)
+  const dt = lastT == null ? 0 : Math.min(0.5, t - lastT); lastT = t;
   settleDrag();
   me.yaw = kit.cam.yaw; me.pitch = kit.cam.pitch;
   fitFov();

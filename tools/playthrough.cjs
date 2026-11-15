@@ -118,8 +118,13 @@ const EYE = 1.62;
   step(`list guess: ${(await diag()).msg}`);
   for (const round of [0, 1]) {
     const d = await diag(), want = d.list.map((r, i) => 1 - r[i]);
-    for (let i = 0; i < 8; i++) if (d.guess[i] !== want[i]) await pressSwitch(i);
-    await pressSwitch("check");
+    if (round === 0) {  // round 1 by aiming at the switches
+      for (let i = 0; i < 8; i++) if (d.guess[i] !== want[i]) await pressSwitch(i);
+      await pressSwitch("check");
+    } else {  // round 2 by the number keys and Enter, as a keyboard-only player would
+      for (let i = 0; i < 8; i++) if (d.guess[i] !== want[i]) { await page.keyboard.press(`Digit${i + 1}`); await frames(2); }
+      await page.keyboard.press("Enter"); await frames(2);
+    }
     step(`list round ${round}: escaped ${(await diag()).escaped}`);
     if (round === 0) { for (let k = 0; k < 80 && (await diag()).round === 0; k++) { await page.waitForTimeout(100); await frames(1); } }
   }
