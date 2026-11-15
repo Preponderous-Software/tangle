@@ -5,6 +5,14 @@ A small first-person game about strange loops, the idea at the heart of Douglas 
 built as a puzzle that you solve by understanding it. When you solve one, a short debrief
 appears in place.
 
+<!-- darkroom:shot triangle-closes -->
+![Animation: the camera walks sideways until three beams line up into an impossible triangle](docs/media/triangle-closes.gif)
+
+*Walk to the one viewpoint and the triangle closes.*
+
+[MP4 version](docs/media/triangle-closes.mp4)
+<!-- darkroom:end -->
+
 **Status: complete.** It has a hub and six rooms:
 
 - **The Triangle (Escher).** A real impossible triangle stands in the room. From almost everywhere
@@ -45,6 +53,74 @@ appears in place.
   a lectern asks why: if the Prover proved card 81 it would have proved something false, so it never
   does, and that is exactly what card 81 says. It's true, and it can't be proved. A closing card
   gathers every room's loop into Hofstadter's idea that "I" is a strange loop.
+
+## Pictures
+
+Every picture here is the real game, shot by [darkroom](https://github.com/Preponderous-Software/darkroom) from `media.json` (serve the game on port 8781, then `darkroom shoot media.json`).
+
+<!-- darkroom:start -->
+![A first-person view down a lit hall with doorways on both sides](docs/media/hall.jpg)
+
+*The hall: every door leads to a strange loop.*
+
+![Three beams that fail to meet, seen from the side](docs/media/triangle-broken.jpg)
+
+*The Triangle from the wrong place: a bent, open bar.*
+
+![Animation: the camera walks sideways until three beams line up into an impossible triangle](docs/media/triangle-closes.gif)
+
+*Walk to the one viewpoint and the triangle closes.*
+
+[MP4 version](docs/media/triangle-closes.mp4)
+
+![A console showing a string of M, I and U letters and rule buttons](docs/media/machine-console.jpg)
+
+*The Machine: turn MI into MU with four rules. You can't, and the balcony shows why.*
+
+![A screen whose picture contains smaller and smaller copies of itself](docs/media/screen-inside-itself.jpg)
+
+*The Screen: a screen that shows whatever you see, so it shows itself.*
+
+![Animation: approaching a screen that shows ever deeper copies of itself](docs/media/screen-feedback.gif)
+
+*Walking up to the screen: it fills with copies of itself.*
+
+![Looking down a stairwell that loops back on itself](docs/media/stairwell.jpg)
+
+*The stairwell: six flights, each a whole tone higher, and it never ends.*
+
+![Animation: walking up a square stairwell, round and round, while a readout counts metres above the door](docs/media/stairs-forever.gif)
+
+*Climbing the stairs: one whole loop, back past the door, and the height readout keeps climbing.*
+
+[MP4 version](docs/media/stairs-forever.mp4)
+
+![A library with tall bookshelves, a desk of switches and a board of light and dark tiles](docs/media/library.jpg)
+
+*The List: a library, and a list that claims to hold every endless row.*
+
+![Animation: a board of light and dark tiles; tiles along the diagonal are flipped one by one, then the row is checked](docs/media/list-diagonal.gif)
+
+*The List: flip each tile on the gold diagonal, and your row differs from every row in the list.*
+
+![A room with a proving machine, its board of numbered cards, and a desk](docs/media/prover-room.jpg)
+
+*The Prover, the last room: a machine that tries every proof.*
+
+![Animation: a board of three cards; the first is stamped PROVED, a counter of proofs tried climbs for the second, then card 81 is set to talk about itself](docs/media/prover.gif)
+
+*The Prover proves 2 + 2 = 4, searches forever for 2 + 2 = 5, then meets card 81: “The Prover can't prove card 81.”*
+
+[MP4 version](docs/media/prover.mp4)
+
+![The Prover's board after solving, with a table of what the Prover does with each card and whether it is true](docs/media/prover-solved.jpg)
+
+*Solved: to the Prover, cards 47 and 81 look the same. Only from outside can you see that 81 is true.*
+
+![A card titled Strange loops, summing up each room's loop](docs/media/ending-card.jpg)
+
+*The closing card, once every room is solved.*
+<!-- darkroom:end -->
 
 ## Play
 
@@ -131,6 +207,9 @@ itself.
   - `npm run playthrough` plays the whole slice
     through the real inputs: W to walk, turning toward each waypoint, E to press what the
     crosshair is on. It exits non-zero unless every room ends solved with no errors.
+- **Pictures.** `media.json` is a [darkroom](https://github.com/Preponderous-Software/darkroom) shot list: the stills
+  and GIFs in this README, driven frame by frame (`?drive=1`, `?skip=4`, `?skip=5`). `darkroom gallery media.json --insert README.md`
+  refreshes the gallery.
 - **AI playtests.** `tools/playtest/tangle.json` is a profile for
   [playtester](https://github.com/Preponderous-Software/playtester): AI agents play the real game in
   headless Chromium windows (`tools/playtest-launch.sh`), steered by a probe the page writes with

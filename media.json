@@ -1,0 +1,532 @@
+{
+  "description": "Tangle's README stills and GIFs, shot with darkroom (https://github.com/Preponderous-Software/darkroom). Serve the game on 8781, then: darkroom shoot media.json",
+  "out": "docs/media",
+  "vars": {
+    "base": "http://127.0.0.1:8781/",
+    "start": "new=1"
+  },
+  "devices": {
+    "wide": {
+      "width": 960,
+      "height": 540
+    }
+  },
+  "budgets": {
+    "still_kb": 200,
+    "gif_mb": 3
+  },
+  "defaults": {
+    "backend": "web",
+    "adapter": "strata-kit",
+    "device": "desktop",
+    "url": "{base}?drive=1&{start}",
+    "waitUntil": "commit",
+    "ready": "window.__tangle && window.__strataKit",
+    "css": "#objective, #caption { display: none !important; }",
+    "quality": 86,
+    "setup": [
+      {
+        "js": "window.__dr = { EYE: 1.62, TRI: [-19.6, 2.9, -3.6], look(from, at) { const dx = at[0] - from[0], dz = at[2] - from[1], dy = at[1] - this.EYE, h = Math.hypot(dx, dz); return [Math.atan2(-dz, -dx), Math.atan2(-dy, h)]; }, pose(x, z, yaw, pitch) { const g = window.__tangle; if (g.state.card) g.card(null); g.pose(x, z, yaw, pitch); }, route: [[-11.9, 16], [-11.9, 11.0], [-22.1, 11.0], [-22.1, 16], [-22.1, 21.0], [-11.9, 21.0], [-11.9, 16], [-11.9, 12.4]], leg: 0, steer() { const m = window.__tangle.me; while (this.leg < this.route.length && Math.hypot(m.x - this.route[this.leg][0], m.z - this.route[this.leg][1]) < 1.7) this.leg++; if (this.leg >= this.route.length) return; const [x, z] = this.route[this.leg]; window.__tangle.look(Math.atan2(-(z - m.z), -(x - m.x)), -0.18); } }"
+      }
+    ]
+  },
+  "shots": [
+    {
+      "name": "hall",
+      "kind": "still",
+      "caption": "The hall: every door leads to a strange loop.",
+      "alt": "A first-person view down a lit hall with doorways on both sides",
+      "steps": [
+        {
+          "js": "__dr.pose(0, 4.0, Math.PI / 2, 0.06)"
+        },
+        {
+          "frames": 6
+        }
+      ]
+    },
+    {
+      "name": "triangle-broken",
+      "kind": "still",
+      "caption": "The Triangle from the wrong place: a bent, open bar.",
+      "alt": "Three beams that fail to meet, seen from the side",
+      "steps": [
+        {
+          "js": "const [y, p] = __dr.look([-14.6, 4.6], __dr.TRI); __dr.pose(-14.6, 4.6, y, p)"
+        },
+        {
+          "frames": 6
+        }
+      ]
+    },
+    {
+      "name": "triangle-closes",
+      "kind": "clip",
+      "device": "wide",
+      "caption": "Walk to the one viewpoint and the triangle closes.",
+      "alt": "Animation: the camera walks sideways until three beams line up into an impossible triangle",
+      "fps": 12.5,
+      "gif": {
+        "width": 640,
+        "colors": 160
+      },
+      "video": [
+        "mp4"
+      ],
+      "steps": [
+        {
+          "repeat": 36,
+          "steps": [
+            {
+              "js": "const a = [-16.8, 0.6], b = [-12.2, 5.4], s = u * u * (3 - 2 * u), x = a[0] + (b[0] - a[0]) * s, z = a[1] + (b[1] - a[1]) * s; const [y, p] = __dr.look([x, z], __dr.TRI); __dr.pose(x, z, y, p)"
+            },
+            {
+              "frames": 2
+            },
+            {
+              "capture": true
+            }
+          ]
+        },
+        {
+          "repeat": 14,
+          "steps": [
+            {
+              "frames": 4
+            },
+            {
+              "capture": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "machine-console",
+      "kind": "still",
+      "caption": "The Machine: turn MI into MU with four rules. You can't, and the balcony shows why.",
+      "alt": "A console showing a string of M, I and U letters and rule buttons",
+      "steps": [
+        {
+          "js": "__dr.pose(16, -2.4, Math.PI / 2, 0.28); for (const b of ['r2', 'r2', 'r1', 'next']) __tangle.press(b)"
+        },
+        {
+          "frames": 6
+        }
+      ]
+    },
+    {
+      "name": "screen-inside-itself",
+      "kind": "still",
+      "caption": "The Screen: a screen that shows whatever you see, so it shows itself.",
+      "alt": "A screen whose picture contains smaller and smaller copies of itself",
+      "steps": [
+        {
+          "js": "__dr.pose(0, 19.6, -Math.PI / 2, -0.05)"
+        },
+        {
+          "frames": 60
+        }
+      ]
+    },
+    {
+      "name": "screen-feedback",
+      "kind": "clip",
+      "device": "wide",
+      "caption": "Walking up to the screen: it fills with copies of itself.",
+      "alt": "Animation: approaching a screen that shows ever deeper copies of itself",
+      "fps": 12.5,
+      "gif": {
+        "width": 640,
+        "colors": 160
+      },
+      "steps": [
+        {
+          "repeat": 44,
+          "steps": [
+            {
+              "js": "const v = Math.min(1, i / 36), s = v * v * (3 - 2 * v); __dr.pose(Math.sin(i / 9) * 0.25 * (1 - s), 12.5 + (19.9 - 12.5) * s, -Math.PI / 2 + Math.sin(i / 7) * 0.03, -0.04)"
+            },
+            {
+              "frames": 4
+            },
+            {
+              "capture": true
+            }
+          ]
+        }
+      ],
+      "setup+": [
+        {
+          "js": "__dr.pose(0, 12.5, -Math.PI / 2, -0.03)"
+        },
+        {
+          "frames": 30
+        }
+      ]
+    },
+    {
+      "name": "stairwell",
+      "kind": "still",
+      "caption": "The stairwell: six flights, each a whole tone higher, and it never ends.",
+      "alt": "Looking down a stairwell that loops back on itself",
+      "steps": [
+        {
+          "js": "__dr.pose(-13.0, 11.0, Math.atan2(-5.0, 4.0), 0.55)"
+        },
+        {
+          "frames": 6
+        }
+      ]
+    },
+    {
+      "name": "stairs-forever",
+      "kind": "clip",
+      "device": "wide",
+      "url": "{base}?drive=1&skip=4",
+      "caption": "Climbing the stairs: one whole loop, back past the door, and the height readout keeps climbing.",
+      "alt": "Animation: walking up a square stairwell, round and round, while a readout counts metres above the door",
+      "css": "#objective, #caption { display: none !important; }",
+      "fps": 12.5,
+      "gif": {
+        "width": 640,
+        "colors": 160
+      },
+      "video": [
+        "mp4"
+      ],
+      "steps": [
+        {
+          "repeat": 80,
+          "steps": [
+            {
+              "js": "__dr.steer()"
+            },
+            {
+              "frames": 2
+            },
+            {
+              "js": "__dr.steer()"
+            },
+            {
+              "frames": 2
+            },
+            {
+              "js": "__dr.steer()"
+            },
+            {
+              "frames": 2
+            },
+            {
+              "capture": true
+            }
+          ]
+        }
+      ],
+      "setup+": [
+        {
+          "js": "__dr.pose(-10.0, 16, Math.PI, 0)"
+        },
+        {
+          "frames": 4
+        },
+        {
+          "key": "KeyW",
+          "action": "down"
+        }
+      ]
+    },
+    {
+      "name": "library",
+      "kind": "still",
+      "device": "wide",
+      "url": "{base}?drive=1&skip=4",
+      "caption": "The List: a library, and a list that claims to hold every endless row.",
+      "alt": "A library with tall bookshelves, a desk of switches and a board of light and dark tiles",
+      "steps": [
+        {
+          "js": "__dr.pose(-3.6, 25.8, -0.69, 0.06)"
+        },
+        {
+          "frames": 6
+        }
+      ]
+    },
+    {
+      "name": "list-diagonal",
+      "kind": "clip",
+      "device": "wide",
+      "url": "{base}?drive=1&skip=4",
+      "caption": "The List: flip each tile on the gold diagonal, and your row differs from every row in the list.",
+      "alt": "Animation: a board of light and dark tiles; tiles along the diagonal are flipped one by one, then the row is checked",
+      "fps": 2.2,
+      "gif": {
+        "width": 640,
+        "colors": 128
+      },
+      "steps": [
+        {
+          "js": "for (const b of ['t1', 't4', 'check']) __tangle.press(b)"
+        },
+        {
+          "frames": 2
+        },
+        {
+          "capture": true
+        },
+        {
+          "capture": true
+        },
+        {
+          "js": "__tangle.press('check')"
+        },
+        {
+          "frames": 2
+        },
+        {
+          "capture": true
+        },
+        {
+          "capture": true
+        },
+        {
+          "repeat": 8,
+          "steps": [
+            {
+              "js": "const d = __tangle.state.diag; if (d.guess[i] !== 1 - d.list[i][i]) __tangle.press('t' + i)"
+            },
+            {
+              "frames": 2
+            },
+            {
+              "capture": true
+            }
+          ]
+        },
+        {
+          "js": "__tangle.press('check')"
+        },
+        {
+          "frames": 2
+        },
+        {
+          "capture": true
+        },
+        {
+          "capture": true
+        },
+        {
+          "capture": true
+        },
+        {
+          "capture": true
+        }
+      ],
+      "setup+": [
+        {
+          "js": "__dr.pose(-8.8, 31.2, -Math.PI / 2, -0.12)"
+        },
+        {
+          "frames": 4
+        }
+      ]
+    },
+    {
+      "name": "prover-room",
+      "kind": "still",
+      "device": "wide",
+      "url": "{base}?drive=1&skip=5",
+      "caption": "The Prover, the last room: a machine that tries every proof.",
+      "alt": "A room with a proving machine, its board of numbered cards, and a desk",
+      "steps": [
+        {
+          "js": "__dr.pose(-17.2, 33.4, -0.38, 0.02)"
+        },
+        {
+          "frames": 6
+        }
+      ]
+    },
+    {
+      "name": "prover",
+      "kind": "clip",
+      "device": "wide",
+      "url": "{base}?drive=1&skip=5",
+      "caption": "The Prover proves 2 + 2 = 4, searches forever for 2 + 2 = 5, then meets card 81: “The Prover can't prove card 81.”",
+      "alt": "Animation: a board of three cards; the first is stamped PROVED, a counter of proofs tried climbs for the second, then card 81 is set to talk about itself",
+      "fps": 4,
+      "gif": {
+        "width": 640,
+        "colors": 160
+      },
+      "video": [
+        "mp4"
+      ],
+      "steps": [
+        {
+          "capture": true
+        },
+        {
+          "js": "__tangle.press('g12')"
+        },
+        {
+          "frames": 1
+        },
+        {
+          "repeat": 10,
+          "steps": [
+            {
+              "wait": 330
+            },
+            {
+              "frames": 1
+            },
+            {
+              "capture": true
+            }
+          ]
+        },
+        {
+          "js": "__tangle.press('g47')"
+        },
+        {
+          "frames": 1
+        },
+        {
+          "repeat": 12,
+          "steps": [
+            {
+              "wait": 380
+            },
+            {
+              "frames": 1
+            },
+            {
+              "capture": true
+            }
+          ]
+        },
+        {
+          "js": "__tangle.press('gnum'); __tangle.press('gnum')"
+        },
+        {
+          "frames": 1
+        },
+        {
+          "capture": true
+        },
+        {
+          "capture": true
+        },
+        {
+          "js": "__tangle.press('g81')"
+        },
+        {
+          "frames": 1
+        },
+        {
+          "repeat": 22,
+          "steps": [
+            {
+              "wait": 380
+            },
+            {
+              "frames": 1
+            },
+            {
+              "capture": true
+            }
+          ]
+        }
+      ],
+      "setup+": [
+        {
+          "js": "__dr.pose(-22.4, 31.0, 0.0, -0.13)"
+        },
+        {
+          "frames": 4
+        }
+      ]
+    },
+    {
+      "name": "prover-solved",
+      "kind": "still",
+      "device": "wide",
+      "url": "{base}?drive=1&skip=5",
+      "caption": "Solved: to the Prover, cards 47 and 81 look the same. Only from outside can you see that 81 is true.",
+      "alt": "The Prover's board after solving, with a table of what the Prover does with each card and whether it is true",
+      "steps": [
+        {
+          "js": "__dr.pose(-22.4, 31.0, 0.0, -0.13)"
+        },
+        {
+          "frames": 2
+        },
+        {
+          "js": "__tangle.press('g12'); __tangle.press('g47'); while (__tangle.state.prv.blank !== 81) __tangle.press('gnum'); __tangle.press('g81')"
+        },
+        {
+          "wait": 6800
+        },
+        {
+          "frames": 2
+        },
+        {
+          "js": "__tangle.press('gb'); __tangle.press('ga')"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "frames": 2
+        },
+        {
+          "js": "__tangle.card(null); __dr.pose(-22.6, 31.0, 0.0, -0.13)"
+        },
+        {
+          "frames": 6
+        }
+      ]
+    },
+    {
+      "name": "ending-card",
+      "kind": "still",
+      "device": "desktop",
+      "url": "{base}?drive=1&skip=5",
+      "caption": "The closing card, once every room is solved.",
+      "alt": "A card titled Strange loops, summing up each room's loop",
+      "steps": [
+        {
+          "js": "__dr.pose(-22.4, 31.0, 0.0, -0.13)"
+        },
+        {
+          "frames": 2
+        },
+        {
+          "js": "__tangle.press('g12'); __tangle.press('g47'); while (__tangle.state.prv.blank !== 81) __tangle.press('gnum'); __tangle.press('g81')"
+        },
+        {
+          "wait": 6800
+        },
+        {
+          "frames": 2
+        },
+        {
+          "js": "__dr.pose(-22.0, 34.3, -Math.PI / 2, -0.12); __tangle.press('gb'); __tangle.press('ga')"
+        },
+        {
+          "wait": 1500
+        },
+        {
+          "frames": 2
+        },
+        {
+          "js": "document.getElementById('panel-ok').click()"
+        },
+        {
+          "frames": 3
+        }
+      ]
+    }
+  ]
+}

@@ -3,3 +3,4 @@ node_modules/
 engine/.build/
 __pycache__/
 .claude/
+.darkroom/
