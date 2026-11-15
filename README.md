@@ -20,6 +20,8 @@ Rooms planned next: a screen that shows itself (video feedback), a staircase tha
 
 ## Play
 
+**In a browser: [tangle.play.danielstephenson.dev](https://tangle.play.danielstephenson.dev)**, on a computer or a phone. Every push to `main` that passes the tests redeploys it there.
+
 On Windows with WSL, `tools/play-tangle.bat` copies the game from WSL (set `TG_SRC` to point elsewhere),
 serves it locally and opens it in its own Edge app window. Options: `fullscreen`, `new` (start over), `browser`.
 
