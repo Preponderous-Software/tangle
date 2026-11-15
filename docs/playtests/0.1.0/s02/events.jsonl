@@ -1,0 +1,31 @@
+{"type": "screen", "tick": 238, "wallTimeMs": 1794726148486, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 1203, "wallTimeMs": 1794726164567, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 1203, "wallTimeMs": 1794726164569, "how": "created", "seed": 0}
+{"type": "objective", "tick": 1203, "wallTimeMs": 1794726164569, "text": "Read the plaque ahead, then take the door on the left."}
+{"type": "status", "tick": 1203, "wallTimeMs": 1794726164569, "text": "Welcome. Walk up to the plaque on the far wall and read it."}
+{"type": "objective", "tick": 15234, "wallTimeMs": 1794726398419, "text": "Look straight at the big screen until it shows itself many levels deep."}
+{"type": "status", "tick": 15234, "wallTimeMs": 1794726398420, "text": "A screen that shows whatever you're looking at. Read the plaque by the door."}
+{"type": "status", "tick": 15544, "wallTimeMs": 1794726403589, "text": "Walk up to the big screen and look straight at it."}
+{"type": "objective", "tick": 19923, "wallTimeMs": 1794726476572, "text": "Answer the lectern's sentences: is each one true or false?"}
+{"type": "status", "tick": 19923, "wallTimeMs": 1794726476573, "text": "A picture that contains itself, which contains itself, and so on down. That's self-reference."}
+{"type": "status", "tick": 20358, "wallTimeMs": 1794726483818, "text": "Now the sentences: the lectern on the right has woken up."}
+{"type": "status", "tick": 54427, "wallTimeMs": 1794727051641, "text": "Not yet: this one only lights when a sentence can't be answered either way."}
+{"type": "status", "tick": 59131, "wallTimeMs": 1794727130042, "text": "Both answers lead to a contradiction. A third button on the lectern has lit up."}
+{"type": "objective", "tick": 60515, "wallTimeMs": 1794727153104, "text": "Next: the Triangle, through the hall's left-hand door."}
+{"type": "objective_completed", "tick": 60515, "wallTimeMs": 1794727153105, "title": "Solve The Screen", "id": "scr", "x": 6.42, "z": 16.61}
+{"type": "screen", "tick": 60648, "wallTimeMs": 1794727155320, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 60648, "wallTimeMs": 1794727155322, "title": "This sentence is false."}
+{"type": "screen", "tick": 61445, "wallTimeMs": 1794727168602, "from": "DEBRIEF", "to": "WORLD"}
+{"type": "objective", "tick": 64879, "wallTimeMs": 1794727225845, "text": "Climb the staircase and find the top."}
+{"type": "status", "tick": 64879, "wallTimeMs": 1794727225845, "text": "A small room outside a stairwell. Read the plaque, then go through the door straight ahead and climb."}
+{"type": "status", "tick": 67121, "wallTimeMs": 1794727263205, "text": "Each landing is one key higher. Listen to your footsteps as you climb."}
+{"type": "objective", "tick": 68044, "wallTimeMs": 1794727278586, "text": "Read the board. If you're convinced MU can't be made, press the red button beside it."}
+{"type": "status", "tick": 68044, "wallTimeMs": 1794727278591, "text": "From up here you can see the machine from outside. Read the board on the wall: it shows every word you made."}
+{"type": "objective", "tick": 82363, "wallTimeMs": 1794727517233, "text": "In the vestibule, answer: where is the top of the staircase?"}
+{"type": "status", "tick": 82363, "wallTimeMs": 1794727517238, "text": "Back at C, at the door you came in. Yet every step went up."}
+{"type": "status", "tick": 82815, "wallTimeMs": 1794727524774, "text": "Go out to the vestibule and answer the question on the wall."}
+{"type": "objective", "tick": 92686, "wallTimeMs": 1794727689283, "text": "Next: the Triangle, through the hall's left-hand door."}
+{"type": "objective_completed", "tick": 92686, "wallTimeMs": 1794727689283, "title": "Solve The Staircase", "id": "stair", "x": -9.22, "z": 14.46}
+{"type": "screen", "tick": 92774, "wallTimeMs": 1794727690758, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 92774, "wallTimeMs": 1794727690760, "title": "There is no top."}
+{"type": "screen", "tick": 93588, "wallTimeMs": 1794727704323, "from": "DEBRIEF", "to": "WORLD"}

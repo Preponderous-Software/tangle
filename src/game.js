@@ -248,7 +248,7 @@ function refreshTop() {
 function buildListRoom() {
   const L = World.LIST;
   mesh(SLOT.list, World.buildList());
-  panelMesh(SLOT.listPlaque, Text.PLAQUES.list, [-14.0, 1.75, L.z1 - 0.02], [0, 0, -1]);
+  panelMesh(SLOT.listPlaque, Text.PLAQUES.list, [L.x1 - 0.02, 1.75, 27.2], [-1, 0, 0]);  // on your left as you come in
   panelMesh(SLOT.soon, Text.PLAQUES.soon, [L.x0 + 0.12, 1.5, 31.0], [1, 0, 0]);
   const k = World.DESK;
   texture(SLOT.deskLegend, Text.legend(document, World.SWITCHES.map(([id, label, x]) => [id, label, k.x1 - x]), 0, k.x1 - k.x0, 52));
@@ -301,11 +301,11 @@ function checkRow() {
     d.msg = `Yours differs from rows 1 to 8, but row ${r.row}, further down, starts just like it. Does yours differ later on? You'd have to check forever.`;
     Audio.cue("nope");
     if (d.checks === 2) say("You can't check every row: the list never ends. Instead, can you make sure your row differs from row 1? And from row 2? From every row?", 10000, true);
-    if (d.checks >= 3 && d.hint < 2) {
+    if (d.checks >= 2 && d.hint < 2) {
       d.hint = 2;
       say("Look at the lit tiles: row 1's tile 1, row 2's tile 2, row 3's tile 3, and on down the list.", 9000);
     }
-    if (d.checks >= 5 && d.hint < 3) {
+    if (d.checks >= 4 && d.hint < 3) {
       d.hint = 3;
       say("Make each of your tiles the opposite of the lit tile in its column. Then your row differs from every row somewhere.", 10000);
     }
@@ -352,7 +352,7 @@ function solveList() {
   state.solved.list = true;
   save(); refreshDoors(); refreshItems(); Audio.cue("solve"); flash();
   setTimeout(() => debrief({title: "No list holds them all.",
-    what: "You built your row from the list itself: tile 1 the opposite of row 1's tile 1, tile 2 the opposite of row 2's tile 2, and on down. " +
+    what: "The winning row is built from the list itself: tile 1 the opposite of row 1's tile 1, tile 2 the opposite of row 2's tile 2, and on down. " +
       "So it differs from every row somewhere, however long the list is. When the librarian added it, the same trick beat the new list.",
     why: "Georg Cantor found this diagonal in 1891. It shows there are more endless rows than counting numbers, so some infinities are bigger than others. " +
       "Gödel's proof makes the same move. He gave every statement about numbers a number of its own, and built a sentence that says, in effect, " +
@@ -452,7 +452,7 @@ function refreshPoints(t = 0) {
 // ------------------------------------------------------------------ the machine
 const LEGEND = {r1: "rule 1: if it ends in I, add U", r2: "rule 2: double everything after M", r3: "rule 3: replace III with U",
   a_up: "higher up: keep climbing", a_loop: "there isn't one: the stairs loop", a_as: "at the A\u266f landing",
-  true: "this sentence is true", false: "this sentence is false", neither: "it can't be true or false",
+  true: "answer TRUE", false: "answer FALSE", neither: "answer CAN'T BE EITHER",
   r4: "rule 4: remove UU", check: "check your row against the list",
   q_long: "a longer list could hold them all", q_endless: "an endless list could hold them all", q_none: "no list can hold them all", next: "move the highlight to the next III or UU", undo: "take back the last step", declare: "say: MU can't be made"};
 
@@ -513,10 +513,13 @@ function answerPressed(id) {
   if (state.solved.scr) return;
   if (!state.screenDone) { Audio.cue("nope"); say("The lectern wakes once you've looked at yourself in the big screen.", 4000); return; }
   if (id === "neither" && !state.neitherOn) {
-    Audio.cue("nope"); say("Not yet: this one only lights when a sentence can't be answered either way.", 4500); return;
+    Audio.cue("nope");
+    say(SENTENCES[state.sentence].answer === null ? "Maybe. Before you say so, press TRUE and see where it leads, then FALSE." : "This one is plainly true or false. Check what it says about itself.", 6000, true);
+    return;
   }
   const r = answerSentence(state.sentence, id, state.liarTried);
   state.boardMsg = r.message; state.boardGood = r.ok;
+  say(r.ok && r.next != null ? `${r.message} Next sentence on the board.` : r.message, 6500, true);  // the board is out of view while you aim
   if (r.tried) state.liarTried = r.tried;
   if (r.unlockNeither && !state.neitherOn) {
     state.neitherOn = true;
@@ -615,8 +618,8 @@ function measureScreen(dt) {
   state.depthHold = depth >= state.depthNeed ? state.depthHold + dt : 0;
   if (state.depthHold > 1.2) {
     state.screenDone = true; save(); refreshSentences(); refreshItems(); Audio.cue("gate");
-    say("A picture that contains itself, which contains itself, and so on down. That's self-reference.", 7000, true);
-    say("Now the sentences: the lectern on the right has woken up.", 6000);
+    say("A picture that contains itself, which contains itself, and so on down. That's self-reference.", 11000, true);
+    say("Now the sentences: turn round. The lectern by the side wall has woken up.", 7000);
     objective("Answer the lectern's sentences: is each one true or false?");
   }
 }
@@ -689,7 +692,7 @@ function checkTribar(dt) {
   warmthNow += (target - warmthNow) * Math.min(1, dt * 6);
   Audio.warmth(warmthNow);
   document.querySelector("#cross .ring").style.stroke = `rgba(214,167,90,${(0.15 + 0.85 * warmthNow) * (warmthNow > 0.03 ? 1 : 0)})`;
-  const lined = off < 0.38 && Math.abs(eye[1] - ey) < 0.2 && angle < 11;
+  const lined = off < 0.5 && Math.abs(eye[1] - ey) < 0.2 && angle < 11;
   state.hold = lined ? state.hold + dt : Math.max(0, state.hold - dt * 2);
   fill.style.strokeDashoffset = 69.1 * (1 - Math.min(1, state.hold / HOLD));
   if (lined && state.hold < dt * 1.5) say("Hold still...", 1600);
@@ -737,6 +740,7 @@ function captions(now) {
 let freshTimer = 0;
 function objective(text) {
   const el = $("objective");
+  text = text.replace(/^Next: (.)/, (m, c) => c.toUpperCase());  // the box already says NEXT
   if (el.textContent === text) return;
   el.textContent = text; el.hidden = false; el.classList.add("fresh");
   clearTimeout(freshTimer); freshTimer = setTimeout(() => el.classList.remove("fresh"), 1400);
@@ -812,7 +816,7 @@ function welcomeBack() {
 
 function roomAt(x, z = 0) {
   if (z > World.LIST.z0 - 0.5) return "list";
-  if (z > World.HUB.z1 + 1.5) return x < World.VEST.x0 ? "stair" : x < World.SCR.x0 ? "vest" : "scr";
+  if (z > World.MIU.z1 + 0.5) return x < World.VEST.x0 ? "stair" : x < World.SCR.x0 ? "vest" : "scr";
   return x < World.HUB.x0 - 1.5 ? "tri" : x > World.HUB.x1 + 1.5 ? "miu" : "hub";
 }
 function enterRoom(r) {
@@ -837,7 +841,7 @@ function enterRoom(r) {
     say("Each landing is one key higher. Listen to your footsteps as you climb.", 6000);
   }
   if (r === "list" && !state.solved.list) {
-    say("A library, and a list that claims to hold everything. Read the plaque to the right of the list.", 7000);
+    say("A library, and a list that claims to hold everything. Read the plaque on your left as you come in.", 7000);
     say("Set the switches on the desk to make a row, then press CHECK.", 6000);
     objective(state.diag.round >= 2 ? "Answer the question on the left-hand wall: which list could hold every endless row?" :
       state.diag.round === 1 ? "The librarian added your row. Make a row that still isn't in the list." : "Make a row of tiles that isn't anywhere in the librarian's list.");
@@ -1014,7 +1018,7 @@ function tick(t, now) {
   }
   if ((state.hint || state.solved.tribar) && r === "tri") refreshPoints(t);
   if (state.glow > 0.01 && t - lastGlowT > 0.1) { lastGlowT = t; state.glow *= 0.93; refreshLights(); }
-  if (me.y > 3 && !state.saidBalcony && !state.solved.miu) {
+  if (r === "miu" && me.y > 3 && !state.saidBalcony && !state.solved.miu) {
     state.saidBalcony = true;
     if (!state.boardShown) { state.boardShown = true; refreshBoard(); save(); }
     say("From up here you can see the machine from outside. Read the board on the wall: it shows every word you made.", 8000, true);
@@ -1024,7 +1028,7 @@ function tick(t, now) {
   checkTribar(dt);
   if (state.tribarDebrief && !state.card) {
     const a = state.solvedAt, moved = Math.hypot(me.x - a.x, me.z - a.z);
-    if (moved > 1.3 || now - a.t > 9000) {
+    if (moved > 1.3 || now - a.t > 25000) {
       const show = state.tribarDebrief; state.tribarDebrief = null;  // a function that shows the card
       setTimeout(show, moved > 1.3 ? 700 : 0);
     }

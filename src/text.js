@@ -134,7 +134,7 @@ export const PLAQUES = {
       "each flight is one key higher, C, D, E, F\u266f, G\u266f, A\u266f.\nGo through the door, climb, and find the top. Then come back here."},
   scr: {kicker: "The Screen", title: "A picture of itself", w: 3.0, h: 2.0, bodySize: 0.043,
     body: "The big screen shows exactly what you see, turned a little.\nWalk up to it and look straight at it. What does a screen show when it is showing itself?\n" +
-      "Then try the sentences on the right: each one talks about itself."},
+      "Then try the sentences on the board by the lectern, halfway along the room: each one talks about itself."},
   gate: {title: "Closed for now", body: "It opens once you've given the machine a fair try.", w: 1.3, h: 0.62, titleSize: 0.11, bodySize: 0.07, dark: true},
   tri: {kicker: "The Triangle", title: "Find where it closes", w: 3.0, h: 2.0, bodySize: 0.043,
     body: "The artist M. C. Escher drew a triangle that cannot exist: three straight beams, each turning a right angle, " +

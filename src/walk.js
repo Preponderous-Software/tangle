@@ -42,6 +42,23 @@ export function resolve(world, me, x, z) {
   return {x, z};
 }
 
+// Doorways ease you through: walking into one near its edge (where a door frame's corner would
+// stop you dead) adds a sideways drift toward the middle. door: {axis: "x" | "z" (the coordinate
+// fixed along the doorway's line), at, c0, c1 (its span on the other coordinate)}.
+export function doorAssist(doors, x, z, vx, vz) {
+  for (const d of doors || []) {
+    const [along, side, va] = d.axis === "x" ? [x, z, vx] : [z, x, vz];
+    const dist = d.at - along;
+    if (Math.abs(dist) > 1.0 || va * Math.sign(dist) < 0.3) continue;   // near the doorway, heading into it
+    const lo = d.c0 + RADIUS + 0.06, hi = d.c1 - RADIUS - 0.06;
+    if (side >= lo && side <= hi) continue;                           // already clear of the frame
+    if (side < d.c0 - 0.7 || side > d.c1 + 0.7) continue;              // walking at the wall, not the door
+    const push = Math.sign((lo + hi) / 2 - side) * Math.min(1.6, Math.abs(va) * 0.9);
+    return d.axis === "x" ? [vx, vz + push] : [vx + push, vz];
+  }
+  return [vx, vz];
+}
+
 // input: {forward, right in -1..1, run}. Returns the new walker; never touches yaw or pitch.
 export function step(me, input, dt, world) {
   const f = [-Math.cos(me.yaw), -Math.sin(me.yaw)], r = [Math.sin(me.yaw), -Math.cos(me.yaw)];
@@ -57,7 +74,8 @@ export function step(me, input, dt, world) {
     const k = 1 - Math.exp(-(m > 0.01 ? ACCEL : DAMP) * h);
     out.vx += (want[0] - out.vx) * k; out.vz += (want[1] - out.vz) * k;
     if (Math.hypot(out.vx, out.vz) < 0.02 && m < 0.01) { out.vx = 0; out.vz = 0; }
-    const p = resolve(world, out, out.x + out.vx * h, out.z + out.vz * h);
+    const [ax, az] = m > 0.01 ? doorAssist(world.doors, out.x, out.z, out.vx, out.vz) : [out.vx, out.vz];
+    const p = resolve(world, out, out.x + ax * h, out.z + az * h);
     const y = floorAt(world, p.x, p.z, out.y);
     out.x = p.x; out.z = p.z; out.y = y;
   }

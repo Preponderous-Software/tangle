@@ -79,8 +79,8 @@ export const SENTENCE_BOARD = {c: [7.87, 2.35, 15.0], w: 3.8, h: 1.6};  // in fr
 // The machine room: console, display, the ramp up to the balcony, the gate.
 export const MACHINE = {
   console: {x0: 14, z0: -5.7, x1: 18, z1: -4.7, h: 1.0},
-  display: {c: [16, 3.3, -7.86], w: 7.2, h: 2.1},
-  rules: {c: [11.4, 2.4, -7.86], w: 3.4, h: 2.4},
+  display: {c: [16.5, 3.3, -7.86], w: 6.6, h: 2.0},   // clear of the rules plaque beside it
+  rules: {c: [11.0, 2.4, -7.86], w: 3.4, h: 2.4},
   ramp: {x0: 12.6, x1: 19.5, z0: 6.4, z1: 8, top: 3.6},
   balcony: {x0: 19.5, x1: 23, z0: -8, z1: 8, y: 3.6},
   gate: {x0: 11.9, x1: 12.3, z0: 6.4, z1: 8},
@@ -157,7 +157,16 @@ export function collision(state) {
     {x0: r.x0 - 0.6, x1: r.x1, z0: r.z0, z1: r.z1, h: (x) => Math.max(0, (x - r.x0) / (r.x1 - r.x0)) * r.top},
     {x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, h: () => b.y},
   ];
-  return {boxes, floors};
+  // every doorway, for walk.doorAssist
+  const D = [DOOR.z0, DOOR.z1], doors = [
+    {axis: "x", at: HUB.x0, c0: D[0], c1: D[1]}, {axis: "x", at: TRI.x1, c0: D[0], c1: D[1]},
+    {axis: "x", at: HUB.x1, c0: D[0], c1: D[1]}, {axis: "x", at: MIU.x0, c0: D[0], c1: D[1]},
+    {axis: "z", at: HUB.z1, c0: D[0], c1: D[1]}, {axis: "z", at: SCR.z0, c0: D[0], c1: D[1]},
+    {axis: "x", at: SCR.x0, c0: DOOR4[0], c1: DOOR4[1]}, {axis: "x", at: VEST.x1, c0: DOOR4[0], c1: DOOR4[1]},
+    {axis: "x", at: VEST.x0, c0: DOOR4[0], c1: DOOR4[1]}, {axis: "x", at: STAIR.x1, c0: DOOR4[0], c1: DOOR4[1]},
+    {axis: "z", at: VEST.z1, c0: DOOR5[0], c1: DOOR5[1]}, {axis: "z", at: LIST.z0, c0: DOOR5[0], c1: DOOR5[1]},
+  ];
+  return {boxes, floors, doors};
 }
 
 // --------------------------------------------------------------------------- meshes
@@ -212,8 +221,8 @@ function corridorZ(m, z0, z1, colors, x0 = DOOR.z0, x1 = DOOR.z1) {
   }
 }
 
-function corridor(m, x0, x1, colors) {
-  const {z0, z1, h} = DOOR, mid = [(x0 + x1) / 2, h / 2, 0];
+function corridor(m, x0, x1, colors, z0 = DOOR.z0, z1 = DOOR.z1, dy = 0) {
+  const h = DOOR.h, mid = [(x0 + x1) / 2, h / 2, (z0 + z1) / 2];
   const q = (pts, col) => m.facing(pts, col, mid);
   q([[x0, 0, z1], [x1, 0, z1], [x1, 0, z0], [x0, 0, z0]], colors.floor);
   q([[x0, h, z0], [x1, h, z0], [x1, h, z1], [x0, h, z1]], colors.ceil);
@@ -239,6 +248,7 @@ export function buildShells() {
   shell(m, MIU, {wall: C.miuWall, floor: C.miuFloor, ceil: C.miuCeil}, {w: [DOOR.z0, DOOR.z1]});
   corridor(m, TRI.x1, HUB.x0, hub);
   corridor(m, HUB.x1, MIU.x0, hub);
+  corridor(m, SCR.x0 - 0.3, SCR.x0, hub, DOOR4[0], DOOR4[1]);   // through the wall: Room 3 to the vestibule
   return m;
 }
 
@@ -390,17 +400,34 @@ export function buildStairShell() {
   q([[r.x0, lo, r.z0], [r.x1, lo, r.z0], [r.x1, hi, r.z0], [r.x0, hi, r.z0]], NIGHT);
   q([[r.x0, lo, r.z1], [r.x1, lo, r.z1], [r.x1, hi, r.z1], [r.x0, hi, r.z1]], NIGHT.map((c) => c * 0.92));
   q([[r.x0, lo, r.z0], [r.x0, lo, r.z1], [r.x0, hi, r.z1], [r.x0, hi, r.z0]], NIGHT.map((c) => c * 0.96));
-  const ex = r.x1, col = NIGHT.map((c) => c * 0.96);
+  const ex = r.x1, col = NIGHT.map((c) => c * 0.96), R = r.rise, K = [-2, -1, 0, 1, 2];
   q([[ex, lo, r.z0], [ex, lo, d0], [ex, hi, d0], [ex, hi, r.z0]], col);
   q([[ex, lo, d1], [ex, lo, r.z1], [ex, hi, r.z1], [ex, hi, d1]], col);
-  q([[ex, lo, d0], [ex, lo, d1], [ex, -0.3, d1], [ex, -0.3, d0]], col);
-  q([[ex, DOOR.h, d0], [ex, DOOR.h, d1], [ex, hi, d1], [ex, hi, d0]], col);
+  // above the door strip: wall between the openings, one opening at each loop's C landing
+  let y = lo;
+  for (const k of K) {
+    q([[ex, y, d0], [ex, y, d1], [ex, k * R, d1], [ex, k * R, d0]], col);
+    y = k * R + DOOR.h;
+  }
+  q([[ex, y, d0], [ex, y, d1], [ex, hi, d1], [ex, hi, d0]], col);
   q([[r.x0, lo, r.z0], [r.x1, lo, r.z0], [r.x1, lo, r.z1], [r.x0, lo, r.z1]], [0.05, 0.05, 0.08]);
   q([[r.x0, hi, r.z0], [r.x1, hi, r.z0], [r.x1, hi, r.z1], [r.x0, hi, r.z1]], [0.05, 0.05, 0.08]);
-  for (const x of [ex]) {  // the door's frame
-    m.box([x - 0.08, 0, d0 - 0.12], [x + 0.08, DOOR.h + 0.12, d0], C.trim);
-    m.box([x - 0.08, 0, d1], [x + 0.08, DOOR.h + 0.12, d1 + 0.12], C.trim);
-    m.box([x - 0.08, DOOR.h, d0 - 0.12], [x + 0.08, DOOR.h + 0.12, d1 + 0.12], C.trim);
+  const hub = {wall: C.hubWall, floor: C.hubFloor, ceil: C.hubCeil};
+  for (const k of K) {
+    const dy = k * R, x = ex;
+    m.box([x - 0.08, dy, d0 - 0.12], [x + 0.08, dy + DOOR.h + 0.12, d0], C.trim);   // the door's frame
+    m.box([x - 0.08, dy, d1], [x + 0.08, dy + DOOR.h + 0.12, d1 + 0.12], C.trim);
+    m.box([x - 0.08, dy + DOOR.h, d0 - 0.12], [x + 0.08, dy + DOOR.h + 0.12, d1 + 0.12], C.trim);
+    // through the wall, and (for the other loops) the same small room behind the door: the stairs
+    // promise the same door every time round, so every loop has one
+    const m2 = new MeshBuilder();
+    corridor(m2, ex, VEST.x0, hub, d0, d1);
+    if (k !== 0) {
+      shell(m2, VEST, hub, {w: DOOR4});
+      m2.box([-10.4, 0, 13.0], [-8.6, 1.0, 13.6], C.dark);
+    }
+    for (let i = 1; i < m2.positions.length; i += 3) m2.positions[i] += dy;
+    m.append(m2);
   }
   return m;
 }

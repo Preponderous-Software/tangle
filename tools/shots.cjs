@@ -34,6 +34,8 @@ const SHOTS = [
   ["21-stairs-c-landing", [-11.7, 16.6, Math.PI / 2, -0.28], "frames10"],
   ["22-stairs-well", [-13.0, 11.0, Math.atan2(-5.0, 4.0), 0.55], "frames10"],
   ["23-stairs-up", [-22.1, 16.0, Math.PI, -0.55], "frames10"],
+  ["23b-stairs-doors", [-12.0, 21.2, Math.PI / 2, -0.05], "frames10"],
+  ["23c-vest-to-scr", [-9.6, 16.0, Math.PI, 0.35], "frames10"],
   ["24-vest-wrong", [-9.5, 14.6, Math.PI / 2, 0.42], "topWrong"],
   ["25-vest-solved", [-9.5, 14.6, Math.PI / 2, 0.2], "topRight"],
   ["26-vest-door5", [-9.5, 15.2, -Math.PI / 2 + 0.35, 0.05], "frames10"],

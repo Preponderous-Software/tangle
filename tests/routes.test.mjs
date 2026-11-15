@@ -97,3 +97,17 @@ test("the vestibule to the List: the desk of switches and the question's lectern
   me = walk(me, [[-9, 35.5]], w, 10);
   assert.ok(me.z < World.DESK.z0, "the desk stops a walk through it");
 });
+
+test("walking into a doorway off-centre slides you through instead of pinning you on the frame", () => {
+  const w = World.collision({gateOpen: false});
+  // aim straight east at the Machine door, 1.15 m off its middle (into the frame's corner)
+  for (const z of [1.15, -1.15, 1.4]) {
+    let me = Walk.spawn(3.5, z, Math.PI);  // yaw PI looks along +x
+    for (let i = 0; i < 90; i++) me = Walk.step(me, {forward: 1, right: 0}, 1 / 30, w);
+    assert.ok(me.x > 7, `through the door from z ${z} (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
+  }
+  // the List corridor, 0.55 m off its middle
+  let me = Walk.spawn(-9.5 + 0.55, 18, -Math.PI / 2);
+  for (let i = 0; i < 120; i++) me = Walk.step(me, {forward: 1, right: 0}, 1 / 30, w);
+  assert.ok(me.z > 22, `into the corridor (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
+});

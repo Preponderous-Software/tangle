@@ -16,6 +16,13 @@ export class MeshBuilder {
 
   get count() { return this.positions.length / 3; }
 
+  // Another builder's geometry, added to this one (untextured meshes only).
+  append(o) {
+    const base = this.count;
+    this.positions.push(...o.positions); this.normals.push(...o.normals); this.colors.push(...o.colors);
+    for (const i of o.indices) this.indices.push(i + base);
+  }
+
   vert(p, n, c, uv) {
     this.positions.push(p[0], p[1], p[2]);
     this.normals.push(n[0], n[1], n[2]);

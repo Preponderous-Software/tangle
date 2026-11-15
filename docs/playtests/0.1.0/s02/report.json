@@ -1,0 +1,132 @@
+{
+  "session": "s02",
+  "goal": "Play the Screen room and the Staircase as a new player (start from the beginning, walk through the hall's door opposite the welcome plaque). Solve them if you can. Note whether the screen-inside-a-screen made sense, whether the sentence answers made sense, and whether the endless climb felt endless.",
+  "build": {
+    "version": "0.1.0",
+    "commit": "56193bd"
+  },
+  "seed": null,
+  "durationSec": 1565,
+  "outcome": "achieved",
+  "findings": [
+    {
+      "severity": "major",
+      "category": "bug",
+      "title": "Staircase: Machine-room objective and caption fire while climbing the stairwell",
+      "detail": "About 1 s into the stairwell (tick 68044, room=stair, y~4.4, stairs.loops=-1 after I accidentally went down), the NEXT line changed to 'Read the board. If you're convinced MU can't be made, press the red button beside it.' and the caption to 'From up here you can see the machine from outside. Read the board on the wall...'. I had never entered the Machine room. It stayed until the staircase loop completed (tick 82363). The player is told to do something in a room they're not in, while trying to find the top of the stairs.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; walk to the Screen room, solve it, walk west into the vestibule and through the staircase door; pt hold Shift_L+w 8; pt shot",
+      "screenshot": "shots/stair_miu_leak.png",
+      "tick": 68044
+    },
+    {
+      "severity": "major",
+      "category": "ux",
+      "title": "Lectern: correct 'CAN'T BE EITHER' answer to the liar sentence is refused with a self-contradicting message",
+      "detail": "Sentence 5 of 5 is 'This sentence is false.' Pressing CAN'T BE EITHER first (the right answer) gives 'Not yet: this one only lights when a sentence can't be answered either way.', which is exactly what this sentence is. Only after trying FALSE and TRUE does the button light. The unlit button still turns the crosshair gold and shows 'E: it can't be true or false', so it looks usable. A player who has just worked it out is told they're wrong. Expected: accept it, or say 'try TRUE and FALSE first' and don't show a usable prompt on the unlit button.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; solve the screen; at the lectern answer TRUE, FALSE, TRUE, FALSE; on 'This sentence is false.' aim at the purple button; pt key e",
+      "screenshot": "shots/neither_rejected.png",
+      "tick": 54427
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Lectern FALSE prompt reads 'E: this sentence is false', the liar sentence itself",
+      "detail": "The answer prompts are 'E: this sentence is true' and 'E: this sentence is false'. In a room about sentences that refer to themselves, the FALSE prompt is word for word the paradox on sentence 5, so it is unclear whether the button answers or is a statement. Suggest 'E: answer TRUE' / 'E: answer FALSE'.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; go to the Screen room lectern; aim at the red button",
+      "screenshot": "shots/prompt_liar.png",
+      "tick": 33764
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Lectern: can't see the sentence board while aiming at the buttons; answer feedback is on the board",
+      "detail": "The buttons are low on the lectern and the board is high on the wall behind, so when you tilt down to aim, the sentence and the green or red feedback line ('True. Yes it does.') are off screen or at the top edge. For every sentence I had to step back and tilt up to read it, walk in and tilt down to answer, then step back again to see if I was right. Pitch steps are coarse (~3.5-7 degrees per tap at this frame rate), which makes aiming at the three slabs slow. Long sentences were also cut off at the board's edge from the answering spot ('...contains the lette').",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; walk to the lectern (pt walkto button); pt hold Next 1.0; pt shot",
+      "screenshot": "shots/w16.png",
+      "tick": 32040
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Caption says the lectern is 'on the right' but it is on the left when facing the screen",
+      "detail": "Right after solving the big screen (you're facing it), the caption says 'Now the sentences: the lectern on the right has woken up.' The lectern is about 120 degrees to the LEFT from that spot (probe bearing -122).",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; solve the big screen; pt state (lectern bearing negative)",
+      "screenshot": "shots/w10.png",
+      "tick": 20358
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "The Screen room's self-reference explanation shows for only ~7 s and gets missed",
+      "detail": "On reaching 6 of 6 levels, the caption 'A picture that contains itself, which contains itself, and so on down. That's self-reference.' (tick 19923) is replaced by 'Now the sentences...' at tick 20358, about 7 game seconds later. There's no debrief for this half of the room, so at a few fps the main lesson of the screen is easy to miss. (The final debrief does sum it up.)",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; walk up to the big screen and face it until 6 of 6; pt wait 6; pt shot",
+      "screenshot": "shots/scr_caption_fleeting.png",
+      "tick": 19923
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Stairwell is disorienting: easy to go down without noticing, and the walls are featureless",
+      "detail": "From the staircase door, walking ahead took me DOWN (loops=-1, ending at 'G# landing - 1.6 m below the door') with no clear sign that I was going the wrong way, apart from the small HUD line. Several turns left me staring at a flat dark wall (shots/w41, w43) with nothing to tell up from down. A clear 'up' arrow, or the first flight going only up from the door, would help.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; enter staircase; pt hold Shift_L+w 8; pt state (y falls, loops -1)",
+      "screenshot": "shots/w41.png",
+      "tick": 70429
+    },
+    {
+      "severity": "minor",
+      "category": "bug",
+      "title": "Empty black rectangle covers the top of the HUD at spawn",
+      "detail": "Right after Begin, a solid black box sits top centre (about x 370-910, y 45-95) and hides the end of the NEXT objective line ('...then take the [hidden] left.'). It was gone a few seconds later.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; pt shot right after WORLD",
+      "screenshot": "shots/black_bar.png",
+      "tick": 1418
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Title card has ghost text showing through behind it",
+      "detail": "Behind 'Tangle.' there is a faint duplicate ('of strange loops') plus extra faint lines under the description and Begin button, and a dark box on the right, as if an older layout is drawn underneath.",
+      "repro": "pt start ...; pt await TITLE; pt shot",
+      "screenshot": "shots/title_ghost.png",
+      "tick": 1100
+    },
+    {
+      "severity": "polish",
+      "category": "text",
+      "title": "Stale caption stays after a room is solved",
+      "detail": "After the Screen debrief, the caption still read 'Both answers lead to a contradiction. A third button on the lectern has lit up.' while walking to the vestibule.",
+      "repro": "pt start --profile ./tools/playtest/tangle.json --game-dir .; pt key Return; solve the Screen room; Carry on; pt state",
+      "screenshot": "shots/w36.png",
+      "tick": 63559
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 2,
+    "deaths": 0,
+    "secondsToObjective": {
+      "Solve The Screen": 1008.6,
+      "Solve The Staircase": 1544.8
+    },
+    "screenRecursionSec": 78.2,
+    "lecternSec": 676.5,
+    "staircaseSec": 463.4,
+    "lecternWrongOrRefusedPresses": 1,
+    "stairLoopsToTrigger": 1
+  },
+  "fun": 3,
+  "verdict": "Both rooms work and both debriefs are clear and well written. The recursive screen (with its '4 of 6 levels deep: get closer, face it squarely' coaching) is the best moment, and the stairwell, with landings repeating above and below, looks properly endless. Two things hurt the experience: the liar-sentence button tells you your correct answer is wrong ('only lights when a sentence can't be answered either way'), and in the stairwell the HUD switches to the Machine room's objective. Aiming at the lectern while you can't see the board is a chore, and the stairwell is easy to walk down by mistake.",
+  "answers": [
+    {
+      "question": "In your own words, what is a strange loop, and what did each room you played show about it?",
+      "answer": "A strange loop is when you keep moving in one direction (up, deeper, onward) through levels and end up back where you started; it often comes from something referring to itself. The Screen room showed a picture that contains itself, over and over, and then sentences that talk about themselves: most are simply true or false, but 'This sentence is false' flips forever and can't be either. The debrief tied that to Godel's 'this sentence can't be proved'. The Staircase showed a climb where every flight goes up a key (C, D, E... A#) but the next one up puts you back at C at the door, so there is no top, like Bach's ever-rising canon and Escher's stairs."
+    },
+    {
+      "question": "Which moment was the most confusing, and why?",
+      "answer": "Pressing CAN'T BE EITHER on 'This sentence is false.' and being told 'Not yet: this one only lights when a sentence can't be answered either way.' I had the right answer and the message seemed to agree with me while refusing it. Only after trying FALSE and TRUE did it light up. A close second was the stairwell: I walked down instead of up without realising, and the HUD switched to a Machine-room objective about the MU board, which made me think I was in the wrong place."
+    },
+    {
+      "question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.",
+      "answer": "1) Title card: faint ghost text ('of strange loops' and extra lines) shows through behind the card. 2) Hub at spawn, facing the welcome plaque: an empty black rectangle top centre covers the end of the NEXT objective line for a few seconds. 3) Stairwell, at several turns (e.g. the G# corner, facing the outer wall): the view is a flat dark wall with no detail, which is hard to read but probably not a rendering bug. 4) Screen room, facing the sentence board from the lectern: long sentences run past the visible edge ('...contains the lette') until you step back. 5) In the stairwell the HUD showed the Machine room's objective and caption. Nothing else looked broken; the screen recursion rendered cleanly."
+    }
+  ]
+}

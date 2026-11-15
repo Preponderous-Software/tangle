@@ -1,0 +1,17 @@
+{"type": "screen", "tick": 346, "wallTimeMs": 1794726149596, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 1430, "wallTimeMs": 1794726167661, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 1430, "wallTimeMs": 1794726167663, "how": "created", "seed": 0}
+{"type": "objective", "tick": 1430, "wallTimeMs": 1794726167664, "text": "Next: the List, through the Screen room's left-hand door, then the small room's left-hand door."}
+{"type": "objective", "tick": 27282, "wallTimeMs": 1794726598527, "text": "Make a row of tiles that isn't anywhere in the librarian's list."}
+{"type": "status", "tick": 27282, "wallTimeMs": 1794726598529, "text": "A library, and a list that claims to hold everything. Read the plaque to the right of the list."}
+{"type": "status", "tick": 27728, "wallTimeMs": 1794726605968, "text": "Set the switches on the desk to make a row, then press CHECK."}
+{"type": "status", "tick": 60842, "wallTimeMs": 1794727157863, "text": "Your row differs from every row in the list, even the ones you can't see."}
+{"type": "objective", "tick": 61183, "wallTimeMs": 1794727163547, "text": "The librarian added your row. Make a row that still isn't in the list."}
+{"type": "status", "tick": 61183, "wallTimeMs": 1794727163548, "text": "The librarian has added your row to the list. Can you beat it again?"}
+{"type": "objective", "tick": 73611, "wallTimeMs": 1794727370680, "text": "Answer the question on the left-hand wall: which list could hold every endless row?"}
+{"type": "status", "tick": 73611, "wallTimeMs": 1794727370681, "text": "Beaten again, the same way. Now answer the question on the left-hand wall."}
+{"type": "objective", "tick": 77077, "wallTimeMs": 1794727428448, "text": "Every room solved. Wander as you like."}
+{"type": "objective_completed", "tick": 77077, "wallTimeMs": 1794727428449, "title": "Solve The List", "id": "list", "x": -3.39, "z": 31.27}
+{"type": "screen", "tick": 77166, "wallTimeMs": 1794727429929, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 77166, "wallTimeMs": 1794727429929, "title": "No list holds them all."}
+{"type": "screen", "tick": 77980, "wallTimeMs": 1794727443487, "from": "DEBRIEF", "to": "WORLD"}

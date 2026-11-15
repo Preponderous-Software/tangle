@@ -1,0 +1,121 @@
+{
+  "session": "s01",
+  "goal": "Play from the very beginning as a brand-new player who has never heard of Godel, Escher, Bach: the title card, the hall, then the Triangle and the Machine. Solve what you can. Note every moment of confusion, whether the captions and plaques told you what to do, and what you think each room was teaching.",
+  "build": {
+    "version": "0.1.0",
+    "commit": "56193bd"
+  },
+  "seed": null,
+  "durationSec": 1632,
+  "outcome": "partial",
+  "findings": [
+    {
+      "severity": "major",
+      "category": "bug",
+      "title": "Machine room: HUD objective switches to the Screen room's while still in the Machine room, and the Machine objective is lost",
+      "detail": "After the MIU gate opened ('Climb the ramp to the balcony and read the board'), I walked along the wall under the balcony near the ramp foot (around x 11-23, z 7.7). The probe room went from 'miu' to 'scr', and the NEXT line and caption changed to 'Look straight at the big screen until it shows itself many levels deep' / 'A screen that shows whatever you're looking at. Read the plaque by the door.' When I walked back into the middle of the Machine room (room 'miu' again), the HUD still showed the Screen objective, so the ramp/balcony instruction was gone. A player would be told to look for a screen that is not in this room. Expected: room detection that matches the walls, with the objective tied to the room the player is actually in.",
+      "repro": "pt start ...; solve the Triangle; enter the Machine room; press buttons until the caption says the gate opened; walk along the +z wall under the balcony toward x~11-22, z~7.7; pt state shows room 'scr' and the Screen objective; walk back to (12.4, 6.1): room 'miu', but the objective stays on the Screen one",
+      "screenshot": "shots/wrong-room.png",
+      "tick": 92180
+    },
+    {
+      "severity": "major",
+      "category": "ux",
+      "title": "Triangle: the only proximity cue is an audio tone, and the solve zone is much tighter than 'looks closed'",
+      "detail": "The plaque says 'Listen: a tone rises as you get close.' With no sound there is no visual 'warmer/colder' cue, apart from a faint ring round the crosshair that I only noticed late. I found a viewpoint, (-12.3, 3.2) and later (-12.6, 5.2), where the tribar looked closed on screen with the crosshair on it, and nothing happened for several seconds each time. A hint caption about a floor ring appeared about 5 minutes in (tick 32718). Even standing on the ring and looking at the triangle, it took four small strafes of about 0.4 m before 'Hold still...' fired. It took about 15 game minutes in total (solved at tick 56952). Expected: a visual proximity cue (a brightening glow or tightening crosshair ring) and a tolerance that matches what looks closed.",
+      "repro": "pt start ...; Begin; enter the Triangle room (west); walk to (-12.6, 5.2) and face yaw ~52, pitch ~-5; the tribar looks closed but it is not solved; strafe a/d 0.4 m at a time until it solves at about (-12.2, 5.5)",
+      "screenshot": "shots/tri-near.png",
+      "tick": 33858
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Triangle debrief says 'When you stepped aside, the triangle came apart' before the player has stepped aside",
+      "detail": "After solving, the NEXT line says 'Walk sideways and watch it break', but the 'You found it.' debrief pops up about 9 s later (tick 57482) while I was still standing still. It describes the break in the past tense, as if I had already seen it. The reveal it talks about is skipped unless the player does it after closing the card. Expected: wait to open the debrief until the player has moved aside, or change the wording to 'Step aside and...'.",
+      "repro": "solve the Triangle and do not move; the debrief opens about 530 ticks later with past-tense 'When you stepped aside' text",
+      "screenshot": "shots/debrief-premature.png",
+      "tick": 57482
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Machine: button tops have no labels, the desk faces away from the screen, and far buttons are hard to aim at with the coarse pitch steps",
+      "detail": "The six desk buttons are plain yellow and grey slabs. Their labels (1 2 3 4 -> undo) are small glyphs on the desk's front edge that you can't see while looking down at the buttons. When you aim at a button, the word screen is out of view, so you have to turn after every press to see the result. Each Page Up/Down tap moves the view 3.5-7 degrees, so aiming at buttons 3-6 from the end of the desk kept skipping past them; I had to walk along the desk. The hover prompt ('E: rule 2 ... MIU -> MIUIU', 'can't apply now') saves it and is excellent. Undo's prompt doesn't show what the word will become.",
+      "repro": "pt walkto button; pt key Next (repeat) and watch prompt; buttons 3/4/->/undo are skipped between pitch steps from the near end",
+      "screenshot": "shots/desk5.png",
+      "tick": 76000
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Hall: you can't 'read' the welcome plaque to tick off the first objective, and walking up close leaves the text too big to read",
+      "detail": "The first objective is 'Read the plaque ahead, then take the door on the left.' Walking up to the plaque leaves you 0.94 m away, where the text overflows the screen. Pressing E shows no prompt and does nothing. The objective never ticks, so you can't tell whether reading it 'counted'; it only changes when you enter the Triangle room. The plaque is perfectly readable from where you start, so the instruction to walk up to it makes things worse.",
+      "repro": "pt start ...; pt key Return; pt walkto plaque; pt key e; no prompt, objective still 'Read the plaque ahead...'",
+      "screenshot": "shots/plaque-no-e.png",
+      "tick": 5230
+    },
+    {
+      "severity": "minor",
+      "category": "bug",
+      "title": "Hall: a black rectangle covers part of the NEXT objective on the first frame; the title card has ghosted text behind it",
+      "detail": "On the first WORLD frame after Begin, a solid black bar (about x370-910, y45-96) sat over the top-centre of the view and hid the end of the NEXT line. It was gone on later frames. On the title card, faint duplicate text shows through behind the card ('...of strange loops' behind the wordmark, extra lines behind Begin) along with a dark rectangle on the right, as if a second layer is bleeding through.",
+      "repro": "pt start ...; pt shot title; pt key Return; pt await WORLD; pt shot hall1",
+      "screenshot": "shots/hall-blackbar.png",
+      "tick": 1984
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Machine: the ramp foot is hard to find; from the floor the railing side reads as a wall",
+      "detail": "After the gate opened I spent about 4 minutes failing to get onto the ramp. From most of the room you see the ramp's side panel and railing, not its walkable surface. The caption says the gate is 'at the foot of the ramp, by the door you came in', but I couldn't see a gate or an obvious opening. I ended up walking under the balcony instead. Expected: a visible open gate, or a light or arrow at the ramp's foot.",
+      "repro": "after the MIU gate caption, try to reach the balcony from the desk area",
+      "screenshot": "shots/under-balcony.png",
+      "tick": 97772
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Machine: rules plaque and word screen overlap; tally marks from the screen poke through the plaque corner",
+      "detail": "The rules plaque is mounted over the left edge of the word screen. A block of dotted marks from the screen shows through the plaque's top-right corner beside the title 'Turn MI into MU'.",
+      "repro": "enter the Machine room; pt walkto plaque (machine rules); pt hold s 2; pt shot",
+      "screenshot": "shots/rules-overlap.png",
+      "tick": 68886
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Triangle hint ring is very dim",
+      "detail": "The hint ring is a circle of small, faint dots next to the bench by the entry door. When I first looked back toward the door I missed it, and only spotted it on a slow 360-degree sweep. It would be easier to see as a solid glowing disc.",
+      "repro": "wait in the Triangle room until the 'ring of light' hint; look around from the middle of the room",
+      "screenshot": "shots/ring-found.png",
+      "tick": 42512
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 1,
+    "deaths": 0,
+    "secondsToObjective": {
+      "Solve The Triangle": 949.2
+    },
+    "triangleSecondsFromBegin": 919.8,
+    "triangleHintShownAtSec": 545.3,
+    "machineDistinctWordsReached": 4,
+    "machineGateOpenedAtSec": 1348.0
+  },
+  "fun": 3,
+  "verdict": "The writing is the best part. The welcome plaque, the Triangle plaque and its debrief explain the idea clearly to someone with no background, and the Machine's hover prompts (showing 'MIU -> MIUIU' before you press) make a formal system easy to touch. The main problems are the Triangle's audio-only 'warmer' cue and a solve zone tighter than what looks closed, so it turns into a pixel hunt. In the Machine room, room detection under the balcony swapped in the Screen room's objective and lost the 'climb the ramp' instruction, and I never managed to get onto the ramp.",
+  "answers": [
+    {
+      "question": "In your own words, what is a strange loop, and what did each room you played show about it?",
+      "answer": "From the game: a path that keeps going forward (or upward) and still ends up back where it started. The Triangle showed one you can see: three beams that seem to turn corners and close into a loop, but only from one exact spot. When you step aside it turns out to be an open, bent bar, so the loop is a trick of viewpoint. The Machine showed the same thing with rules instead of beams. You keep applying word-rules (MI -> MIU -> MIUIU ...) and the words grow and change, but you never get to MU. Then the game says you have been 'working inside the machine's rules' and opens a balcony so you can look at the system from outside. My guess is the lesson is that some questions can't be answered from inside the rules, only by stepping out of them. I couldn't reach the balcony board, so I couldn't confirm what it says."
+    },
+    {
+      "question": "Which moment was the most confusing, and why?",
+      "answer": "The Triangle search. Without sound, the 'tone rises as you get close' cue did nothing for me. Twice I stood where the triangle looked completely closed with the crosshair on it, and nothing happened. I couldn't tell whether I was in the wrong spot, needed to press E, or needed to wait. The ring hint helped, but even inside the ring it took several small side-steps before 'Hold still...' appeared. A close second: in the Machine room after the gate opened, the objective suddenly changed to the Screen room's 'look straight at the big screen' while I was still in the Machine room, and I couldn't find a way onto the ramp."
+    },
+    {
+      "question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.",
+      "answer": "1) Title card: faint ghost text and a dark box show through behind the card. 2) Hall, first frame after Begin, facing the welcome plaque (north): a solid black bar over the top-centre that hid part of the NEXT objective. It was gone on later frames. 3) Machine room, facing the rules plaque on the wall to the left of the word screen: the plaque overlaps the screen, and a block of dotted tally marks from the screen pokes through the plaque's top-right corner. 4) Machine room, under the balcony near the far +z wall: the objective and caption switched to the Screen room's text (a logic error, not a rendering one). The Triangle hint ring wasn't broken, just very dim. Everything else rendered cleanly, if slowly (software rendering)."
+    }
+  ]
+}

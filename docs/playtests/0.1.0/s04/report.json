@@ -1,0 +1,100 @@
+{
+  "session": "s04",
+  "goal": "Graphics and layout hunt in every room (hall, Triangle, Machine and balcony, Screen, vestibule, Staircase, List). Look in every direction, up and down. Screenshot and describe anything that looks wrong: gaps or seams, flicker, surfaces fighting, unreadable or overlapping text, walls you can see through or walk through, places you get stuck.",
+  "build": {
+    "version": "0.1.0",
+    "commit": "56193bd"
+  },
+  "seed": null,
+  "durationSec": 1165,
+  "outcome": "partial",
+  "findings": [
+    {
+      "severity": "major",
+      "category": "bug",
+      "title": "Doorways snag the player on the jamb with no sliding (Machine door, staircase, list corridor, List door)",
+      "detail": "Several doorways were hard to get through. Holding w from a little off-centre pins the player against the jamb, and they barely move (about 0.2 m/s or nothing at all) instead of sliding into the opening. pt walkto door timed out three times, at the staircase door, the list corridor mouth (x-9.1 z19.3) and the List door. At the Machine door, walkto said 'within reach' at 0.8-1.2 m (bearing -5) while the screen showed only a flat wall, and in about 3 real minutes of strafing and turning I could not get into the Machine room. The staircase exit took about 2 minutes. Expected: the player slides along the jamb into the opening, or the openings are wider.",
+      "repro": "pt start ... --rooms all; Continue; from the hall centre: pt walkto door (machine door); pt hold w 4 -> no progress, view is a wall. Also: from the List, pt face 180; pt hold w 5 at the corridor mouth -> no movement until pt hold a 0.5.",
+      "screenshot": "shots/machine_door_snag.png",
+      "tick": 67381
+    },
+    {
+      "severity": "minor",
+      "category": "bug",
+      "title": "Staircase: one flight up, the HUD says 'level with the door' but there is only a blank wall where the door should be",
+      "detail": "I ran up one flight from the C landing (x-11.4 z17.2 y4.8, yaw ~125). The HUD chip read 'on the stairs - level with the door' and the probe put the staircase door 1.4 m ahead, but the view showed a flat dark wall with a D sign and no opening. Walking forward pressed into the wall. A player trying to leave gets stuck, with the HUD telling them the door is right there. Expected: the door is drawn at every level the HUD calls 'level with the door', or the HUD wording changes.",
+      "repro": "From the vestibule, enter the staircase; pt face 180; pt hold Shift_L+w 4; pt walkto door -> timed out, facing a wall.",
+      "screenshot": "shots/stair_door_missing.png",
+      "tick": 20418
+    },
+    {
+      "severity": "minor",
+      "category": "bug",
+      "title": "Pure-black void shows along doorway thresholds (staircase to vestibule, vestibule to Screen room)",
+      "detail": "From the staircase C landing, looking back at the vestibule doorway (yaw ~178), a solid black strip runs the full width of the threshold at floor level. From the vestibule corridor looking north (x-9.1 z21.4), a black wedge shows at the foot of the Screen-room doorway jamb. Both look like gaps in the floor or wall where the empty background shows through. Expected: floor continuous across the threshold.",
+      "repro": "Stand on the staircase C landing at about x-11.0 z15.9 and face the vestibule doorway; or stand at x-9.1 z21.4 in the vestibule corridor and face north.",
+      "screenshot": "shots/stair_threshold_gap.png",
+      "tick": 14767
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Dotted line of light pixels along door jamb edges (Screen room west door, List door)",
+      "detail": "A dotted line of light pixels runs down the inner edge of door jambs, like a crack or two surfaces fighting. Clearest on the Screen room's west door to the vestibule, seen from x-5.1 z11.9. Also on the left jamb of the List door (shots/list3.png).",
+      "repro": "Stand in the Screen room at about x-5.1 z11.9 and look at the west (vestibule) doorway.",
+      "screenshot": "shots/jamb_dotted_seam.png",
+      "tick": 55156
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Empty black box covers the NEXT objective text right after Continue",
+      "detail": "For a few seconds after pressing Continue on the title, an empty black rectangle (about x370-910, y45-96) sat at the top centre and cut the middle out of the NEXT objective line. It was gone 4 s later. It may be an empty caption box.",
+      "repro": "pt start ...; pt key Return; pt await WORLD; pt shot immediately.",
+      "screenshot": "shots/black_bar_over_objective.png",
+      "tick": 2222
+    },
+    {
+      "severity": "polish",
+      "category": "text",
+      "title": "Small text on boards is unreadable at normal distance (vestibule board, hall progress board, stair signs)",
+      "detail": "The second line on the vestibule question board and the hall progress board, and the small captions under staircase landing letters, are a few pixels high and come out as smudges. The sharp sign in 'AT A#' on the vestibule button and on far landing signs ('F#') breaks up into noise at a distance. Headline text is fine.",
+      "repro": "Look at the vestibule question board from the middle of the vestibule; look at the hall's '4 of 5 rooms solved' board.",
+      "screenshot": "shots/vest_30024.png",
+      "tick": 5558
+    },
+    {
+      "severity": "polish",
+      "category": "text",
+      "title": "Objective HUD repeats itself: 'NEXT  Next: the List...'",
+      "detail": "The objective box has a gold 'NEXT' label, and then the text also starts with 'Next:'.",
+      "repro": "Load a save with 4 rooms solved; read the top-left HUD.",
+      "screenshot": "shots/hub1.png",
+      "tick": 2300
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 0,
+    "deaths": 0,
+    "secondsToObjective": {},
+    "roomsVisited": 5,
+    "roomsNotReached": 2,
+    "doorwaySnags": 5
+  },
+  "fun": 2,
+  "verdict": "The rooms I reached (vestibule, Staircase, List, Screen, hall) look clean and readable at headline level. The staircase shaft and the recursive screen are striking. The biggest problem was moving through doorways: the player sticks to jambs, and that ate most of my time and kept me out of the Machine and Triangle rooms. Visual problems were minor: black void slivers at two thresholds, dotted seams on door jambs, a staircase level where the HUD promises a door that is not drawn, and tiny sub-text that cannot be read.",
+  "answers": [
+    {
+      "question": "In your own words, what is a strange loop, and what did each room you played show about it?",
+      "answer": "From what the game showed me: a path that keeps going forward or upward and still ends up back where it started. I did not solve any rooms in this session (the save already had four solved). The Staircase shows it most directly: you climb, every landing is one note higher, and the HUD still says you are level with the door. The Screen room's big screen shows itself inside itself, '3 levels deep'. The List is about a list that claims to hold everything, and you make a row of tiles that is not in it. I did not get into the Triangle or the Machine, so I cannot say what they show."
+    },
+    {
+      "question": "Which moment was the most confusing, and why?",
+      "answer": "One flight up the staircase. The HUD said 'on the stairs - level with the door', but there was only a blank wall where the door should have been, and I had to walk back down to find the real doorway. Close behind it: standing 'within reach' of the Machine door and seeing nothing but wall, unable to get through."
+    },
+    {
+      "question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.",
+      "answer": "(1) Staircase C landing, facing back toward the vestibule doorway: a solid black strip along the threshold. (2) Vestibule corridor at about x-9.1 z21.4, facing north: a black wedge at the foot of the Screen-room doorway jamb. (3) Screen room, facing the west door, and the List door: a dotted line of light pixels down the jamb edge. (4) One flight up the staircase: no doorway drawn where the HUD says the door is level with you. (5) Vestibule, facing south just after Continue: an empty black box briefly covered the objective text. (6) Small sub-text on boards and stair signs is unreadable. (7) Doorways in general (Machine door from the hall, list corridor, staircase): the player gets stuck on the jambs."
+    }
+  ]
+}

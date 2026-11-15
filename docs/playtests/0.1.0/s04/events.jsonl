@@ -1,0 +1,8 @@
+{"type": "screen", "tick": 228, "wallTimeMs": 1794726147712, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 1412, "wallTimeMs": 1794726167444, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 1412, "wallTimeMs": 1794726167444, "how": "created", "seed": 0}
+{"type": "objective", "tick": 1412, "wallTimeMs": 1794726167445, "text": "Next: the List, through the Screen room's left-hand door, then the small room's left-hand door."}
+{"type": "status", "tick": 42796, "wallTimeMs": 1794726857172, "text": "A library, and a list that claims to hold everything. Read the plaque to the right of the list."}
+{"type": "objective", "tick": 42796, "wallTimeMs": 1794726857170, "text": "Make a row of tiles that isn't anywhere in the librarian's list."}
+{"type": "status", "tick": 43105, "wallTimeMs": 1794726862316, "text": "Set the switches on the desk to make a row, then press CHECK."}
+{"type": "status", "tick": 57570, "wallTimeMs": 1794727103408, "text": "Four loops found. Next is the List, through the Screen room's left-hand door, then the small room's left-hand door."}
