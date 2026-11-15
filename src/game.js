@@ -134,8 +134,17 @@ const SLOT = {shells: 1, props: 2, tribar: 3, pole: 4, gate: 5, hub: 10, west: 1
   declare: 15, progress: 16, legend: 17, gatesign: 18, soon: 19, rug: 21, scrPlaque: 22, south: 23, lectern: 24, vestPlaque: 25, door4: 26, vestLegend: 27, sealed4: 28, display: 30, board: 31, screen: 32,
   sentences: 33, top: 34, stairs: 40, stairShell: 41, keySign: 42 /* ..47 */,
   list: 50, listBoard: 51, qBoard: 52, qLegend: 53, deskLegend: 54, listPlaque: 55, door5: 56,
-  prv: 57, pBoard: 58, pLegend: 59, gBoard: 60, gLegend: 61, prvPlaque: 62, door6: 63, sealed6: 64, sealedPlaque: 65};
+  ridge: 80 /* ..86 */, prv: 57, pBoard: 58, pLegend: 59, gBoard: 60, gLegend: 61, prvPlaque: 62, door6: 63, sealed6: 64, sealedPlaque: 65};
 let tribar = null;
+
+// A second copy of a desk's button legend, standing on the far edge of its top and tilted back
+// toward you, so the labels are in view while you aim down at the buttons (the front-face strip
+// is hidden then). c, n: the front strip's centre and normal; depth: the desk's depth.
+function labelRidge(slot, tex, c, n, w, depth) {
+  const m = new MeshBuilder(), top = c[1] + 0.17;
+  m.panel([c[0] - n[0] * (depth - 0.06), top + 0.12, c[2] - n[2] * (depth - 0.06)], v3.norm([n[0] * 0.55, 0.84, n[2] * 0.55]), w, 0.2);
+  mesh(slot, m, tex, MESH_UNLIT);
+}
 
 function panelMesh(slot, spec, c, normal) {
   texture(slot, Text.plaque(document, spec));
@@ -167,6 +176,7 @@ function buildScene() {
     const m = new MeshBuilder();
     m.panel([(k.x0 + k.x1) / 2, k.h - 0.17, k.z1 + 0.01], [0, 0, 1], k.x1 - k.x0, 0.32);
     mesh(SLOT.legend, m, SLOT.legend, MESH_UNLIT);
+    labelRidge(SLOT.ridge, SLOT.legend, [(k.x0 + k.x1) / 2, k.h - 0.17, k.z1 + 0.01], [0, 0, 1], k.x1 - k.x0, k.z1 - k.z0);
   }
   // Room 3: the plaque by its door, the sealed door to the rooms still to come, the screen, the lectern
   const R = World.SCR;
@@ -188,6 +198,7 @@ function buildScene() {
     const lm = new MeshBuilder();
     lm.panel([L.x0 - 0.01, L.h - 0.17, (L.z0 + L.z1) / 2], [-1, 0, 0], L.z1 - L.z0, 0.3);
     mesh(SLOT.lectern, lm, SLOT.lectern, MESH_UNLIT);
+    labelRidge(SLOT.ridge + 1, SLOT.lectern, [L.x0 - 0.01, L.h - 0.17, (L.z0 + L.z1) / 2], [-1, 0, 0], L.z1 - L.z0, L.x1 - L.x0);
   }
   refreshSentences();
   // the rug: a flat textured quad just above the floor (normal up)
@@ -249,6 +260,7 @@ function buildStairwell() {
   const lm = new MeshBuilder();
   lm.panel([-9.5, 0.83, 13.61], [0, 0, 1], 1.8, 0.3);
   mesh(SLOT.vestLegend, lm, SLOT.vestLegend, MESH_UNLIT);
+  labelRidge(SLOT.ridge + 2, SLOT.vestLegend, [-9.5, 0.83, 13.61], [0, 0, 1], 1.8, 0.6);
   refreshTop();
 }
 
@@ -269,11 +281,13 @@ function buildListRoom() {
   const dm = new MeshBuilder();
   dm.panel([(k.x0 + k.x1) / 2, k.h - 0.17, k.z0 - 0.01], [0, 0, -1], k.x1 - k.x0, 0.3);
   mesh(SLOT.deskLegend, dm, SLOT.deskLegend, MESH_UNLIT);
+  labelRidge(SLOT.ridge + 3, SLOT.deskLegend, [(k.x0 + k.x1) / 2, k.h - 0.17, k.z0 - 0.01], [0, 0, -1], k.x1 - k.x0, k.z1 - k.z0);
   const q = World.QLECTERN;
   texture(SLOT.qLegend, Text.legend(document, Diag.QUESTION.map(([id, label]) => [id, label, World.QANSWERS_Z[id]]), q.z0, q.z1 - q.z0, 52));
   const qm = new MeshBuilder();
   qm.panel([q.x0 - 0.01, q.h - 0.17, (q.z0 + q.z1) / 2], [-1, 0, 0], q.z1 - q.z0, 0.3);
   mesh(SLOT.qLegend, qm, SLOT.qLegend, MESH_UNLIT);
+  labelRidge(SLOT.ridge + 4, SLOT.qLegend, [q.x0 - 0.01, q.h - 0.17, (q.z0 + q.z1) / 2], [-1, 0, 0], q.z1 - q.z0, q.x1 - q.x0);
   if (state.diag.round === 0 && state.diag.escaped) insertRow();  // reloaded while the librarian was adding it
   refreshList(); refreshQuestion();
 }
@@ -299,12 +313,13 @@ function refreshQuestion() {
 function buildProverRoom() {
   const P = World.PRV;
   mesh(SLOT.prv, World.buildProver());
-  panelMesh(SLOT.prvPlaque, Text.PLAQUES.prover, [-19.3, 1.75, P.z0 + 0.02], [0, 0, 1]);  // on your right as you come in
+  panelMesh(SLOT.prvPlaque, Text.PLAQUES.prover, [-19.5, 1.65, P.z0 + 0.02], [0, 0, 1]);  // on your right as you come in
   const k = World.PDESK;
   texture(SLOT.pLegend, Text.legend(document, World.PKEYS.map(([id, label, z]) => [id, label, k.z1 - z]), 0, k.z1 - k.z0, 40));
   const dm = new MeshBuilder();
   dm.panel([k.x1 + 0.01, k.h - 0.17, (k.z0 + k.z1) / 2], [1, 0, 0], k.z1 - k.z0, 0.3);
   mesh(SLOT.pLegend, dm, SLOT.pLegend, MESH_UNLIT);
+  labelRidge(SLOT.ridge + 5, SLOT.pLegend, [k.x1 + 0.01, k.h - 0.17, (k.z0 + k.z1) / 2], [1, 0, 0], k.z1 - k.z0, k.x1 - k.x0);
   refreshProverLegend(); refreshProver(); refreshGQuestion();
 }
 function refreshProverLegend() {
@@ -313,6 +328,7 @@ function refreshProverLegend() {
   const m = new MeshBuilder();
   m.panel([(q.x0 + q.x1) / 2, q.h - 0.17, q.z0 - 0.01], [0, 0, -1], q.x1 - q.x0, 0.3);
   mesh(SLOT.gLegend, m, SLOT.gLegend, MESH_UNLIT);
+  labelRidge(SLOT.ridge + 6, SLOT.gLegend, [(q.x0 + q.x1) / 2, q.h - 0.17, q.z0 - 0.01], [0, 0, -1], q.x1 - q.x0, q.z1 - q.z0);
 }
 function proverRun(now = performance.now()) {
   const r = state.prv.run;
@@ -425,7 +441,7 @@ function solveGodel() {
     why: "Each of these is what Douglas Hofstadter calls a strange loop: you move up through levels, and find yourself back where you began. " +
       "In Gödel, Escher, Bach he suggests that your sense of “I” is a loop like this: a pattern in the brain that ends up standing for itself. " +
       "Thank you for playing Tangle."};
-  objective(allSolved() ? "Every loop found. Wander as you like." : nextObjective());
+  objective(allSolved() ? "Every loop found. Turn round: the Prover's board shows why card 81 is true." : nextObjective());
 }
 let pendingEnd = null;
 
@@ -440,7 +456,10 @@ function checkRow() {
   const d = state.diag;
   if (d.round >= 2 || d.busy) { Audio.cue("nope"); say(d.round >= 2 ? "You've beaten the list. Now the question on the left-hand wall." : "Wait: the librarian is adding your row to the list.", 4000); return; }
   const r = Diag.check(d.guess, d.list);
-  d.checks++; d.diffs = r.diffs; d.later = null; d.good = r.kind === "escapes";
+  d.checks++; d.later = null; d.good = r.kind === "escapes";
+  // a winning row is shown differing on the diagonal (row n at tile n), the story the board tells,
+  // not at each row's first mismatch, which may come earlier and muddle it
+  d.diffs = r.kind === "escapes" ? d.list.map((_, n) => n) : r.diffs;
   if (r.kind === "row") {
     d.msg = `That's row ${r.row}, tile for tile. Change something and check again.`;
     Audio.cue("nope");
@@ -508,7 +527,7 @@ function solveList() {
       "Gödel's proof makes the same move. He gave every statement about numbers a number of its own, and built a sentence that says, in effect, " +
       "\u201cI am not on the list of things arithmetic can prove.\u201d Like your row, it is made from the list it escapes. " +
       "Alan Turing used the diagonal again to show that no program can tell, for every program, whether it will ever stop." +
-      (allSolved() ? " Every room is solved." : state.solved.godel ? "" : " One room is left: its door, in this room's right-hand wall, has opened.")}), 900);
+      (allSolved() ? " Every room is solved." : state.solved.godel ? "" : " One room is left. Its door, the one that was sealed, is on the wall to your right as you come into the library. It has opened.")}), 900);
   objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective());
 }
 
@@ -1162,14 +1181,15 @@ function rayHit(o, d, lo, hi) {
 function targets() {
   const t = [];
   for (const [id, , x] of World.BUTTONS) t.push({id, lo: [x - 0.26, World.BUTTON_Y - 0.08, World.BUTTON_Z - 0.24], hi: [x + 0.26, World.BUTTON_Y + 0.1, World.BUTTON_Z + 0.24]});
-  for (const [id, , x] of World.TOP_ANSWERS) t.push({id, lo: [x - 0.22, 0.98, 13.08], hi: [x + 0.22, 1.16, 13.52]});
-  for (const [id, , z] of World.ANSWERS) t.push({id, lo: [World.ANSWER_X - 0.24, World.ANSWER_Y - 0.08, z - 0.26], hi: [World.ANSWER_X + 0.24, World.ANSWER_Y + 0.1, z + 0.26]});
+  // once a room is solved its answer buttons go dark and stop taking aim (no dead "E: …" prompt)
+  if (!state.solved.stair) for (const [id, , x] of World.TOP_ANSWERS) t.push({id, lo: [x - 0.22, 0.98, 13.08], hi: [x + 0.22, 1.16, 13.52]});
+  if (!state.solved.scr) for (const [id, , z] of World.ANSWERS) t.push({id, lo: [World.ANSWER_X - 0.24, World.ANSWER_Y - 0.08, z - 0.26], hi: [World.ANSWER_X + 0.24, World.ANSWER_Y + 0.1, z + 0.26]});
   for (const [id, , x] of World.SWITCHES) {
     // the switch's own size (0.4 wide, top at +0.04): bigger boxes catch a glancing look at the next one
     const hw = id === "check" ? 0.4 : 0.2;
     t.push({id, lo: [x - hw, World.SWITCH_Y - 0.06, World.SWITCH_Z - 0.21], hi: [x + hw, World.SWITCH_Y + 0.045, World.SWITCH_Z + 0.21]});
   }
-  for (const [id] of Diag.QUESTION) {
+  if (!state.solved.list) for (const [id] of Diag.QUESTION) {
     const z = World.QANSWERS_Z[id];
     t.push({id, lo: [World.QANSWER_X - 0.24, 0.98, z - 0.26], hi: [World.QANSWER_X + 0.24, 1.16, z + 0.26]});
   }
@@ -1177,7 +1197,7 @@ function targets() {
     const hz = id === "gnum" ? 0.3 : 0.23;
     t.push({id, lo: [World.PKEY_X - 0.21, World.PKEY_Y - 0.06, z - hz], hi: [World.PKEY_X + 0.21, World.PKEY_Y + 0.045, z + hz]});
   }
-  for (const id of Prover.ANSWER_IDS) {
+  if (!state.solved.godel) for (const id of Prover.ANSWER_IDS) {
     const x = World.GANSWERS_X[id];
     t.push({id, lo: [x - 0.24, 0.98, World.GANSWER_Z - 0.24], hi: [x + 0.24, 1.16, World.GANSWER_Z + 0.24]});
   }
@@ -1210,14 +1230,16 @@ function screenRay(nx, ny) {  // normalised device coords -> world direction
 // ------------------------------------------------------------------ frame
 let lastT = null, stride = 0, lastSave = 0, lastGlowT = 0, lastProverT = 0;
 function tick(t, now) {
-  const dt = lastT == null ? 0 : Math.min(0.05, t - lastT); lastT = t;
+  // a slow frame (software rendering can run at 4-5 fps) still moves you the right distance:
+  // up to 0.25 s per frame, walked in steps of at most 50 ms (collision stays fine-grained)
+  const dt = lastT == null ? 0 : Math.min(0.25, t - lastT); lastT = t;
   settleDrag();
   me.yaw = kit.cam.yaw; me.pitch = kit.cam.pitch;
   fitFov();
   if (!state.card) {
     const before = me;
     const inp = input(dt);
-    me = Walk.step(me, inp, dt, collide);
+    for (let left = dt; left > 1e-6; left -= 0.05) me = Walk.step(me, inp, Math.min(0.05, left), collide);
     stride += Math.hypot(me.x - before.x, me.z - before.z);
     stairs(before);
     if (stride > (inp.run ? 1.05 : 0.78)) {

@@ -126,7 +126,7 @@ export const PLAQUES = {
       "Each room here holds one kind of loop, as a puzzle. Start with the Triangle (left), then the Machine (right), then the Screen (behind you), and the Staircase, the List and the Prover beyond it."},
   sealed: {kicker: "Room 6  ·  sealed", title: "The Prover", w: 1.2, h: 1.0, titleSize: 0.12, dark: true,
     body: "Opens when you've beaten the list.", bodySize: 0.08},
-  prover: {kicker: "The Prover", title: "A sentence about itself", w: 2.6, h: 2.4, bodySize: 0.046,
+  prover: {kicker: "The Prover", title: "A sentence about itself", w: 3.0, h: 2.6, bodySize: 0.058,
     body: "Feed the Prover a card and it tries every possible proof, shortest first. If it finds one, the card is PROVED.\n" +
       "The Prover is honest: it never proves anything false.\nEvery card has a number, so a card can talk about other cards. " +
       "Press a card on the desk to feed it in. Start with cards 12 and 47."},
@@ -403,8 +403,8 @@ export function proverBoard(doc, {fed, blank, run, message, good, solved, unlock
       g.font = `700 36px ${MONO}`; g.fillStyle = tc; g.fillText(tv, X + 470, yy);
     });
     g.strokeStyle = "#e6c46a"; g.lineWidth = 3; g.strokeRect(X - 14, 240 + 56 * 2 - 40, W - X - 40, 54);
-    g.fillStyle = "#b9b2c8"; g.font = `italic 400 32px ${SERIF}`;
-    for (const [i, l] of wrap(g, "To the Prover, cards 47 and 81 look the same. Only from outside can you see that 81 is true.", W - X - 50).entries()) g.fillText(l, X, 432 + i * 40);
+    g.fillStyle = "#e8e2f2"; g.font = `600 38px ${SERIF}`;
+    for (const [i, l] of wrap(g, "To the Prover, cards 47 and 81 look the same. Only from outside can you see that 81 is true.", W - X - 50).entries()) g.fillText(l, X, 436 + i * 46);
   } else {
     g.fillStyle = "#f1ece2"; g.font = `700 46px ${SERIF}`; g.fillText(`Card ${run.n}`, X, 186);
     if (run.kind !== "proved") {  // a lamp that blinks while it works
@@ -461,7 +461,7 @@ export function proverQuestion(doc, {locked, ask, legend, step, total, message, 
   if (!locked && !solved) {
     g.font = `600 30px ${MONO}`; g.fillStyle = "#e6c46a"; g.fillText(legend, 50, 290);
     // what you already know, so each question is one small step
-    g.font = `italic 400 34px ${SERIF}`; g.fillStyle = "#b9b2c8";
+    g.font = `600 40px ${SERIF}`; g.fillStyle = "#e8e2f2";
     g.fillText(step === 0 ? "Remember: the Prover never proves anything false." : "You've worked out: the Prover never proves card 81.", 50, 360);
   }
   if (message) {

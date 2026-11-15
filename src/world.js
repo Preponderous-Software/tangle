@@ -148,7 +148,7 @@ export function collision(state) {
     {x0: DOOR5[0] - 0.3, z0: VEST.z1, x1: DOOR5[0], z1: LIST.z0}, {x0: DOOR5[1], z0: VEST.z1, x1: DOOR5[1] + 0.3, z1: LIST.z0},
     {x0: DESK.x0, z0: DESK.z0, x1: DESK.x1, z1: DESK.z1},
     {x0: QLECTERN.x0, z0: QLECTERN.z0, x1: QLECTERN.x1, z1: QLECTERN.z1},
-    {x0: LIST.x0, z0: 25.6, x1: LIST.x0 + 0.45, z1: 29.4}, {x0: LIST.x0, z0: 32.6, x1: LIST.x0 + 0.45, z1: 36.4},  // shelves
+    {x0: LIST.x0, z0: 25.6, x1: LIST.x0 + 0.45, z1: 29.0}, {x0: LIST.x0, z0: 33.0, x1: LIST.x0 + 0.45, z1: 36.4},  // shelves (clear of the Prover's door)
     {x0: -15.4, z0: LIST.z0, x1: -11.0, z1: LIST.z0 + 0.45}, {x0: -7.9, z0: LIST.z0, x1: -2.6, z1: LIST.z0 + 0.45},
     ...wallBoxes(STAIR, {e: DOOR4}),
     {x0: STAIR.x0 + STAIR.wd, z0: STAIR.z0 + STAIR.wd, x1: STAIR.x1 - STAIR.wd, z1: STAIR.z1 - STAIR.wd},  // the well's rail
@@ -521,7 +521,7 @@ export function buildList() {
       }
     }
   };
-  shelf(25.6, 29.4, L.x0, "z", 0.42); shelf(32.6, 36.4, L.x0, "z", 0.42);
+  shelf(25.6, 29.0, L.x0, "z", 0.42); shelf(33.0, 36.4, L.x0, "z", 0.42);
   shelf(-15.4, -11.0, L.z0, "x", 0.42); shelf(-7.9, -2.6, L.z0, "x", 0.42);
   return m;
 }

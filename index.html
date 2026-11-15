@@ -21,6 +21,8 @@
   /* a new objective glows, but stays dark enough to read over a bright plaque */
   #objective.fresh { background: rgba(74,55,22,.92); box-shadow: 0 0 0 2px rgba(214,167,90,.8); }
   #objective::before { content: "NEXT  "; color: var(--gold); }
+  /* once read, it steps back: smaller and see-through, so it covers less of a board you're reading */
+  #objective:not(.fresh) { opacity: .74; font-size: .74rem; max-width: min(24rem, 48vw); transition: background .4s, box-shadow .4s, opacity 1.2s, font-size .6s; }
   #caption { left: 50%; bottom: calc(max(18px, env(safe-area-inset-bottom)) + 3.6rem); transform: translateX(-50%);
     width: min(40rem, calc(100vw - 32px)); box-sizing: border-box; text-align: center; font-size: 1.05rem; background: var(--glass); padding: .6rem .9rem;
     transition: opacity .35s; }
