@@ -87,6 +87,18 @@ export function stairHeight(x, z) {
 }
 const DOOR = {z0: -1.2, z1: 1.2, h: 2.8};
 
+// The epilogue: once all six rooms are solved, a door opens in the hall's far (north) wall, where the
+// welcome plaque was. A short passage leads through it into... the same hall, through its south door.
+// Built like the staircase: beyond the passage stand copies of the hall, one loop (LOOP metres) apart,
+// and stepping past WRAP_Z moves you forward by LOOP, so you walk in through the door opposite.
+export const PASSAGE = {z0: HUB.z0 - 3, z1: HUB.z0};   // as long as the passage from the hall to the Screen room
+export const LOOP = (HUB.z1 - HUB.z0) + (PASSAGE.z1 - PASSAGE.z0);
+export const WRAP_Z = PASSAGE.z0;                        // = the copy's south doorway, one loop north of the real one
+export const HALL_COPIES = [1, 2];
+export function hallDoorOpen(solved) {
+  return !!solved && ["tribar", "miu", "scr", "stair", "list", "godel"].every((k) => solved[k]);
+}
+
 // The triangle room's one viewpoint and its sculpture.
 export const TRIBAR = {eye: [-12.2, EYE, 5.4], centre: [-19.6, 2.9, -3.6], L: 4.2, w: 0.7};
 
@@ -135,7 +147,11 @@ function wallBoxes(r, doors) {
 
 export function collision(state) {
   const boxes = [
-    ...wallBoxes(HUB, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1]}),
+    ...wallBoxes(HUB, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1], n: [DOOR.z0, DOOR.z1]}),
+    // the epilogue's door: wall until every room is solved, then the passage beyond it
+    {x0: DOOR.z0, z0: HUB.z0 - 0.3, x1: DOOR.z1, z1: HUB.z0, when: () => !hallDoorOpen(state.solved)},
+    {x0: DOOR.z0 - 0.3, z0: PASSAGE.z0 - 1, x1: DOOR.z0, z1: PASSAGE.z1}, {x0: DOOR.z1, z0: PASSAGE.z0 - 1, x1: DOOR.z1 + 0.3, z1: PASSAGE.z1},
+    {x0: DOOR.z0 - 0.3, z0: PASSAGE.z0 - 1.3, x1: DOOR.z1 + 0.3, z1: PASSAGE.z0 - 1},  // never reached: the wrap comes first
     ...wallBoxes(SCR, {n: [DOOR.z0, DOOR.z1], w: DOOR4}),
     ...wallBoxes(VEST, {w: DOOR4, e: DOOR4, s: DOOR5}),
     ...wallBoxes(LIST, {n: DOOR5, w: DOOR6}),
@@ -190,6 +206,7 @@ export function collision(state) {
     {axis: "x", at: HUB.x0, c0: D[0], c1: D[1]}, {axis: "x", at: TRI.x1, c0: D[0], c1: D[1]},
     {axis: "x", at: HUB.x1, c0: D[0], c1: D[1]}, {axis: "x", at: MIU.x0, c0: D[0], c1: D[1]},
     {axis: "z", at: HUB.z1, c0: D[0], c1: D[1]}, {axis: "z", at: SCR.z0, c0: D[0], c1: D[1]},
+    {axis: "z", at: HUB.z0, c0: D[0], c1: D[1], when: () => hallDoorOpen(state.solved)},
     {axis: "x", at: SCR.x0, c0: DOOR4[0], c1: DOOR4[1]}, {axis: "x", at: VEST.x1, c0: DOOR4[0], c1: DOOR4[1]},
     {axis: "x", at: VEST.x0, c0: DOOR4[0], c1: DOOR4[1]}, {axis: "x", at: STAIR.x1, c0: DOOR4[0], c1: DOOR4[1]},
     {axis: "z", at: VEST.z1, c0: DOOR5[0], c1: DOOR5[1]}, {axis: "z", at: LIST.z0, c0: DOOR5[0], c1: DOOR5[1]},
@@ -270,7 +287,7 @@ function corridor(m, x0, x1, colors, z0 = DOOR.z0, z1 = DOOR.z1, dy = 0) {
 export function buildShells() {
   const m = new MeshBuilder();
   const hub = {wall: C.hubWall, floor: C.hubFloor, ceil: C.hubCeil};
-  shell(m, HUB, hub, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1]});
+  shell(m, HUB, hub, {w: [DOOR.z0, DOOR.z1], e: [DOOR.z0, DOOR.z1], s: [DOOR.z0, DOOR.z1], n: [DOOR.z0, DOOR.z1]});  // north: see buildHallDoor
   shell(m, SCR, {wall: C.scrWall, floor: C.scrFloor, ceil: C.scrCeil}, {n: [DOOR.z0, DOOR.z1], w: DOOR4});
   shell(m, VEST, hub, {w: DOOR4, e: DOOR4, s: DOOR5});
   corridorZ(m, HUB.z1, SCR.z0, hub);
@@ -287,6 +304,46 @@ export function buildShells() {
   return m;
 }
 
+// The hall's north doorway while it is shut: plain wall (and skirting) filling the opening.
+export function buildHallDoor() {
+  const m = new MeshBuilder(), z = HUB.z0, e = 0.01;
+  m.facing([[DOOR.z0 - e, 0, z], [DOOR.z1 + e, 0, z], [DOOR.z1 + e, DOOR.h + e, z], [DOOR.z0 - e, DOOR.h + e, z]], C.hubWall, [0, 2, 0]);
+  m.box([DOOR.z0, 0, z], [DOOR.z1, 0.12, z + 0.03], C.trim);
+  return m;
+}
+
+// The hall's benches (also drawn in its copies).
+function hallBenches(m, dz = 0) {
+  for (const cx of [-3.6, 3.6]) {
+    const cz = 3.4 + dz;
+    m.box([cx - 0.22, 0.42, cz - 0.8], [cx + 0.22, 0.48, cz + 0.8], C.wood);
+    for (const sz of [-1, 1]) { const lz = cz + sz * 0.7; m.box([cx - 0.19, 0, lz - 0.05], [cx + 0.19, 0.42, lz + 0.05], C.dark); }
+  }
+}
+
+// The epilogue, once the north door is open: the passage, and beyond it copies of the hall (each with
+// its own passage north), so through the door you see the hall inside itself. The last copy's passage
+// ends in the dark.
+export function buildEpilogue() {
+  const m = new MeshBuilder(), hub = {wall: C.hubWall, floor: C.hubFloor, ceil: C.hubCeil}, D = [DOOR.z0, DOOR.z1];
+  const last = HALL_COPIES[HALL_COPIES.length - 1];
+  for (const k of [0, ...HALL_COPIES]) {
+    const dz = -k * LOOP;
+    corridorZ(m, PASSAGE.z0 + dz, PASSAGE.z1 + dz, hub);
+    if (k === 0) continue;
+    const H = {...HUB, z0: HUB.z0 + dz, z1: HUB.z1 + dz};
+    shell(m, H, hub, {w: D, e: D, s: D, n: D});
+    hallBenches(m, dz);
+    // the side doors: a passage's first metres, then dark (in the real hall, rooms lie beyond)
+    corridor(m, TRI.x1, HUB.x0, hub, D[0] + dz, D[1] + dz);
+    corridor(m, HUB.x1, MIU.x0, hub, D[0] + dz, D[1] + dz);
+    for (const x of [TRI.x1 + 0.02, MIU.x0 - 0.02]) m.facing([[x, 0, D[0] + dz], [x, 0, D[1] + dz], [x, DOOR.h, D[1] + dz], [x, DOOR.h, D[0] + dz]], [0.06, 0.06, 0.08], [0, 1.4, dz]);
+  }
+  const zEnd = PASSAGE.z0 - last * LOOP + 0.02;
+  m.facing([[D[0], 0, zEnd], [D[1], 0, zEnd], [D[1], DOOR.h, zEnd], [D[0], DOOR.h, zEnd]], [0.05, 0.05, 0.07], [0, 1.4, zEnd + 1]);
+  return m;
+}
+
 export function buildProps() {
   const m = new MeshBuilder();
   // benches: two in the hall, and one in the triangle room just behind the viewpoint, facing the sculpture
@@ -298,7 +355,7 @@ export function buildProps() {
       else { const lz = cz + sx * (hz - 0.1); m.box([cx - hx + 0.03, 0, lz - 0.05], [cx + hx - 0.03, 0.42, lz + 0.05], C.dark); }
     }
   };
-  bench(-3.6, 3.4, "z"); bench(3.6, 3.4, "z");
+  hallBenches(m);
   bench(TRIBAR.eye[0] + 1.1, TRIBAR.eye[2] + 1.0, "x");
   // room 3: the screen's bezel, the lectern, the sealed door to the rooms still to come
   const sc = SCREEN;

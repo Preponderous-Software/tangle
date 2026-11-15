@@ -128,3 +128,41 @@ test("the List to the Prover: sealed until the List is solved, then the desk of 
   me = walk(me, [[-25, 31]], w, 10);
   assert.ok(me.x > World.PDESK.x1 - 0.01 || me.z > World.PDESK.z1, "the desk stops a walk through it");
 });
+
+// The epilogue: the game moves the walker a loop forward once past the passage's end (game.js, loopHall).
+function wrapHall(me) { return me.z < World.WRAP_Z ? {...me, z: me.z + World.LOOP, wrapped: (me.wrapped || 0) + 1} : me; }
+
+test("the epilogue: the hall's north wall stays shut until every room is solved", () => {
+  const five = {tribar: true, miu: true, scr: true, stair: true, list: true, godel: false};
+  const w = World.collision({gateOpen: true, solved: five});
+  const me = walk(Walk.spawn(0, 2, Math.PI / 2), [[0, -9]], w, 8);
+  assert.ok(me.z > World.HUB.z0, `the wall stops you (at z ${me.z.toFixed(2)})`);
+  assert.equal(World.hallDoorOpen(five), false);
+  assert.equal(World.hallDoorOpen({...five, godel: true}), true);
+});
+
+test("the epilogue: out through the north door, along the passage, and back into the hall through the south door", () => {
+  const w = World.collision({gateOpen: true, solved: {tribar: true, miu: true, scr: true, stair: true, list: true, godel: true}});
+  let me = walk(Walk.spawn(0, 2, Math.PI / 2), [[0, -4], [0, -7.5]], w);
+  assert.ok(Math.hypot(me.x, me.z + 7.5) < 0.3, `in the passage (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
+  // the last plaque, on the passage's left-hand wall, is close enough to read
+  assert.ok(Math.abs(me.x - -1.18) < 1.4);
+  // keep walking north (straight ahead): one step past the passage's end, you're coming in at the south door
+  for (let i = 0; i < 90 && !me.wrapped; i++) {
+    me.yaw = Math.PI / 2;
+    me = wrapHall({...Walk.step(me, {forward: 1, right: 0}, 1 / 30, w), wrapped: me.wrapped});
+  }
+  assert.equal(me.wrapped, 1, "wrapped once");
+  assert.ok(me.z > World.HUB.z1 - 0.6 && me.z < World.HUB.z1 + 0.3 && Math.abs(me.x) < 1.2, `at the south door (at ${me.x.toFixed(2)}, ${me.z.toFixed(2)})`);
+  me = walk(me, [[0, 0]], w);
+  assert.ok(Math.hypot(me.x, me.z) < 0.3, "and on into the middle of the hall");
+  // walking into the passage off-centre still slides you through the doorway
+  let off = Walk.spawn(1.15, -3, Math.PI / 2);
+  for (let i = 0; i < 60; i++) off = Walk.step(off, {forward: 1, right: 0}, 1 / 30, w);
+  assert.ok(off.z < World.HUB.z0 - 0.5, `into the passage from x 1.15 (at ${off.x.toFixed(2)}, ${off.z.toFixed(2)})`);
+});
+
+test("the epilogue's loop is exact: the copy's south doorway is where the passage ends", () => {
+  assert.equal(World.HUB.z1 - World.LOOP, World.WRAP_Z);
+  assert.equal(World.PASSAGE.z1 - World.PASSAGE.z0, World.SCR.z0 - World.HUB.z1, "as long as the passage to the Screen room");
+});

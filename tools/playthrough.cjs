@@ -160,9 +160,21 @@ const EYE = 1.62;
   await answerG("gb"); await answerG("ga");
   step(`prover card: ${await closeCard()}`);
   step(`ending card: ${await closeCard()}`);
+
+  // the epilogue: back to the hall, out through its new north door, and straight on until you're back in it
+  for (const [x, z] of [[-17, 31], [-13.5, 31], [-9, 31], [-9.5, 27], [-9.5, 24], [-9.5, 19.2], [-9.5, 16], [-7.5, 16], [-2, 16], [0, 14], [0, 9.6], [0, 5.5], [0, 0], [0, -4], [0, -7.5]]) await walkTo(x, z);
+  step(`epilogue passage: room ${await page.evaluate(() => window.__tangle.state.room)}, caption "${await page.textContent("#caption")}"`);
+  await lookAt([0, EYE, -20]);
+  await page.keyboard.down("KeyW");
+  for (let k = 0; k < 60 && !(await page.evaluate(() => window.__tangle.state.epilogue)); k++) await frames(3);
+  await page.keyboard.up("KeyW");
+  step(`epilogue: looped ${await page.evaluate(() => window.__tangle.state.epilogue)}, at z ${(await me()).z.toFixed(2)}, room ${await page.evaluate(() => window.__tangle.state.room)}`);
+  step(`epilogue card: ${await closeCard()}`);
+  await walkTo(0, 0);
+  const looped = await page.evaluate(() => window.__tangle.state.epilogue);
   const end = await st();
   step(`end: ${JSON.stringify(end.solved)}`);
   console.log("errors", errors);
   await browser.close();
-  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || !end.solved.list || !end.solved.godel || errors.length) process.exit(1);
+  if (!end.solved.tribar || !end.solved.miu || !end.solved.scr || !end.solved.stair || !end.solved.list || !end.solved.godel || !looped || errors.length) process.exit(1);
 })().catch((e) => { console.error(e.message); process.exit(1); });

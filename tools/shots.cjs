@@ -63,6 +63,13 @@ const SHOTS = [
   ["46-prv-board-solved", [-22.6, 31.0, 0.0, -0.12], "frames6"],
   ["47-prv-wide-sw", [-17.4, 36.3, 0.87, 0.05], "frames6"],
   ["48-prv-wide-nw", [-17.4, 25.7, -0.86, 0.05], "frames6"],
+  // the epilogue (every room is solved by now)
+  ["49-hall-door", [0, 3.5, Math.PI / 2, -0.02], "frames6"],
+  ["50-passage-plaque", [0.6, -7.5, 0.0, 0.0], "frames6"],
+  ["51-passage-end", [0, -8.95, Math.PI / 2, 0.0], "frames6"],
+  ["52-hall-looped", [0, -9.05, Math.PI / 2, 0.0], "frames6"],
+  ["53-epilogue-card", [0, 5.0, Math.PI / 2, 0.0], "afterSolve", 4000],
+  ["54-hall-behind", [0, 4.5, -Math.PI / 2, 0.0], "frames6"],
 ];
 
 (async () => {
@@ -73,7 +80,8 @@ const SHOTS = [
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   // FROM=36 shoots only the poses from 36 on, starting with the first five rooms solved (?skip=5)
   const from = process.env.FROM;
-  await page.goto(url + (from ? "?drive=1&skip=5" : "?drive=1"), { waitUntil: "commit" });
+  // (FROM=49 shoots only the epilogue, starting with every room solved, ?skip=6)
+  await page.goto(url + (from ? `?drive=1&skip=${from >= "49" ? 6 : 5}` : "?drive=1"), { waitUntil: "commit" });
   await page.waitForFunction(() => window.__tangle && window.__strataKit, null, { timeout: 90000 });
   await page.evaluate(() => { window.__tangle.reset(); });
   let t = 1;
