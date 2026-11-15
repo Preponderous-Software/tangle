@@ -58,6 +58,9 @@ const SHOTS = [
   ["43-prv-question", [-22.0, 34.3, -Math.PI / 2, -0.12], "prvWrong"],
   ["44-prv-q2", [-22.0, 34.3, -Math.PI / 2, 0.3], "prvQ2"],
   ["45-prv-solved", [-22.0, 34.3, -Math.PI / 2, -0.12], "prvSolve", 1200],
+  ["46-prv-board-solved", [-22.6, 31.0, 0.0, -0.12], "frames6"],
+  ["47-prv-wide-sw", [-17.4, 36.3, 0.87, 0.05], "frames6"],
+  ["48-prv-wide-nw", [-17.4, 25.7, -0.86, 0.05], "frames6"],
 ];
 
 (async () => {

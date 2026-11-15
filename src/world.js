@@ -40,6 +40,12 @@ export const GLECTERN = {x0: -23.2, x1: -20.8, z0: 35.1, z1: 35.75, h: 1.0};  //
 export const GANSWER_Z = 35.42;
 export const GANSWERS_X = {ga: -21.45, gb: -22.0, gc: -22.55};   // facing the wall (+z), ga is on the left
 export const GBOARD = {c: [-22.0, 2.35, 36.87], w: 3.8, h: 1.6};  // in front of its frame (36.9)
+// The Prover's dressing: two memory drums either side of its board, and the card catalogue (a drawer
+// for every numbered card) against the wall on your left as you come in.
+export const PDRUMS = [[-26.72, 26.1], [-26.72, 35.9]], PDRUM_R = 0.42, PDRUM_H = 4.1;
+export const PCATALOG = {x0: -25.7, x1: -21.9, z0: 25, z1: 25.55, h: 1.35};
+// The cabinet's lamps, which blink while the Prover searches: [y, z] on its face.
+export const PLAMPS = [0.28, 0.5].flatMap((y) => [27.7, 28.3, 28.9, 29.5, 32.5, 33.1, 33.7, 34.3].map((z) => [y, z]));
 
 // The stairwell, going up: landings (flat) and flights (each one whole tone, 0.8 m, higher).
 // Flight `dir`: +1 rises as the coordinate along `along` grows, -1 as it shrinks.
@@ -135,6 +141,8 @@ export function collision(state) {
     {x0: LIST.x0 - 0.3, z0: DOOR6[0], x1: LIST.x0 + 0.1, z1: DOOR6[1], when: () => !(state.solved && state.solved.list)},  // sealed until the List is solved
     ...wallBoxes(PRV, {e: DOOR6}),
     {x0: PCAB.x0, z0: PCAB.z0, x1: PCAB.x1, z1: PCAB.z1},
+    ...PDRUMS.map(([x, z]) => ({x0: x - PDRUM_R, z0: z - PDRUM_R, x1: x + PDRUM_R, z1: z + PDRUM_R})),
+    {x0: PCATALOG.x0, z0: PCATALOG.z0, x1: PCATALOG.x1, z1: PCATALOG.z1},
     {x0: PDESK.x0, z0: PDESK.z0, x1: PDESK.x1, z1: PDESK.z1},
     {x0: GLECTERN.x0, z0: GLECTERN.z0, x1: GLECTERN.x1, z1: GLECTERN.z1},
     {x0: DOOR5[0] - 0.3, z0: VEST.z1, x1: DOOR5[0], z1: LIST.z0}, {x0: DOOR5[1], z0: VEST.z1, x1: DOOR5[1] + 0.3, z1: LIST.z0},
@@ -536,10 +544,42 @@ export function buildProver() {
   m.box([q.x0, 0, q.z0], [q.x1, q.h, q.z1], C.dark);
   m.box([q.x0 - 0.04, q.h, q.z0 - 0.04], [q.x1 + 0.04, q.h + 0.04, q.z1 + 0.04], C.brass);
   m.box([g.c[0] - g.w / 2 - 0.12, g.c[1] - g.h / 2 - 0.12, PRV.z1 - 0.1], [g.c[0] + g.w / 2 + 0.12, g.c[1] + g.h / 2 + 0.12, PRV.z1], C.brass);
+  // the cabinet's face: a recessed panel of lamp sockets either side of the slot
+  for (const [z0, z1] of [[27.4, 30.0], [32.0, 34.6]]) m.box([c.x1, 0.14, z0], [c.x1 + 0.02, 0.64, z1], [0.06, 0.06, 0.07]);
+  // memory drums: tall dark cylinders with brass bands, wired to the board
+  for (const [x, z] of PDRUMS) {
+    m.box([x - 0.5, 0, z - 0.5], [x + 0.5, 0.12, z + 0.5], C.dark);
+    m.cylinder([x, 0.12, z], PDRUM_R, PDRUM_H - 0.12, [0.15, 0.15, 0.19], 24);
+    for (const y of [0.5, 1.4, 2.3, 3.2, PDRUM_H - 0.12]) m.cylinder([x, y, z], PDRUM_R + 0.025, 0.07, C.brass, 24);
+    const toward = z < b.c[2] ? 1 : -1, edge = b.c[2] + toward * -(b.w / 2 + 0.16);
+    m.box([x - 0.05, 3.7, Math.min(z, edge)], [x + 0.05, 3.8, Math.max(z, edge)], C.brass);  // a cable into the board
+  }
+  // the card catalogue: a drawer for every numbered card
+  const k2 = PCATALOG, cols = 7, rowsN = 4, dw = (k2.x1 - k2.x0 - 0.1) / cols, dh = (k2.h - 0.14) / rowsN;
+  m.box([k2.x0, 0, k2.z0], [k2.x1, k2.h, k2.z1], C.wood.map((v) => v * 0.7));
+  m.box([k2.x0 - 0.03, k2.h, k2.z0], [k2.x1 + 0.03, k2.h + 0.04, k2.z1 + 0.03], C.brass);
+  for (let i = 0; i < cols; i++) for (let j = 0; j < rowsN; j++) {
+    const x0 = k2.x0 + 0.05 + i * dw, y0 = 0.08 + j * dh;
+    m.box([x0 + 0.02, y0 + 0.02, k2.z1], [x0 + dw - 0.02, y0 + dh - 0.02, k2.z1 + 0.02], C.wood);
+    m.box([x0 + dw / 2 - 0.06, y0 + dh * 0.45, k2.z1 + 0.02], [x0 + dw / 2 + 0.06, y0 + dh * 0.45 + 0.03, k2.z1 + 0.045], C.brass);
+    m.box([x0 + dw / 2 - 0.08, y0 + dh * 0.62, k2.z1 + 0.02], [x0 + dw / 2 + 0.08, y0 + dh * 0.62 + 0.06, k2.z1 + 0.025], [0.9, 0.86, 0.76]);  // its label
+  }
+  // a few cards waiting on top of the catalogue
+  for (let i = 0; i < 4; i++) m.box([k2.x0 + 0.4 + i * 0.07, k2.h + 0.04 + i * 0.012, k2.z0 + 0.12 + i * 0.03], [k2.x0 + 0.75 + i * 0.07, k2.h + 0.052 + i * 0.012, k2.z0 + 0.36 + i * 0.03], [0.93, 0.9, 0.82]);
+  // a runner from the door to the desk
+  m.box([k.x1 + 0.3, 0, 30.45], [PRV.x1 - 0.05, 0.012, 31.55], [0.32, 0.12, 0.1]);
+  // pendant lamps over the desk and the lectern
+  for (const [x, z, y] of [[-24.0, 31.0, 3.95], [-22.0, 34.6, 3.5]]) {
+    m.box([x - 0.015, y + 0.18, z - 0.015], [x + 0.015, PRV.h, z + 0.015], C.dark);
+    m.cylinder([x, y, z], 0.28, 0.2, C.brass, 20);
+  }
   return m;
 }
-export function proverLights() {
-  return [[-21.8, 4.4, 31, 14, 0.85, 0.85, 1.0, 0.8], [-24.5, 3.6, 31, 6, 1.0, 0.9, 0.7, 0.7], [-22, 3.2, 35.2, 5, 1.0, 0.9, 0.75, 0.6]];
+// solved: a warm light on the board, now that card 81 is known to be true
+export function proverLights(solved = false) {
+  const L = [[-21.8, 4.4, 31, 14, 0.85, 0.85, 1.0, 0.8], [-24.0, 3.7, 31, 6, 1.0, 0.9, 0.7, 0.75], [-22, 3.3, 34.6, 5, 1.0, 0.9, 0.75, 0.6]];
+  if (solved) L.push([-25.2, 3.0, 31, 7, 1.0, 0.8, 0.45, 0.9]);
+  return L;
 }
 
 export function listLights() {
