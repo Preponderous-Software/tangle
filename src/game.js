@@ -628,6 +628,8 @@ function refreshPoints(t = 0) {
       const a = 2 * Math.PI * k / 28;
       pts.push([ex + 0.42 * Math.cos(a), 0.03, ez + 0.42 * Math.sin(a), solved ? 7 : 9, 0, ...(solved ? [1.0, 0.8, 0.3] : [0.95, 0.85, 0.55]), pulse]);
     }
+    // the ring is on the floor, out of view at eye level: a column of light marks it
+    if (!solved) for (let k = 1; k <= 9; k++) pts.push([ex, 0.25 * k, ez, 7, 0, 0.95, 0.85, 0.55, pulse * (1 - k / 12)]);
   }
   if (state.gateOpen && !state.solved.miu) {  // the Machine: a trail of lights through the open gate and up the ramp
     const rp = World.MACHINE.ramp, zc = (rp.z0 + rp.z1) / 2;
@@ -912,13 +914,13 @@ function solveTribar() {
   document.querySelector("#cross .fill").style.strokeDashoffset = 69.1;
   say("There: three beams closing into a loop. Now take a few steps sideways and watch it.", 7000, true);
   state.solvedAt = {x: me.x, z: me.z, t: performance.now()};
-  state.tribarDebrief = (stepped) => debrief({title: "You found it.",
+  state.tribarDebrief = (stepped) => (objective(allSolved() ? "Every room solved. Wander as you like." : nextObjective()), debrief({title: "You found it.",
     what: "From exactly this spot, the far end of one beam lines up with the near end of another, so your eye joins them into a triangle. " +
       (stepped ? "When you stepped aside, the triangle came apart: it was an open, bent bar all along, cut at a slant."
         : "Step aside and it comes apart: it's an open, bent bar, cut at a slant. It only closes from here."),
     why: "Going round the triangle, you keep moving forward and arrive back where you started. Hofstadter calls that a strange loop. " +
       "It only worked from one point of view, and stepping out of that view showed you how it was done. " +
-      "The Machine, across the hall, does the same thing with rules instead of beams."});
+      "The Machine, across the hall, does the same thing with rules instead of beams."}));
   objective(allSolved() ? "Every room solved. Wander as you like." : "Walk sideways and watch it break. " + nextObjective().replace("Next: ", "Then "));
 }
 
@@ -1254,8 +1256,8 @@ function tick(t, now) {
   if (r !== state.room) { state.room = r; enterRoom(r); }
   if (r === "tri" && !state.solved.tribar && !state.card) {
     state.triTime += dt;
-    if (!state.hint && state.triTime > 70) { state.hint = true; say("Hint: a ring of light has appeared on the floor, near the door you came in. Stand in it and look at the triangle.", 8000, true); }
-    if (state.hint && state.triTime > 150 && !state.hint2) { state.hint2 = true; say("Stand inside the ring of light near the door, and face the triangle.", 8000); }
+    if (!state.hint && state.triTime > 70) { state.hint = true; say("Hint: a ring of light has appeared on the floor, on your left as you come in from the hall, about six steps in, under a glowing column. Stand in it and look at the triangle.", 9000, true); }
+    if (state.hint && state.triTime > 150 && !state.hint2) { state.hint2 = true; say("Stand inside the ring of light under the glowing column, left of the hall door, and face the triangle.", 8000); }
   }
   if ((state.hint || state.solved.tribar) && r === "tri") refreshPoints(t);
   if (state.glow > 0.01 && t - lastGlowT > 0.1) { lastGlowT = t; state.glow *= 0.93; refreshLights(); }
@@ -1271,7 +1273,7 @@ function tick(t, now) {
     const a = state.solvedAt, moved = Math.hypot(me.x - a.x, me.z - a.z);
     if (moved > 1.3 || now - a.t > 25000) {
       const show = state.tribarDebrief; state.tribarDebrief = null;  // a function that shows the card
-      setTimeout(() => show(moved > 1.3), moved > 1.3 ? 700 : 0);
+      setTimeout(() => show(moved > 1.3), moved > 1.3 ? 2600 : 0);  // time to watch it come apart first
     }
   }
   const prev = focus && focus.id;
