@@ -209,8 +209,10 @@ itself.
   - `src/prover.js`: Room 6's cards, what the Prover does with each, and the questions about card 81.
   - `src/probe.js`: the playtester probe (only with `?probe`).
   - `src/tribar.js`: the tribar construction.
+  - `src/geom.js`: vector helpers and the mesh builder every shape is made with. No DOM, no engine.
   - `src/world.js`: the house layout.
   - `src/text.js`: plaques drawn on a canvas.
+  - `src/audio.js`: every sound, synthesized with Web Audio: footsteps, room tones, cues and chords.
   - `src/game.js`: the page.
 - **How the tribar works.** It is built nearly orthographically: three bars along x, y and z, with
   their free ends offset along (1,1,1). One bar is cut exactly by the other's silhouette prism.
@@ -219,8 +221,9 @@ itself.
   closes seamlessly. From anywhere else it is visibly broken and tapered, like real tribar
   sculptures.
 - **Checks.** Run `npm install && npx playwright install chromium` once for the two browser tools, with the game served on port 8781.
-  - `npm test` (node) covers the tribar's alignment and normals, the MIU invariant, walking, and
-    every route through the house.
+  - `npm test` (node) covers the tribar's alignment and normals, the MIU invariant, walking, the
+    Screen's sentences and answers, the List's diagonal and the librarian's answers, the Prover's
+    cards, card 81's dial and the questions about it, and every route through the house.
   - `npm run shots` drives the game frame by frame
     (`?drive=1`), screenshots fixed poses (and the title card, and a player's first seconds) into
     `shots/`, and fails on any console error, including a mesh the engine refuses.
