@@ -1,0 +1,75 @@
+{
+  "session": "s01",
+  "goal": "Start with --rooms prover (the first five rooms count as solved; you stand in the List facing the Prover's door). Solve the Prover as someone who has never heard of Godel. Card 81's number is now set with two digit buttons (TENS and ONES) instead of one button; number keys 1-5 press the desk's buttons in order. Report: did you work out what number card 81 should have and WHY (not just by trying numbers)? Were the explanations for wrong numbers helpful? How many presses did it take? Was the dial fun or a chore?",
+  "build": {"version": "0.2.0", "commit": "308671f"},
+  "seed": null,
+  "durationSec": 811,
+  "outcome": "achieved",
+  "findings": [
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Prover desk number keys 1-5 are silently ignored when a few metres from the desk",
+      "detail": "After feeding card 12 I had drifted ~3 m beside the desk (x -22.8, z 27.5) while turning to read the board. Pressing 2 to feed card 47 did nothing: no prompt, no caption, no sound. Only after walking back to the desk did 2 work. A player who learned the keys would think they had broken. Expected either a wider range while in the Prover room, or a hint like 'Step up to the desk to use its buttons'.",
+      "repro": "pt start --rooms prover; Return; walk into the Prover; pt walkto button; pt key 1; strafe/walk ~2-3 m away along the desk; pt key 2 -> nothing happens; pt walkto button; pt key 2 -> card 47 feeds",
+      "screenshot": "shots/keys_range.png",
+      "tick": 14658
+    },
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Aiming at the Prover lectern's three answer buttons with Page Up/Down is fiddly",
+      "detail": "Answering the two questions took about 10 tilt/turn attempts: the buttons sit low and wide, each key tap at a few fps overshoots (pitch jumped 31 -> 69 degrees, one Right tap turned ~50 degrees), and the gold prompt only shows when the crosshair is exactly on a button. Number keys 1-5 work for the desk but do not seem to be offered for the lectern (YES/NO/ONE DAY are labelled 1/2/3 in the probe). Expected the lectern to accept 1-3 like the desk, or bigger hit areas.",
+      "repro": "after feeding card 81, walk to the lectern on the left wall; use Next/Prior and Left/Right to put the crosshair on NO",
+      "screenshot": "shots/aim8.png",
+      "tick": 33000
+    },
+    {
+      "severity": "minor",
+      "category": "text",
+      "title": "Finale gives two different directions: 'walk back to the desk' vs 'a door has opened in the hall'",
+      "detail": "After the second answer, the NEXT box says 'Every loop found. Walk back to the desk: the Prover's board now shows why card 81 is true.' The 'Strange loops.' debrief on top of it says 'One last door has opened, in the hall's far wall, where the welcome plaque was.' The player is told to go two places at once; the first debrief also appears before the board payoff the objective promises.",
+      "repro": "solve the Prover; read the two debrief cards with the NEXT box visible behind them",
+      "screenshot": "shots/finale_conflict.png",
+      "tick": 39540
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Black rectangle at the top centre of the view on arrival, clipping the NEXT box",
+      "detail": "Right after Begin, standing in the List facing the Prover door, a solid black box (about x 370-910, y 45-95) covered the top of the view and cut off the NEXT objective text ('...door in the L'). It was gone once I entered the Prover. Possibly an empty caption/banner element.",
+      "repro": "pt start --rooms prover; pt key Return; pt await WORLD; pt shot",
+      "screenshot": "shots/black_bar.png",
+      "tick": 1121
+    },
+    {
+      "severity": "polish",
+      "category": "text",
+      "title": "TENS / ONES labels under card 81's digits on the board are unreadably small",
+      "detail": "On the board, card 81 shows its two gold digit tiles with tiny 'TENS ONES' captions beneath them that cannot be read from the desk. The desk labels are clear, so it works, but the link between the board digits and the desk buttons would be stronger with bigger labels.",
+      "repro": "walk into the Prover and look at the board from the doorway",
+      "screenshot": "shots/w2.png",
+      "tick": 1840
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 1,
+    "deaths": 0,
+    "secondsToObjective": {"Solve The Prover": 606.6},
+    "dialPresses": 8,
+    "cardFeedPresses": 4,
+    "ignoredKeyPresses": 1,
+    "lecternAnswers": 2,
+    "wrongAnswers": 0,
+    "totalPresses": 15,
+    "wrongNumbersSeenExplained": 4
+  },
+  "fun": 4,
+  "verdict": "The Prover lands: feeding 12 (PROVED) and 47 (searches forever) sets up the rule 'it never proves anything false', the objective 'set its number so it talks about itself' makes 81 an act of understanding rather than guessing, and the two lectern questions walk a newcomer to 'true, and it can't be proved' with clear right-answer explanations. The two-digit dial is quick (8 presses from 47 to 81) and the board explains every intermediate number live, so it reads as feedback, not a chore. The friction is physical: desk keys silently fail out of range, lectern aiming is fiddly, and the finale sends you to the desk and to the hall at the same time."
+  ,
+  "answers": [
+    {"question": "In your own words, what is a strange loop, and what did each room you played show about it?", "answer": "A strange loop is when something climbs through levels (a sentence, a picture, a system of rules) and ends up pointing back at itself. I only played the Prover: card 81 says 'The Prover can't prove card 81', so through its number it talks about itself. Because the Prover is honest, it can never prove card 81 (that would prove something false), which is exactly what the card says, so it is true but unprovable. The game's final card says the other rooms show the same shape: a triangle that closes on itself, a screen inside itself, stairs back to the start, a list row escaping its list."},
+    {"question": "Which moment was the most confusing, and why?", "answer": "Not the puzzle itself; the controls around it. Pressing 2 a few metres from the desk did nothing with no message, so I briefly thought feeding card 47 had failed. Second, at the end the NEXT box told me to walk back to the desk to see why card 81 is true, while the debrief said a door had opened in the hall, so I did not know where to go. Conceptually, the second question ('is card 81 true?') needs a moment of stepping back, but the plaque line 'it never proves anything false' and the first answer's explanation set it up well."},
+    {"question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.", "answer": "One thing: right after Begin, standing in the List facing west at the Prover's door, a solid black rectangle sat at the top centre of the view and cut off the end of the NEXT box text. It disappeared once I walked into the Prover. Otherwise text and cards rendered cleanly; the TENS/ONES labels under card 81's digits on the board (seen from the doorway, facing the board) are too small to read."}
+  ]
+}

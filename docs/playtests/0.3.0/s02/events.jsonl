@@ -1,0 +1,10 @@
+{"type": "screen", "tick": 4200, "wallTimeMs": 1794782925066, "from": null, "to": "TITLE"}
+{"type": "screen", "tick": 6241, "wallTimeMs": 1794782959079, "from": "TITLE", "to": "WORLD"}
+{"type": "world", "tick": 6241, "wallTimeMs": 1794782959080, "how": "created", "seed": 0}
+{"type": "objective", "tick": 6241, "wallTimeMs": 1794782959081, "text": "Every room solved. One last door: the way out, in the hall's far wall."}
+{"type": "objective", "tick": 7383, "wallTimeMs": 1794782978123, "text": "Every loop found, the hall's too. Wander as you like."}
+{"type": "status", "tick": 7383, "wallTimeMs": 1794782978124, "text": "You walked straight ahead, out through the far wall, and came back into the hall through the door opposite."}
+{"type": "screen", "tick": 7594, "wallTimeMs": 1794782981635, "from": "WORLD", "to": "DEBRIEF"}
+{"type": "debrief", "tick": 7594, "wallTimeMs": 1794782981636, "title": "Back where you started."}
+{"type": "screen", "tick": 8663, "wallTimeMs": 1794782999448, "from": "DEBRIEF", "to": "WORLD"}
+{"type": "status", "tick": 30533, "wallTimeMs": 1794783363958, "text": "Round again: straight ahead, and back in the hall."}
