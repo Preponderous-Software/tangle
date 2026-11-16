@@ -6,7 +6,7 @@ import * as World from "./world.js";
 import {QUESTION} from "./diagonal.js";
 import {QUESTIONS as PROVER_Q, ANSWER_IDS} from "./prover.js";
 
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
 const post = (path, body) => { fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body), keepalive: true}).catch(() => {}); };
 const t0 = performance.now();
 const tick = () => Math.max(0, Math.round((performance.now() - t0) / 1000 * 60));

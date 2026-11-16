@@ -1,0 +1,70 @@
+{
+  "session": "s02",
+  "goal": "Start with --rooms done (all six rooms count as solved; you stand in the hall facing a new door in the far wall). This is the game's epilogue. Go through the new door, read what you find, and keep going. Report: did you notice what happened (where you ended up) and did it feel like a fitting end to a game about strange loops? Was anything confusing or broken (walls, seams, plaques you can't read, getting stuck, the transition back into the hall)? Then look around the hall: does it still make sense after the epilogue?",
+  "build": {"version": "0.2.0", "commit": "308671f"},
+  "seed": null,
+  "durationSec": 627,
+  "outcome": "achieved",
+  "findings": [
+    {
+      "severity": "minor",
+      "category": "ux",
+      "title": "Epilogue's key plaque ('THE LAST LOOP: \"I\" is a strange loop') in the passage is easy to walk past unread",
+      "detail": "The sign over the far door says 'Go through, and keep walking straight ahead.' Doing exactly that (holding w from the hall centre) took me through the short passage and back into the hall before I ever saw the plaque, which hangs side-on on the passage's west wall. It is the thematic payoff of the whole game (Hofstadter's 'I' as a strange loop, tying back to card 81 and the screen). I only read it on a second, deliberate trip: stop in the passage, turn ~90 degrees left, back up. Expected: the plaque placed facing the player (e.g. on the passage end or angled), or the passage long enough / the loop trigger far enough in that a walking player sees it.",
+      "repro": "pt start ... --rooms done; Return; pt hold w 2; pt hold w 2.5 -> already back in hall (caption 'You walked straight ahead...'), plaque never on screen. Second trip: stop at z~-7.6, pt hold Left ~1.0 to face west wall.",
+      "screenshot": "shots/last_plaque.png",
+      "tick": 29374
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Rows of small dark specks floating in the hall near the far (way-out) door",
+      "detail": "Facing north from the south half of the hall, a row of ~6 small dark dots hangs near the ceiling right of the way-out door and a row of ~4 sits on the floor in front of the passage. They look like stray geometry or tiny unlit boxes. Expected: clean wall/floor.",
+      "repro": "pt start ... --rooms done; walk through the way-out passage once so you re-enter at the south end; face north (yaw ~90) at about x=-0.6 z=3.9; pt shot",
+      "screenshot": "shots/specks.png",
+      "tick": 31881
+    },
+    {
+      "severity": "polish",
+      "category": "bug",
+      "title": "Empty black rectangle at top centre of the screen on the first frame in the hall",
+      "detail": "Right after Begin, a solid black box (~540x50 px) sat at the top centre of the view, overlapping the NEXT box area. It was gone 2 seconds later. Possibly an empty caption/banner element rendering before its text. Expected: nothing, or a banner with text.",
+      "repro": "pt start ... --rooms done; pt await TITLE; pt key Return; pt await WORLD; pt shot start",
+      "screenshot": "shots/start.png",
+      "tick": 6382
+    },
+    {
+      "severity": "polish",
+      "category": "text",
+      "title": "After the epilogue the north sign still reads 'The way out / Go through, and keep walking straight ahead.'",
+      "detail": "Everything else in the hall updates after the loop is found (objective: 'Every loop found, the hall's too. Wander as you like.'; progress plaque: '6 of 6 rooms solved / And the hall itself is a loop. Thank you for playing.'). The way-out sign stays the same even though the player now knows it is not a way out. Could be an intentional joke; if so, a small wink in its subtitle after the loop (e.g. 'The way out?') would land it. Otherwise the hall makes sense: Screen door still leads to the Screen room, Triangle/Machine doors in place.",
+      "repro": "pt start ... --rooms done; walk through the north door until looped back; Return on the debrief; walk to the north wall and read the sign above the door.",
+      "screenshot": "shots/hall_after.png",
+      "tick": 37088
+    },
+    {
+      "severity": "polish",
+      "category": "ux",
+      "title": "Walking straight north from the hall centre at a slight angle catches on the way-out door jamb",
+      "detail": "Approaching the north door from x~1.4 I stopped dead against the right side of the frame with no feedback and had to strafe left. Narrow doorway for a 'keep walking straight ahead' instruction. Minor; sliding along the jamb would help.",
+      "repro": "From hub x~0.9 z~7, face yaw ~94 (slightly right of north), pt hold w 4.5 -> stuck at x=1.41 z=-5.38.",
+      "screenshot": "shots/walk5.png",
+      "tick": 25311
+    }
+  ],
+  "metrics": {
+    "objectivesCompleted": 7,
+    "deaths": 0,
+    "secondsToObjective": {"Every loop found, the hall's too (epilogue loop)": 123.05},
+    "gameSecondsFromWorldStartToLoop": 19.0,
+    "loopsThroughHall": 2,
+    "debriefsSeen": 1
+  },
+  "fun": 4,
+  "verdict": "The epilogue works: walking out the 'way out' and stepping back into the same hall through the Screen's door is seamless (no visible seam or pop, a calm caption, then the 'Back where you started.' debrief) and is a genuinely fitting last beat for a game about strange loops. The one real weakness is that the actual thesis plaque ('\"I\" is a strange loop') hangs side-on in a very short passage, so a player obeying 'keep walking straight ahead' loops back without ever reading it. The hall stays coherent afterwards, with an updated progress plaque and objective; only a few floating dark specks and an unchanged 'The way out' sign stand out.",
+  "answers": [
+    {"question": "In your own words, what is a strange loop, and what did each room you played show about it?", "answer": "A strange loop is a path where you keep moving 'forward' or 'up' a level, yet end up back where you started, so the thing ends up referring to or containing itself. I only played the epilogue: walking straight out through the hall's far door and arriving back in the same hall through the opposite (Screen) door showed it physically, and the debrief said the hall seen through the far door contains the hall again, like a screen showing itself. The passage plaque applied it to the self: one of the brain's patterns stands for the brain itself, and that self-pointing loop is what 'I' means. I did not play the six rooms, though I passed through the Screen room by accident and saw the screen inside a screen ('3 levels deep')."},
+    {"question": "Which moment was the most confusing, and why?", "answer": "The first trip through the way-out door: I was holding w as the sign said and suddenly a caption said I had come back into the hall, with no memory of the passage. It took a moment to realise I had looped, and I had missed the plaque in the passage entirely. Only the debrief made it clear. Also slightly puzzling: the debrief says I came in through the Screen's door, but walking back through that door leads to the Screen room, not the passage (an intended Escher-style contradiction, I think)."},
+    {"question": "Did anything look broken on screen? Describe each problem, where you were and which way you were facing.", "answer": "Nothing seriously broken; the loop transition itself was seamless. Small issues: (1) in the hall's south half facing north toward the way-out door, rows of small dark specks near the ceiling right of the door and on the floor in front of the passage; (2) on the very first frame in the hall, facing north from the centre, an empty black rectangle at the top centre of the screen that vanished seconds later; (3) approaching the north door slightly right of centre, I stuck on the door jamb with no slide. The passage plaque is readable but only side-on at close range."}
+  ]
+}
