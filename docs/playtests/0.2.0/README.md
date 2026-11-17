@@ -9,7 +9,7 @@ Four AI playtesters ([playtester](https://github.com/Preponderous-Software/playt
 | s03 | The end game: the List, then the Prover | achieved | 4/5 |
 | s04 | Graphics and layout hunt in the List, the Prover and the doorway between them | partial | 3/5 |
 
-`summary.md` is the aggregated report (27 findings: 0 blocker, 1 major, 17 minor, 9 polish). Each session directory holds its `report.json`, `findings.jsonl`, the game's probe `events.jsonl`, and the screenshots its findings cite. Local paths are shortened to `.` (the game's checkout) and `playtest-run2` (the run directory).
+`summary.md` is the aggregated report (27 findings: 0 blocker, 1 major, 17 minor, 9 polish). Each session directory holds its `report.json`, `findings.jsonl` and the game's probe `events.jsonl`. The screenshots its findings cite are missing: `.gitignore` then ignored every `shots/` directory, so they were never committed, and the links to them in `summary.md` and `confirmation/summary.md` are broken. Local paths are shortened to `.` (the game's checkout) and `playtest-run2` (the run directory).
 
 Compared with 0.1.0: every session reached its goal except the graphics hunt, which covered both rooms but didn't walk every wall. No geometry problems were found (no gaps, seams, z-fighting or walk-through walls). Both testers who reached the Prover understood why card 81 is true but can't be proved.
 
