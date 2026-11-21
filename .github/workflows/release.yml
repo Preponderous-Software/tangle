@@ -1,0 +1,159 @@
+# Builds Tangle's download and attaches it to a GitHub release:
+#
+#   tangle-<version>-web.zip          the static site, exactly what the arcade deploy ships (unzip, serve, play)
+#   tangle-<version>-web.zip.sha256   its SHA-256, in the format `sha256sum -c` reads
+#
+# tools/build-release.sh does the building.
+#
+#   - Pushing a version tag (git push origin v0.4.0) builds that tag, creates its release if there is
+#     none yet ("Tangle <version>", a full release) and uploads to it. This is how the fleet's release
+#     automation releases the game.
+#   - workflow_dispatch with a tag builds that tag and uploads to its release (created if missing);
+#     without a tag it is a dry run that keeps the zip as a workflow artifact and attaches nothing.
+#   - A pull request that changes this workflow, the build script or package.json runs the same build
+#     as a dry run, so a packaging change is checked before it merges.
+#
+# Tags are vX.Y.Z; the version inside them (and in the asset names) is the bare X.Y.Z. The arcade is
+# separate: test.yml deploys every push to main. See docs/RELEASING.md.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  pull_request:
+    paths:
+      - ".github/workflows/release.yml"
+      - "tools/build-release.sh"
+      - "package.json"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and attach to, e.g. v0.4.0 (empty = dry run: workflow artifact only)"
+        required: false
+        default: ""
+
+concurrency:
+  group: release-${{ inputs.tag || (github.ref_type == 'tag' && github.ref_name) || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build the download
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write # gh release create / upload
+    steps:
+      - name: Resolve the tag
+        id: resolve
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          case "$EVENT" in
+            push)              [ "$REF_TYPE" = tag ] && tag="$REF_NAME" || tag="" ;;
+            workflow_dispatch) tag="$INPUT_TAG" ;;
+            *)                 tag="" ;;
+          esac
+          if [ -n "$tag" ]; then
+            if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Release tags look like v0.3.0, not '$tag'."
+              exit 1
+            fi
+            echo "ref=refs/tags/$tag" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # package.json and the version the game reports (src/probe.js's VERSION) must both be the version
+      # in the tag.
+      - name: Check the version against the tag
+        id: version
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          probe=$(sed -n 's/^\(export \)\{0,1\}const VERSION = "\([^"]*\)";.*/\2/p' src/probe.js)
+          echo "package.json $version, src/probe.js $probe, tag ${TAG:-none (dry run)}"
+          bad=0
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::package.json's version '$version' is not X.Y.Z."; bad=1
+          fi
+          if [ "$probe" != "$version" ]; then
+            echo "::error::src/probe.js says '$probe' but package.json says $version."; bad=1
+          fi
+          if [ -n "$TAG" ] && [ "v$version" != "$TAG" ]; then
+            echo "::error::package.json says $version but the tag is $TAG. Set the version first (docs/RELEASING.md)."; bad=1
+          fi
+          [ "$bad" = 0 ] || exit 1
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Unit tests
+        run: |
+          npm test
+          for f in src/*.js; do node --check "$f"; done
+
+      - name: Build the download
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: tools/build-release.sh "$VERSION" "$SHA" dist
+
+      - name: Check the download
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          (cd dist && sha256sum -c ./*.sha256)
+          mkdir -p check
+          unzip -q "dist/tangle-$VERSION-web.zip" -d check
+          for f in index.html version.txt src/game.js src/save.js assets/poster.jpg \
+                   engine/tangle-engine.js engine/tangle-engine.wasm engine/strata-kit.js engine/strata-loader.js; do
+            [ -f "check/tangle-$VERSION-web/$f" ] || { echo "::error::The zip has no 'tangle-$VERSION-web/$f'."; exit 1; }
+          done
+          cat "check/tangle-$VERSION-web/version.txt"
+
+      - name: Keep the download as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tangle-download
+          path: dist/
+          retention-days: 14
+
+      - name: Create the release if it does not exist
+        if: steps.resolve.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $TAG exists."
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Tangle $VERSION" \
+              --notes "Tangle $VERSION. Play it in a browser at https://tangle.play.danielstephenson.dev, or download tangle-$VERSION-web.zip (checksum in tangle-$VERSION-web.zip.sha256), unzip it and serve the folder (for example python3 -m http.server)."
+          fi
+
+      - name: Attach the download to the release
+        if: steps.resolve.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          gh release upload "$TAG" dist/*.zip dist/*.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'

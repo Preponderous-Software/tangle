@@ -207,6 +207,7 @@ itself.
   - `src/sentences.js`: Room 3's sentences, with checks that each answer is true of itself.
   - `src/diagonal.js`: Room 5's list, the diagonal and the librarian's answers.
   - `src/prover.js`: Room 6's cards, what the Prover does with each, and the questions about card 81.
+  - `src/save.js`: what is kept in localStorage (progress and settings), how it is read back, and the save format version. Pure, with node tests against real saves.
   - `src/probe.js`: the playtester probe (only with `?probe`).
   - `src/tribar.js`: the tribar construction.
   - `src/geom.js`: vector helpers and the mesh builder every shape is made with. No DOM, no engine.
@@ -240,6 +241,8 @@ itself.
   `?probe` (`src/probe.js`, through `tools/serve.py --probe-dir`). Run
   `pt smoke --profile tools/playtest/tangle.json --game-dir .`; the evidence from each run goes in
   `docs/playtests/<version>/`.
+- **Releases.** Tagged `vX.Y.Z` and made by release automation; the arcade keeps deploying `main`.
+  See [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Related
 

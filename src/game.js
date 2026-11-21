@@ -1,6 +1,6 @@
 // Tangle: the page. Boots the Strata hall engine, builds the house, runs walking, the two puzzles,
 // the narration, the cards (title, pause menu, debrief) and the sound. Pure logic lives in walk.js,
-// miu.js, tribar.js and world.js.
+// miu.js, tribar.js, world.js and save.js.
 import {v3, MeshBuilder} from "./geom.js";
 import * as Walk from "./walk.js";
 import {moves, MAX_LEN} from "./miu.js";
@@ -11,6 +11,7 @@ import * as Audio from "./audio.js";
 import {SENTENCES, answer as answerSentence, nestingDepth} from "./sentences.js";
 import * as Diag from "./diagonal.js";
 import * as Prover from "./prover.js";
+import * as Save from "./save.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -20,7 +21,7 @@ const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private window */ } },
 };
-const SAVE_KEY = "tangle.v1", SETTINGS_KEY = "tangle.settings";
+const {SAVE_KEY, SETTINGS_KEY} = Save;
 const touchFirst = matchMedia("(pointer: coarse)").matches;
 const HOLD = 1.0, MIN_HFOV = 74;
 let ambient = 0.45, fovNow = 66;  // set from settings at boot
@@ -32,8 +33,6 @@ if (params.get("new") === "1") {  // play-tangle.bat new: start over, once (the 
   params.delete("new");
   history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : ""));
 }
-function validRow(r) { return Array.isArray(r) && r.length === Diag.N && r.every((b) => b === 0 || b === 1) ? r.slice() : null; }
-function validList(l) { return Array.isArray(l) && l.length === Diag.N && l.every(validRow) ? l.map((r) => r.slice()) : null; }
 if (params.get("skip") === "4" || params.get("skip") === "5") {
   // playtesting: the first four rooms solved, standing in the vestibule (4), or all five, in the List by the Prover's door (5)
   const five = params.get("skip") === "5";
@@ -51,54 +50,12 @@ if (params.get("skip") === "6") {
   params.delete("skip");
   history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : ""));
 }
-const read = (k) => { try { return JSON.parse(store.get(k) || "{}"); } catch (e) { return {}; } };
-const saved = read(SAVE_KEY);
-const settings = Object.assign({sens: 1, invert: false, sound: true, fov: 66, text: 1}, read(SETTINGS_KEY));
+const saved = Save.parseRecord(store.get(SAVE_KEY));
+const settings = Save.loadSettings(store.get(SETTINGS_KEY));
 document.documentElement.style.setProperty("--ui", settings.text);
-const state = {
-  solved: {tribar: !!saved.tribar, miu: !!saved.miu, scr: !!saved.scr, stair: !!saved.stair, list: !!saved.list, godel: !!saved.godel},
-  // Room 6: the Prover. fed: cards fed so far; blank: card 81's number; selfFed: card 81 fed while about itself; q: question
-  prv: {fed: Array.isArray(saved.prv && saved.prv.fed) ? saved.prv.fed.filter((n) => n === 12 || n === 47) : [],
-    blank: Prover.validBlank(saved.prv && saved.prv.blank) ? saved.prv.blank : Prover.START,
-    selfFed: !!(saved.prv && saved.prv.selfFed) || !!saved.godel, q: saved.godel ? Prover.QUESTIONS.length : Math.min(1, (saved.prv && saved.prv.q) || 0),
-    run: null, msg: null, good: false, qMsg: null, qGood: !!saved.godel},
-  // Room 5: the librarian's list. round 0: the first list; 1: your row added; 2: beaten twice (the question)
-  diag: {list: validList(saved.diag && saved.diag.list) || Diag.START.map((r) => r.slice()),
-    guess: (saved.diag && validRow(saved.diag.guess)) || Array(Diag.N).fill(0),
-    round: (saved.diag && saved.diag.round) || (saved.list ? 2 : 0), checks: (saved.diag && saved.diag.checks) || 0,
-    escaped: !!(saved.diag && saved.diag.escaped) || !!saved.list, hint: (saved.diag && saved.diag.hint) || 0,
-    diffs: null, later: null, msg: null, good: false, busy: false, qMsg: null, qGood: !!saved.list},
-  loops: 0, loopedOnce: !!saved.loopedOnce || !!saved.stair, lastKey: -1, topMsg: null, topGood: false,
-  screenDone: !!saved.screenDone || !!saved.scr,   // Room 3, part 1: seen the screen inside itself
-  sentence: saved.sentence || 0, liarTried: saved.liarTried || {}, neitherOn: !!saved.neitherOn, boardMsg: null, boardGood: false,
-  depth: 0, depthHold: 0,
-  gateOpen: !!saved.gateOpen || !!saved.miu,
-  made: saved.made || ["MI"],
-  word: saved.word || "MI",
-  history: saved.trail || [],
-  sel: 0,                 // index into the current word's rule 3/4 spots
-  presses: saved.presses || 0,
-  machineTime: 0,
-  triTime: 0,
-  hint: !!saved.tribar,
-  hold: 0,                // seconds lined up with the tribar
-  card: driven ? null : "title",   // "title" | "menu" | "panel" | null
-  frames: 0,
-  room: "hub",
-  seenRooms: new Set(saved.seen || []),
-  glow: 0,                // the sculpture's solve light, fading
-  boardShown: !!saved.boardShown || !!saved.miu,
-  epilogue: !!saved.epilogue,   // walked the hall's last loop (out of the north door, in through the south)
-  hallLoops: 0,
-};
+const state = Save.restoreState(saved, {driven});
 const hasProgress = state.solved.tribar || state.solved.miu || state.solved.scr || state.solved.stair || state.solved.list || state.solved.godel || state.made.length > 1 || state.seenRooms.size > 0;
-function save() {
-  store.set(SAVE_KEY, JSON.stringify({tribar: state.solved.tribar, miu: state.solved.miu, scr: state.solved.scr, stair: state.solved.stair, list: state.solved.list, godel: state.solved.godel, prv: {fed: state.prv.fed, blank: state.prv.blank, selfFed: state.prv.selfFed, q: state.prv.q}, loopedOnce: state.loopedOnce,
-    diag: {list: state.diag.list, guess: state.diag.guess, round: state.diag.round, checks: state.diag.checks, escaped: state.diag.escaped, hint: state.diag.hint},
-    screenDone: state.screenDone, sentence: state.sentence, liarTried: state.liarTried, neitherOn: state.neitherOn, gateOpen: state.gateOpen,
-    made: state.made.slice(-200), word: state.word, trail: state.history.slice(-40), presses: state.presses,
-    seen: [...state.seenRooms], boardShown: state.boardShown, epilogue: state.epilogue, pose: {x: me.x, z: me.z, y: me.y, yaw: me.yaw, pitch: me.pitch}}));
-}
+function save() { store.set(SAVE_KEY, Save.saveRecord(state, me)); }
 function saveSettings() { store.set(SETTINGS_KEY, JSON.stringify(settings)); }
 
 const collide = World.collision(state);

@@ -40,7 +40,7 @@ jobs:
           cp -r src assets "$site/"
           cp engine/tangle-engine.js engine/tangle-engine.wasm engine/strata-kit.js engine/strata-loader.js "$site/engine/"
           echo "SITE=$site" >> "$GITHUB_ENV"
-          echo "0.1.0+g${GITHUB_SHA::7}" > "$RUNNER_TEMP/arcade-version.txt"
+          echo "$(node -p "require('./package.json').version")+g${GITHUB_SHA::7}" > "$RUNNER_TEMP/arcade-version.txt"
           find "$site" -type f | sort
       - uses: Stephenson-Software/arcade-deploy@v1
         with:
