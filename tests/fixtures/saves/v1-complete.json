@@ -1,0 +1,4 @@
+{
+  "tangle.v1": "{\"tribar\":true,\"miu\":true,\"scr\":true,\"stair\":true,\"list\":true,\"godel\":true,\"prv\":{\"fed\":[12,47],\"blank\":81,\"selfFed\":true,\"q\":2},\"loopedOnce\":true,\"diag\":{\"list\":[[1,0,1,1,0,0,1,0],[0,1,1,0,1,1,0,0],[1,1,0,1,0,0,0,1],[0,0,1,1,1,0,1,0],[1,0,0,1,1,1,0,1],[0,1,0,0,0,1,1,1],[1,1,1,0,0,1,0,0],[0,0,1,0,1,0,1,1]],\"guess\":[0,0,0,0,0,0,0,0],\"round\":2,\"checks\":0,\"escaped\":true,\"hint\":0},\"screenDone\":true,\"sentence\":4,\"liarTried\":{},\"neitherOn\":false,\"gateOpen\":true,\"made\":[\"MI\"],\"word\":\"MI\",\"trail\":[],\"presses\":0,\"seen\":[\"hub\",\"tri\",\"miu\",\"scr\",\"vest\",\"stair\",\"list\",\"prv\"],\"boardShown\":true,\"epilogue\":true,\"pose\":{\"x\":0,\"z\":2.5,\"y\":0,\"yaw\":1.5707963267948966,\"pitch\":0}}",
+  "tangle.settings": "{\"sens\":1.4,\"invert\":true,\"sound\":false,\"fov\":74,\"text\":1.2}"
+}
