@@ -47,7 +47,9 @@ restoring and writing them is in [`src/save.js`](../src/save.js), which also hol
 the format version of both.
 
 - `tests/fixtures/saves/v<N>-<name>.json` are real saves: what localStorage held (key -> stored
-  string) after a playthrough of the released build wrote them.
+  string) after a playthrough of the released build wrote them (`v1-early.json`), or what
+  `src/save.js` itself writes for a given progress (`v1-complete.json`: every room solved and the
+  settings changed).
 - [`tests/saves.test.mjs`](../tests/saves.test.mjs) lists every fixture by file name, fails on an
   unlisted file, and loads each one through `src/save.js`, the path the game loads with.
 - Released fixtures never change. A change to what is stored bumps `SAVE_VERSION`, adds a migration

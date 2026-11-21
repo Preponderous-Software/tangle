@@ -1,6 +1,8 @@
 // Released saves keep loading. Each fixture in tests/fixtures/saves/ is what localStorage held (key ->
 // the stored string) after a playthrough of the released build (tools/playthrough.cjs's route, through
-// the real inputs) wrote it. Every one is loaded here through src/save.js, the path the game loads with,
+// the real inputs) wrote it; v1-complete.json was written by src/save.js itself (saveRecord, and
+// settings as saveSettings stores them) from the record game.js's ?skip=6 path seeds, with the
+// epilogue walked and every setting changed. Every one is loaded here through src/save.js, the path the game loads with,
 // and must come back with its progress.
 //
 // Contract (src/save.js): released fixtures never change. A new save format bumps SAVE_VERSION, adds a
@@ -12,6 +14,7 @@ import {SAVE_VERSION, SAVE_KEY, SETTINGS_KEY, SETTINGS_DEFAULTS, parseRecord, lo
 
 const FIXTURES = [
   "v1-early.json",
+  "v1-complete.json",
 ];
 const DIR = new URL("./fixtures/saves/", import.meta.url);
 
@@ -47,6 +50,20 @@ test("v1-early.json: the triangle solved, nothing else", () => {
   assert.deepEqual(state.made, ["MI"]);
   assert.equal(state.epilogue, false);
   assert.deepEqual(settings, SETTINGS_DEFAULTS);  // settings never touched: none stored
+});
+
+test("v1-complete.json: all six rooms, the epilogue and changed settings", () => {
+  const {state, settings} = boot("v1-complete.json");
+  assert.deepEqual(state.solved, {tribar: true, miu: true, scr: true, stair: true, list: true, godel: true});
+  assert.equal(state.epilogue, true);
+  assert.equal(state.prv.blank, 81);
+  assert.deepEqual(state.prv.fed, [12, 47]);
+  assert.equal(state.prv.selfFed, true);
+  assert.equal(state.diag.escaped, true);
+  assert.equal(state.diag.round, 2);
+  assert.equal(state.sentence, 4);
+  assert.equal(state.seenRooms.size, 8);
+  assert.deepEqual(settings, {sens: 1.4, invert: true, sound: false, fov: 74, text: 1.2});
 });
 
 test("loading a fixture and saving straight away writes back the same string", () => {
