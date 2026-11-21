@@ -1,0 +1,3 @@
+{
+  "tangle.v1": "{\"tribar\":true,\"miu\":false,\"scr\":false,\"stair\":false,\"list\":false,\"godel\":false,\"prv\":{\"fed\":[],\"blank\":47,\"selfFed\":false,\"q\":0},\"loopedOnce\":false,\"diag\":{\"list\":[[1,0,1,1,0,0,1,0],[0,1,1,0,1,1,0,0],[1,1,0,1,0,0,0,1],[0,0,1,1,1,0,1,0],[1,0,0,1,1,1,0,1],[0,1,0,0,0,1,1,1],[1,1,1,0,0,1,0,0],[0,0,1,0,1,0,1,1]],\"guess\":[0,0,0,0,0,0,0,0],\"round\":0,\"checks\":0,\"escaped\":false,\"hint\":0},\"screenDone\":false,\"sentence\":0,\"liarTried\":{},\"neitherOn\":false,\"gateOpen\":false,\"made\":[\"MI\"],\"word\":\"MI\",\"trail\":[],\"presses\":0,\"seen\":[\"tri\"],\"boardShown\":false,\"epilogue\":false,\"pose\":{\"x\":-10.53236159457287,\"z\":4.147225615366566,\"y\":0,\"yaw\":-0.6625772867920329,\"pitch\":0}}"
+}
